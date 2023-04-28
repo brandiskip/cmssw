@@ -48,6 +48,7 @@ public:
 
   // 1D intermediate resolution plots (pT and eta)
   MonitorElement *res_eta = nullptr;    // for all eta and pT
+  MonitorElement *test_res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
   MonitorElement *respt_eta0to0p7_pt2to3 = nullptr;

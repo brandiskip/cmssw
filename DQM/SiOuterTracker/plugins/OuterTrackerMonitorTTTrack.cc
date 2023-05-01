@@ -241,7 +241,7 @@ void OuterTrackerMonitorTTTrack::bookHistograms(DQMStore::IBooker &iBooker,
                                psTrack_N.getParameter<int32_t>("Nbinsx"),
                                psTrack_N.getParameter<double>("xmin"),
                                psTrack_N.getParameter<double>("xmax"));
-  Track_All_N->setAxisTitle("# L1 Tracks", 1);
+  Track_All_N->setAxisTitle("# L1 Tracks Brandi", 1);
   Track_All_N->setAxisTitle("# Events", 2);
 
   // Number of stubs

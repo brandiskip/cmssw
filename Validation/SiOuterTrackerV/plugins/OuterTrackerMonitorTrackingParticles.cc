@@ -381,7 +381,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                  psTrackParts_Pt.getParameter<double>("xmin"),
                                  psTrackParts_Pt.getParameter<double>("xmax"));
   trackParts_Pt->setAxisTitle("p_{T} [GeV]", 1);
-  trackParts_Pt->setAxisTitle("# tracking particles", 2);
+  trackParts_Pt->setAxisTitle("# tracking particles Brandi", 2);
 
   // 1D: eta
   edm::ParameterSet psTrackParts_Eta = conf_.getParameter<edm::ParameterSet>("TH1TrackParts_Eta");
@@ -535,6 +535,18 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
 
   // 1D plots for resolution
   iBooker.setCurrentFolder(topFolderName_ + "/Tracks/Resolution");
+
+  // test full pT
+  edm::ParameterSet test_psRes_pt = conf_.getParameter<edm::ParameterSet>("test_TH1Res_pt");
+  HistoName = "test_res_pt";
+  test_res_pt = iBooker.book1D(HistoName,
+                          HistoName,
+                          test_psRes_pt.getParameter<int32_t>("Nbinsx"),
+                          test_psRes_pt.getParameter<double>("xmin"),
+                          test_psRes_pt.getParameter<double>("xmax"));
+  test_res_pt->setAxisTitle("p_{T} [GeV]", 1);
+  test_res_pt->setAxisTitle("# test_tracking particles", 2);
+
   // full pT
   edm::ParameterSet psRes_pt = conf_.getParameter<edm::ParameterSet>("TH1Res_pt");
   HistoName = "res_pt";

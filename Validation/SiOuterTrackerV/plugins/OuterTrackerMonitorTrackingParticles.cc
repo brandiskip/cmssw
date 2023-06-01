@@ -34,6 +34,8 @@
 
 #include "OuterTrackerMonitorTrackingParticles.h"
 
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
+
 //
 // constructors and destructor
 //
@@ -279,6 +281,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
       // Eta and pT histograms for resolution
       float pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
+      float test_pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
       float pt_res = pt_diff / tmp_tp_pt;
       float eta_res = tmp_matchtrk_eta - tmp_tp_eta;
       float phi_res = tmp_matchtrk_phi - tmp_tp_phi;
@@ -287,6 +290,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
       // fill total resolution histograms
       res_pt->Fill(pt_diff);
+      test_res_pt->Fill(test_pt_diff);
       res_ptRel->Fill(pt_res);
       res_eta->Fill(eta_res);
 
@@ -361,6 +365,124 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       }
     }  //if MC TTTrack handle is valid
   }    //end loop over tracking particles
+
+  //-------------------------------------------------------------------------------------------------
+  // declare L1StubInputTag as an edm::InputTag variable 
+  // create a placeholder for an input tag that will be used to specify the collection of data to be processed
+  edm::InputTag L1StubInputTag;
+
+  // retrieves a configuration parameter named "L1StubInputTag" of type edm::InputTag from the iConfig object and assigns its value to the L1StubInputTag variable
+  // this used to read iConfig.getParameter but I had to change it to conf_.getParameter because of the constructor (need to check out exactly why)
+  L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
+
+  // Declare pointer for stub position
+  std::vector<float>* m_allstub_x;
+
+  // Declare pointer for matched stub
+  // Stub associated with tracking particle?
+  std::vector<int>* m_allstub_matchTP_pdgid; // -999 if not matched
+
+  // Assign memory address to the pointers for stub position
+  m_allstub_x = new std::vector<float>;
+  m_allstub_matchTP_pdgid = new std::vector<int>;
+
+  edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> getTokenTrackerGeom_;
+  getTokenTrackerGeom_ = esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>();
+
+  // Declares a token, ttStubToken, that will be used to retrieve a collection of TTStub objects associated with Phase2TrackerDigi data
+  edm::EDGetTokenT<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > ttStubToken_;
+
+  // Consumes a collection of TTStub objects associated with Phase2TrackerDigi data and assigns it to ttStubToken_
+  ttStubToken_ = consumes<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > >(L1StubInputTag);
+
+  // L1 Stubs
+  edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
+  iEvent.getByToken(ttStubToken_, TTStubHandle);
+
+  // more for TTStubs
+  edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
+  const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+
+  //-------------------------------------------------------------------------------------------------      
+  // Loop over L1 stubs
+  //-------------------------------------------------------------------------------------------------      
+  for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
+    DetId detid = (*gd)->geographicalId();
+    if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
+      continue;
+    if (!tTopo->isLower(detid))
+      continue;                              // loop on the stacks: choose the lower arbitrarily
+    DetId stackDetid = tTopo->stack(detid);  // Stub module detid
+
+    if (TTStubHandle->find(stackDetid) == TTStubHandle->end())
+      continue;
+
+    // Get the DetSets of the Clusters
+    edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+    const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit(detid);
+    const auto* theGeomDet = dynamic_cast<const PixelGeomDetUnit*>(det0);
+    const PixelTopology* topol = dynamic_cast<const PixelTopology*>(&(theGeomDet->specificTopology()));
+
+    // loop over stubs
+    for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+      edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
+
+      /*
+      int isBarrel = 0;
+      int layer = -999999;
+      if (detid.subdetId() == StripSubdetector::TOB) {
+        isBarrel = 1;
+        layer = static_cast<int>(tTopo->layer(detid));
+      } else if (detid.subdetId() == StripSubdetector::TID) {
+      isBarrel = 0;
+        layer = static_cast<int>(tTopo->layer(detid));
+      } else {
+        edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB or TID stub, shouldn't happen...";
+        layer = -1;
+      }
+
+      int isPSmodule = 0;
+      if (topol->nrows() == 960)
+        isPSmodule = 1;
+      */
+
+      // calculates the global position of a measurement point by starting with the local coordinates, 
+      // find the average local coordinates of a cluster and convert them to a local position, 
+      // transform the local position to a global position using the detector geometry information
+      MeasurementPoint coords = tempStubPtr->clusterRef(0)->findAverageLocalCoordinatesCentered();
+      LocalPoint clustlp = topol->localPosition(coords);
+      GlobalPoint posStub = theGeomDet->surface().toGlobal(clustlp);
+
+      // extract the X-coordinate value from the posStub object and assign it to the variable tmp_stub_x
+      double tmp_stub_x = posStub.x();
+
+      // append the value of tmp_stub_x to the vector m_allstub_x is pointing to (add tmp_stub_x as a new element at the end of the vector)
+      m_allstub_x->push_back(tmp_stub_x);
+
+      // matched stub to tracking particle? (access TrackingParticle object)
+      // find the associated TrackingParticle corresponding to a given stub
+      edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
+
+      int myTP_pdgid = -999;
+
+      // if the following is not null, it means that a valid associated tracking particle was found for the stub
+      if (my_tp.isNull() == false) {
+        // retrieve the event ID (event number) associated with the tracking particle
+        int tmp_eventid = my_tp->eventId().event();
+
+        if (tmp_eventid > 0)
+          continue;  // this means stub from pileup track
+
+        // retrieve pdgid of tracking particle
+        myTP_pdgid = my_tp->pdgId();
+      }
+
+      // store multiple pdgids corresponding to different stubs or tracking particles
+      m_allstub_matchTP_pdgid->push_back(myTP_pdgid);
+    }
+  }
+//-------------------------------------------------------------------------------------------------
+
 }  // end of method
 
 // ------------ method called once each job just before starting event loop
@@ -381,7 +503,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                  psTrackParts_Pt.getParameter<double>("xmin"),
                                  psTrackParts_Pt.getParameter<double>("xmax"));
   trackParts_Pt->setAxisTitle("p_{T} [GeV]", 1);
-  trackParts_Pt->setAxisTitle("# tracking particles Brandi", 2);
+  trackParts_Pt->setAxisTitle("# tracking particles", 2);
 
   // 1D: eta
   edm::ParameterSet psTrackParts_Eta = conf_.getParameter<edm::ParameterSet>("TH1TrackParts_Eta");

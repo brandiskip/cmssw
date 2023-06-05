@@ -364,7 +364,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       res_ptRel->Fill(pt_res);
       res_eta->Fill(eta_res);
       stub_res_eta->Fill(stub_eta_res);
-      stub_res_pt->Fill(stub_phi_res);
+      stub_res_phi->Fill(stub_phi_res);
 
       // Fill resolution plots for different abs(eta) bins:
       // (0, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
@@ -644,6 +644,17 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                            psRes_eta.getParameter<double>("xmax"));
   res_eta->setAxisTitle("#eta", 1);
   res_eta->setAxisTitle("# tracking particles", 2);
+
+  // Full stub eta
+  edm::ParameterSet psStubRes_eta = conf_.getParameter<edm::ParameterSet>("TH1StubRes_eta");
+  HistoName = "stub_res_eta";
+  stub_res_eta = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_res_eta->setAxisTitle("#eta", 1);
+  stub_res_eta->setAxisTitle("# tracking particles", 2);
 
   // Relative pT
   edm::ParameterSet psRes_ptRel = conf_.getParameter<edm::ParameterSet>("TH1Res_ptRel");

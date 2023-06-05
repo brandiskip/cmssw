@@ -81,7 +81,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   //-------------------------------------------------------------------------------------------------
   // declare L1StubInputTag as an edm::InputTag variable 
   // create a placeholder for an input tag that will be used to specify the collection of data to be processed
-  edm::InputTag L1StubInputTag;
+  edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
 
   // retrieves a configuration parameter named "L1StubInputTag" of type edm::InputTag from the iConfig object and assigns its value to the L1StubInputTag variable
   // this used to read iConfig.getParameter but I had to change it to conf_.getParameter because of the constructor (need to check out exactly why)
@@ -280,7 +280,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       int tmp_matchTrk_nStub = -999;
       float tmp_matchtrk_d0 = -999;
       float myTP_eta = -999;
-      float myTP_phi = -999;
+      // float myTP_phi = -999;
 
       //-------------------------------------------------------------------------------------------------      
       // Loop over L1 stubs
@@ -316,7 +316,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
               continue;  // this means stub from pileup track
 
             myTP_eta = my_tp->p4().eta();
-            myTP_phi = my_tp->p4().phi();
+            // myTP_phi = my_tp->p4().phi();
           }
         } // end loop over stubs
       } // end loop over L1 stubs
@@ -355,8 +355,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float phi_res = tmp_matchtrk_phi - tmp_tp_phi;
       float VtxZ_res = tmp_matchtrk_VtxZ - tmp_tp_VtxZ;
       float d0_res = tmp_matchtrk_d0 - tmp_tp_d0;
+      // float stub_eta_res = tmp_matchtrk_eta - tmp_tp_eta;
       float stub_eta_res = myTP_eta - tmp_tp_eta;
-      float stub_phi_res = myTP_phi - tmp_tp_phi;
+      // float stub_phi_res = myTP_phi - tmp_tp_phi;
 
       // fill total resolution histograms
       res_pt->Fill(pt_diff);
@@ -364,7 +365,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       res_ptRel->Fill(pt_res);
       res_eta->Fill(eta_res);
       stub_res_eta->Fill(stub_eta_res);
-      stub_res_phi->Fill(stub_phi_res);
+      // stub_res_phi->Fill(stub_phi_res);
 
       // Fill resolution plots for different abs(eta) bins:
       // (0, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)

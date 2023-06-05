@@ -87,10 +87,10 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         ),
 
 # test to reproduce tracking particles vs relative pT (below)
-    test_TH1Res_pt = cms.Pset(
-        Nbinsx = cms.int32(100),
-        xmax = cms.double(0.2),
-        xmin = cms.double(-0.2)
+    test_TH1Res_pt = cms.PSet(
+        Nbinsx = cms.int32(200),
+        xmax = cms.double(0.1),
+        xmin = cms.double(-0.1)
         ),
 
 # tracking particles vs relative pT (for resolution plots)
@@ -102,6 +102,13 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
 
 # tracking particles vs eta (for resolution)
     TH1Res_eta = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(0.01),
+        xmin = cms.double(-0.01)
+        ),
+
+# tracking particles vs stub eta (for stub resolution)
+    TH1StubRes_eta = cms.PSet(
         Nbinsx = cms.int32(100),
         xmax = cms.double(0.01),
         xmin = cms.double(-0.01)

@@ -50,6 +50,9 @@ OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const
       conf_.getParameter<edm::InputTag>("MCTruthClusterInputTag"));
   ttTrackMCTruthToken_ = consumes<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>>(
       conf_.getParameter<edm::InputTag>("MCTruthTrackInputTag"));
+  getTokenTrackerGeom_ = esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>();
+  edm::InputTag L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
+  ttStubToken_ = consumes<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > >(L1StubInputTag);
   L1Tk_minNStub = conf_.getParameter<int>("L1Tk_minNStub");         // min number of stubs in the track
   L1Tk_maxChi2dof = conf_.getParameter<double>("L1Tk_maxChi2dof");  // maximum chi2/dof of the track
   TP_minNStub = conf_.getParameter<int>("TP_minNStub");             // min number of stubs in the tracking particle to
@@ -85,16 +88,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
   // retrieves a configuration parameter named "L1StubInputTag" of type edm::InputTag from the iConfig object and assigns its value to the L1StubInputTag variable
   // this used to read iConfig.getParameter but I had to change it to conf_.getParameter because of the constructor (need to check out exactly why)
-  L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
-
-  edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> getTokenTrackerGeom_;
-  getTokenTrackerGeom_ = esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>();
-
-  // Declares a token, ttStubToken, that will be used to retrieve a collection of TTStub objects associated with Phase2TrackerDigi data
-  edm::EDGetTokenT<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > ttStubToken_;
-
-  // Consumes a collection of TTStub objects associated with Phase2TrackerDigi data and assigns it to ttStubToken_
-  ttStubToken_ = consumes<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > >(L1StubInputTag);
+  // L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
 
   // L1 Stubs
   edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
@@ -317,7 +311,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
             myTP_eta = my_tp->p4().eta();
             // myTP_phi = my_tp->p4().phi();
+            std::cout << "myTP_eta value: " << myTP_eta << std::endl;
           }
+
         } // end loop over stubs
       } // end loop over L1 stubs
 //-------------------------------------------------------------------------------------------------
@@ -355,7 +351,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float phi_res = tmp_matchtrk_phi - tmp_tp_phi;
       float VtxZ_res = tmp_matchtrk_VtxZ - tmp_tp_VtxZ;
       float d0_res = tmp_matchtrk_d0 - tmp_tp_d0;
-      // float stub_eta_res = tmp_matchtrk_eta - tmp_tp_eta;
       float stub_eta_res = myTP_eta - tmp_tp_eta;
       // float stub_phi_res = myTP_phi - tmp_tp_phi;
 

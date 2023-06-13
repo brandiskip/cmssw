@@ -81,25 +81,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   edm::Handle<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTStubHandle;
   iEvent.getByToken(ttStubMCTruthToken_, MCTruthTTStubHandle);
 
-  //-------------------------------------------------------------------------------------------------
-  // declare L1StubInputTag as an edm::InputTag variable 
-  // create a placeholder for an input tag that will be used to specify the collection of data to be processed
-  edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
-
-  // retrieves a configuration parameter named "L1StubInputTag" of type edm::InputTag from the iConfig object and assigns its value to the L1StubInputTag variable
-  // this used to read iConfig.getParameter but I had to change it to conf_.getParameter because of the constructor (need to check out exactly why)
-  // L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
-
-  // L1 Stubs
-  edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
-  iEvent.getByToken(ttStubToken_, TTStubHandle);
-
-  // more for TTStubs
-  edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
-  const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
-
   // Geometries
-  const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
+      const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
 
   // Loop over tracking particles
   int this_tp = 0;
@@ -111,6 +94,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     float tmp_tp_pt = iterTP.pt();
     float tmp_tp_phi = iterTP.phi();
     float tmp_tp_eta = iterTP.eta();
+
+    std::cout << "This is the TP number: " << this_tp << std::endl;
+    std::cout << "For TP number " << this_tp << " eta is " << tmp_tp_eta << std::endl;
 
     //Calculate nLayers variable
     std::vector<edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>, TTStub<Ref_Phase2TrackerDigi_>>>
@@ -277,6 +263,22 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float myTP_phi = -999;
 
       //-------------------------------------------------------------------------------------------------      
+      // declare L1StubInputTag as an edm::InputTag variable 
+      // create a placeholder for an input tag that will be used to specify the collection of data to be processed
+      edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
+
+      // retrieves a configuration parameter named "L1StubInputTag" of type edm::InputTag from the iConfig object and assigns its value to the L1StubInputTag variable
+      // this used to read iConfig.getParameter but I had to change it to conf_.getParameter because of the constructor (need to check out exactly why)
+      // L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
+
+      // L1 Stubs
+      edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
+      iEvent.getByToken(ttStubToken_, TTStubHandle);
+
+      // more for TTStubs
+      edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
+      const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+
       // Loop over L1 stubs
       //-------------------------------------------------------------------------------------------------      
       for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {

@@ -273,8 +273,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float tmp_matchtrk_chi2dof = -999;
       int tmp_matchTrk_nStub = -999;
       float tmp_matchtrk_d0 = -999;
-      float myTP_eta = -999;
-      // float myTP_phi = -999;
+      float matchStub_eta = -999;
+      float myTP_phi = -999;
 
       //-------------------------------------------------------------------------------------------------      
       // Loop over L1 stubs
@@ -292,30 +292,66 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
         // Get the DetSets of the Clusters
         edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
-        
+      
         // loop over stubs
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
-
+  
           // matched stub to tracking particle? (access TrackingParticle object)
           // find the associated TrackingParticle corresponding to a given stub
-          edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
-
+          edm::Ptr<TrackingParticle> match_stub = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
+            
           // if the following is not null, it means that a valid associated tracking particle was found for the stub
-          if (my_tp.isNull() == false) {
+          if (match_stub.isNull() == false) {
             // retrieve the event ID (event number) associated with the tracking particle
-            int tmp_eventid = my_tp->eventId().event();
+            int tmp_eventid = match_stub->eventId().event();
 
             if (tmp_eventid > 0)
               continue;  // this means stub from pileup track
 
-            myTP_eta = my_tp->p4().eta();
-            // myTP_phi = my_tp->p4().phi();
-            std::cout << "myTP_eta value: " << myTP_eta << std::endl;
-          }
+            matchStub_eta = match_stub->p4().eta();
+            myTP_phi = match_stub->p4().phi();
 
+            float stub_eta_res = matchStub_eta - tmp_tp_eta;
+            float stub_phi_res = myTP_phi - tmp_tp_phi;
+
+            stub_res_eta->Fill(stub_eta_res);
+            stub_res_phi->Fill(stub_phi_res);
+            check_matchStub_eta->Fill(matchStub_eta);
+            check_tmp_tp_eta->Fill(tmp_tp_eta);
+                        
+            std::cout << "matchStub_eta value: " << matchStub_eta << std::endl;
+            std::cout << "tmp_tp_eta value: " << tmp_tp_eta << std::endl;
+
+            // Fill resolution plots for different abs(eta) bins:
+            // (0, 0.4), (0.4, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
+            if (std::fabs(tmp_tp_eta) >= 0 && std::fabs(tmp_tp_eta) < 0.4) {
+              stub_reseta_eta0to0p4->Fill(stub_eta_res);
+              stub_resphi_eta0to0p4->Fill(stub_phi_res);
+          } else if (std::fabs(tmp_tp_eta) >= 0.4 && std::fabs(tmp_tp_eta) < 0.7) {
+              stub_reseta_eta0p4to0p7->Fill(stub_eta_res);
+              stub_resphi_eta0p4to0p7->Fill(stub_phi_res); 
+          } else if (std::fabs(tmp_tp_eta) >= 0.7 && std::fabs(tmp_tp_eta) < 1.0) {
+              stub_reseta_eta0p7to1->Fill(stub_eta_res);
+              stub_resphi_eta0p7to1->Fill(stub_phi_res); 
+          } else if (std::fabs(tmp_tp_eta) >= 1.0 && std::fabs(tmp_tp_eta) < 1.2) {
+              stub_reseta_eta1to1p2->Fill(stub_eta_res);
+              stub_resphi_eta1to1p2->Fill(stub_phi_res);
+          } else if (std::fabs(tmp_tp_eta) >= 1.2 && std::fabs(tmp_tp_eta) < 1.6) {
+              stub_reseta_eta1p2to1p6->Fill(stub_eta_res);
+              stub_resphi_eta1p2to1p6->Fill(stub_phi_res); 
+          } else if (std::fabs(tmp_tp_eta) >= 1.6 && std::fabs(tmp_tp_eta) < 2.0) {
+              stub_reseta_eta1p6to2->Fill(stub_eta_res);
+              stub_resphi_eta1p6to2->Fill(stub_phi_res);
+          } else if (std::fabs(tmp_tp_eta) >= 2.0 && std::fabs(tmp_tp_eta) < 2.4) {
+              stub_reseta_eta2to2p4->Fill(stub_eta_res);
+              stub_resphi_eta2to2p4->Fill(stub_phi_res);
+            }      
+          }
         } // end loop over stubs
       } // end loop over L1 stubs
+
+
 //-------------------------------------------------------------------------------------------------
 
       tmp_matchtrk_pt = matchedTracks[i_track]->momentum().perp();
@@ -343,6 +379,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       match_tp_VtxR->Fill(tmp_tp_VtxR);
       match_tp_VtxZ->Fill(tmp_tp_VtxZ);
 
+      std::cout << "tmp_tp_eta outside value: " << tmp_tp_eta << std::endl;
       // Eta and pT histograms for resolution
       float pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
       float test_pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
@@ -351,16 +388,12 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float phi_res = tmp_matchtrk_phi - tmp_tp_phi;
       float VtxZ_res = tmp_matchtrk_VtxZ - tmp_tp_VtxZ;
       float d0_res = tmp_matchtrk_d0 - tmp_tp_d0;
-      float stub_eta_res = myTP_eta - tmp_tp_eta;
-      // float stub_phi_res = myTP_phi - tmp_tp_phi;
 
       // fill total resolution histograms
       res_pt->Fill(pt_diff);
       test_res_pt->Fill(test_pt_diff);
       res_ptRel->Fill(pt_res);
       res_eta->Fill(eta_res);
-      stub_res_eta->Fill(stub_eta_res);
-      // stub_res_phi->Fill(stub_phi_res);
 
       // Fill resolution plots for different abs(eta) bins:
       // (0, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
@@ -652,6 +685,40 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_res_eta->setAxisTitle("#eta", 1);
   stub_res_eta->setAxisTitle("# tracking particles", 2);
 
+  
+  // Full stub phi
+  edm::ParameterSet psStubRes_phi = conf_.getParameter<edm::ParameterSet>("TH1StubRes_phi");
+  HistoName = "stub_res_phi";
+  stub_res_phi = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_res_phi->setAxisTitle("#phi", 1);
+  stub_res_phi->setAxisTitle("# tracking particles", 2);
+
+  // check to see what myTP_eta histo looks like
+  edm::ParameterSet check_psRes_eta = conf_.getParameter<edm::ParameterSet>("check_TH1Res_eta");
+  HistoName = "check_matchStub_eta";
+  check_matchStub_eta = iBooker.book1D(HistoName,
+                           HistoName,
+                           check_psRes_eta.getParameter<int32_t>("Nbinsx"),
+                           check_psRes_eta.getParameter<double>("xmin"),
+                           check_psRes_eta.getParameter<double>("xmax"));
+  check_matchStub_eta->setAxisTitle("#eta", 1);
+  check_matchStub_eta->setAxisTitle("# tracking particles", 2);
+
+  // check to see what tmp_tp_eta histo looks like
+  edm::ParameterSet check_tmp_psRes_eta = conf_.getParameter<edm::ParameterSet>("check_tmp_TH1Res_eta");
+  HistoName = "check_tmp_tp_eta";
+  check_tmp_tp_eta = iBooker.book1D(HistoName,
+                           HistoName,
+                           check_psRes_eta.getParameter<int32_t>("Nbinsx"),
+                           check_psRes_eta.getParameter<double>("xmin"),
+                           check_psRes_eta.getParameter<double>("xmax"));
+  check_tmp_tp_eta->setAxisTitle("#eta", 1);
+  check_tmp_tp_eta->setAxisTitle("# tracking particles", 2);
+
   // Relative pT
   edm::ParameterSet psRes_ptRel = conf_.getParameter<edm::ParameterSet>("TH1Res_ptRel");
   HistoName = "res_ptRel";
@@ -723,6 +790,77 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                     psRes_eta.getParameter<double>("xmax"));
   reseta_eta2to2p4->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
   reseta_eta2to2p4->setAxisTitle("# tracking particles", 2);
+
+  // Eta parts (for resolution)
+  // Stub Eta 1 (0 to 0.4)
+  HistoName = "stub_reseta_eta0to0p4";
+  stub_reseta_eta0to0p4 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_reseta_eta0to0p4->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+  stub_reseta_eta0to0p4->setAxisTitle("# tracking particles", 2);
+  
+  // Stub Eta 2 (0.4 to 0.7)
+  HistoName = "stub_reseta_eta0p4to0p7";
+  stub_reseta_eta0p4to0p7 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_reseta_eta0p4to0p7->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+  stub_reseta_eta0p4to0p7->setAxisTitle("# tracking particles", 2);
+
+  // Stub Eta 3 (0.7 to 1.0)
+  HistoName = "stub_reseta_eta0p7to1";
+  stub_reseta_eta0p7to1 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_reseta_eta0p7to1->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+  stub_reseta_eta0p7to1->setAxisTitle("# tracking particles", 2);
+
+  // Stub Eta 4 (1.0 to 1.2)
+  HistoName = "stub_reseta_eta1to1p2";
+  stub_reseta_eta1to1p2 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_reseta_eta1to1p2->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+  stub_reseta_eta1to1p2->setAxisTitle("# tracking particles", 2);
+
+  // Stub Eta 5 (1.2 to 1.6)
+  HistoName = "stub_reseta_eta1p2to1p6";
+  stub_reseta_eta1p2to1p6 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_reseta_eta1p2to1p6->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+  stub_reseta_eta1p2to1p6->setAxisTitle("# tracking particles", 2);
+
+  // Stub Eta 6 (1.2 to 2.0)
+  HistoName = "stub_reseta_eta1p6to2";
+  stub_reseta_eta1p6to2 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_reseta_eta1p6to2->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+  stub_reseta_eta1p6to2->setAxisTitle("# tracking particles", 2);
+
+  // Stub Eta 7 (2.0 to 2.4)
+  HistoName = "stub_reseta_eta2to2p4";
+  stub_reseta_eta2to2p4 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_eta.getParameter<double>("xmin"),
+                           psStubRes_eta.getParameter<double>("xmax"));
+  stub_reseta_eta2to2p4->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+  stub_reseta_eta2to2p4->setAxisTitle("# tracking particles", 2);
 
   // pT parts for resolution (pT res vs eta)
   // pT a (2 to 3 GeV)
@@ -969,6 +1107,77 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                     psRes_phi.getParameter<double>("xmax"));
   resphi_eta2to2p4->setAxisTitle("#phi_{trk} - #phi_{tp}", 1);
   resphi_eta2to2p4->setAxisTitle("# tracking particles", 2);
+
+  // Phi parts (for resolution)
+  // Eta 1 (0 to 0.4)
+  HistoName = "stub_resphi_eta0to0p4";
+  stub_resphi_eta0to0p4 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_resphi_eta0to0p4->setAxisTitle("#phi", 1);
+  stub_resphi_eta0to0p4->setAxisTitle("# tracking particles", 2);
+
+  // Eta 2 (0.4 to 0.7)
+  HistoName = "stub_resphi_eta0p4to0p7";
+  stub_resphi_eta0p4to0p7 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_resphi_eta0p4to0p7->setAxisTitle("#phi", 1);
+  stub_resphi_eta0p4to0p7->setAxisTitle("# tracking particles", 2);
+
+  // Eta 3 (0.7 to 1.0)
+  HistoName = "stub_resphi_eta0p7to1";
+  stub_resphi_eta0p7to1 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_resphi_eta0p7to1->setAxisTitle("#phi", 1);
+  stub_resphi_eta0p7to1->setAxisTitle("# tracking particles", 2);
+
+  // Eta 4 (1.0 to 1.2)
+  HistoName = "stub_resphi_eta1to1p2";
+  stub_resphi_eta1to1p2 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_resphi_eta1to1p2->setAxisTitle("#phi", 1);
+  stub_resphi_eta1to1p2->setAxisTitle("# tracking particles", 2);
+
+  // Eta 5 (1.2 to 1.6)
+  HistoName = "stub_resphi_eta1p2to1p6";
+  stub_resphi_eta1p2to1p6 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_resphi_eta1p2to1p6->setAxisTitle("#phi", 1);
+  stub_resphi_eta1p2to1p6->setAxisTitle("# tracking particles", 2);
+
+  // Eta 6 (1.6 to 2.0)
+  HistoName = "stub_resphi_eta1p6to2";
+  stub_resphi_eta1p6to2 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_resphi_eta1p6to2->setAxisTitle("#phi", 1);
+  stub_resphi_eta1p6to2->setAxisTitle("# tracking particles", 2);
+
+  // Eta 6 (2.0 to 2.4)
+  HistoName = "stub_resphi_eta2to2p4";
+  stub_resphi_eta2to2p4 = iBooker.book1D(HistoName,
+                           HistoName,
+                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
+                           psStubRes_phi.getParameter<double>("xmin"),
+                           psStubRes_phi.getParameter<double>("xmax"));
+  stub_resphi_eta2to2p4->setAxisTitle("#phi", 1);
+  stub_resphi_eta2to2p4->setAxisTitle("# tracking particles", 2);
 
   // VtxZ parts (for resolution)
   // Eta 1 (0 to 0.7)

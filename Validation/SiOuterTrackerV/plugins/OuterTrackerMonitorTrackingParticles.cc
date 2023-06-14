@@ -85,25 +85,36 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
 
   // Loop over tracking particles
-  int this_tp = 0;
-  for (const auto &iterTP : *trackingParticleHandle) {
+  int this_tp = 0; // initialize counter to keep track of the current index within the tracking particle collection
+  // loop over all tracking particles referenced by trackingParticleHandle
+  // iterTP is a reference to the current tracking particle
+  for (const auto &iterTP : *trackingParticleHandle) { 
+    // create a pointer (tp_ptr) to the current tracking particle
     edm::Ptr<TrackingParticle> tp_ptr(trackingParticleHandle, this_tp);
     this_tp++;
 
     // int tmp_eventid = iterTP.eventId().event();
-    float tmp_tp_pt = iterTP.pt();
-    float tmp_tp_phi = iterTP.phi();
-    float tmp_tp_eta = iterTP.eta();
+    float tmp_tp_pt = iterTP.pt(); // get transverse momentum (pt) of the current tracking particle and store it
+    float tmp_tp_phi = iterTP.phi(); // get azimuthal angle (phi) of the current tracking particle and store it
+    float tmp_tp_eta = iterTP.eta(); // get pseudorapidity (eta) of the current tracking particle and store it
 
+    // print TP number and value of eta to compare later to matched stubs
     std::cout << "This is the TP number: " << this_tp << std::endl;
     std::cout << "For TP number " << this_tp << " eta is " << tmp_tp_eta << std::endl;
 
-    //Calculate nLayers variable
+    // calculates a variable nStubLayerTP that represents the number of distinct layers in which stubs 
+    // associated with a specific tracking particle (tp_ptr) are found
+    // Calculate nLayers variable
+    // vector theStubRefs is created to store references to stubs associated with the tracking particle tp_ptr
     std::vector<edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>, TTStub<Ref_Phase2TrackerDigi_>>>
         theStubRefs = MCTruthTTStubHandle->findTTStubRefs(tp_ptr);
 
+    // keep track of which layers contain stubs associated with tp_ptr
+    // set integer array of size 11 with all elements set to zero
     int hasStubInLayer[11] = {0};
+    // loop over stubs associated with tp_ptr
     for (unsigned int is = 0; is < theStubRefs.size(); is++) {
+      // determine detector layer stub is found
       DetId detid(theStubRefs.at(is)->getDetId());
       int layer = -1;
       if (detid.subdetId() == StripSubdetector::TOB)
@@ -223,7 +234,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         // further require L1 track to be (loosely) genuine, that there is only
         // one TP matched to the track
         // + have >= L1Tk_minNStub stubs for it to be a valid match
+        // counts the number of stubs associated with the track (tmp_trk_nstub) and checks if this is below a certain threshold
         int tmp_trk_nstub = thisTrack->getStubRefs().size();
+        std::cout << "tmp_trk_nstub value: " << tmp_trk_nstub << std::endl;
         if (tmp_trk_nstub < L1Tk_minNStub)
           continue;
         float dmatch_pt = 999;
@@ -267,22 +280,27 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       // create a placeholder for an input tag that will be used to specify the collection of data to be processed
       edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
 
-      // retrieves a configuration parameter named "L1StubInputTag" of type edm::InputTag from the iConfig object and assigns its value to the L1StubInputTag variable
-      // this used to read iConfig.getParameter but I had to change it to conf_.getParameter because of the constructor (need to check out exactly why)
-      // L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
-
       // L1 Stubs
+      // assuming TTStub is a collection of objects associated with mctruth stubs
+      // handle points to collection of TTStub objects
+      // should be able to tell from here which information and I am accessing, MC truth or reco
+      // look into these next to lines to understand what this means
       edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
       iEvent.getByToken(ttStubToken_, TTStubHandle);
 
       // more for TTStubs
+      // the TrackerGeometry object provides information about the layout of the tracker detector
+      // including positions of the various detector components, their sizes, shapes, etc.
+      // this information is needed when dealing with detector hits (or stubs) to map their positions in the detector volume
       edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
       const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
 
       // Loop over L1 stubs
-      //-------------------------------------------------------------------------------------------------      
+      //-------------------------------------------------------------------------------------------------   
+      // loop over all detector elements   
       for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
         DetId detid = (*gd)->geographicalId();
+        // if not Tracker Outer Barrel and if not Tracker Inner Disks, continue
         if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
           continue;
         if (!tTopo->isLower(detid))
@@ -292,17 +310,19 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         if (TTStubHandle->find(stackDetid) == TTStubHandle->end())
           continue;
 
-        // Get the DetSets of the Clusters
+        // access the TTStub corresponding to the stackDetid and assign it to the variable stubs
         edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
-      
-        // loop over stubs
+
+        // loop over stubs just obtained
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
   
-          // matched stub to tracking particle? (access TrackingParticle object)
+          // matched stub to tracking particle (access TrackingParticle object)
           // find the associated TrackingParticle corresponding to a given stub
+          // this is where matching to TP takes place
+          // edm::Ptr<TrackingParticle> match_stub = MCTruthTTStubHandle->findTrackingParticlePtr(stubIter);
           edm::Ptr<TrackingParticle> match_stub = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
-            
+
           // if the following is not null, it means that a valid associated tracking particle was found for the stub
           if (match_stub.isNull() == false) {
             // retrieve the event ID (event number) associated with the tracking particle
@@ -322,8 +342,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
             check_matchStub_eta->Fill(matchStub_eta);
             check_tmp_tp_eta->Fill(tmp_tp_eta);
                         
-            std::cout << "matchStub_eta value: " << matchStub_eta << std::endl;
-            std::cout << "tmp_tp_eta value: " << tmp_tp_eta << std::endl;
+            // std::cout << "matchStub_eta value: " << matchStub_eta << std::endl;
+            // std::cout << "tmp_tp_eta value: " << tmp_tp_eta << std::endl;
 
             // Fill resolution plots for different abs(eta) bins:
             // (0, 0.4), (0.4, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
@@ -348,8 +368,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           } else if (std::fabs(tmp_tp_eta) >= 2.0 && std::fabs(tmp_tp_eta) < 2.4) {
               stub_reseta_eta2to2p4->Fill(stub_eta_res);
               stub_resphi_eta2to2p4->Fill(stub_phi_res);
-            }      
-          }
+            } 
+          }     
         } // end loop over stubs
       } // end loop over L1 stubs
 

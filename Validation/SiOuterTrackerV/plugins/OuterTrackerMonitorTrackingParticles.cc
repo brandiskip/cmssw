@@ -99,8 +99,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     float tmp_tp_eta = iterTP.eta(); // get pseudorapidity (eta) of the current tracking particle and store it
 
     // print TP number and value of eta to compare later to matched stubs
-    std::cout << "This is the TP number: " << this_tp << std::endl;
-    std::cout << "For TP number " << this_tp << " eta is " << tmp_tp_eta << std::endl;
+    // std::cout << "This is the TP number: " << this_tp << std::endl;
+    // std::cout << "For TP number " << this_tp << " eta is " << tmp_tp_eta << std::endl;
 
     // calculates a variable nStubLayerTP that represents the number of distinct layers in which stubs 
     // associated with a specific tracking particle (tp_ptr) are found
@@ -236,7 +236,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         // + have >= L1Tk_minNStub stubs for it to be a valid match
         // counts the number of stubs associated with the track (tmp_trk_nstub) and checks if this is below a certain threshold
         int tmp_trk_nstub = thisTrack->getStubRefs().size();
-        std::cout << "tmp_trk_nstub value: " << tmp_trk_nstub << std::endl;
+        // std::cout << "tmp_trk_nstub value: " << tmp_trk_nstub << std::endl;
         if (tmp_trk_nstub < L1Tk_minNStub)
           continue;
         float dmatch_pt = 999;
@@ -244,6 +244,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         float dmatch_phi = 999;
         int match_id = 999;
 
+        // get "thisTrack" matched TP (my_tp)
         edm::Ptr<TrackingParticle> my_tp = MCTruthTTTrackHandle->findTrackingParticlePtr(thisTrack);
         dmatch_pt = std::fabs(my_tp->p4().pt() - tmp_tp_pt);
         dmatch_eta = std::fabs(my_tp->p4().eta() - tmp_tp_eta);
@@ -272,109 +273,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float tmp_matchtrk_chi2dof = -999;
       int tmp_matchTrk_nStub = -999;
       float tmp_matchtrk_d0 = -999;
-      float matchStub_eta = -999;
-      float myTP_phi = -999;
-
-      //-------------------------------------------------------------------------------------------------      
-      // declare L1StubInputTag as an edm::InputTag variable 
-      // create a placeholder for an input tag that will be used to specify the collection of data to be processed
-      edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
-
-      // L1 Stubs
-      // assuming TTStub is a collection of objects associated with mctruth stubs
-      // handle points to collection of TTStub objects
-      // should be able to tell from here which information and I am accessing, MC truth or reco
-      // look into these next to lines to understand what this means
-      edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
-      iEvent.getByToken(ttStubToken_, TTStubHandle);
-
-      // more for TTStubs
-      // the TrackerGeometry object provides information about the layout of the tracker detector
-      // including positions of the various detector components, their sizes, shapes, etc.
-      // this information is needed when dealing with detector hits (or stubs) to map their positions in the detector volume
-      edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
-      const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
-
-      // Loop over L1 stubs
-      //-------------------------------------------------------------------------------------------------   
-      // loop over all detector elements   
-      for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
-        DetId detid = (*gd)->geographicalId();
-        // if not Tracker Outer Barrel and if not Tracker Inner Disks, continue
-        if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
-          continue;
-        if (!tTopo->isLower(detid))
-          continue;                              // loop on the stacks: choose the lower arbitrarily
-        DetId stackDetid = tTopo->stack(detid);  // Stub module detid
-
-        if (TTStubHandle->find(stackDetid) == TTStubHandle->end())
-          continue;
-
-        // access the TTStub corresponding to the stackDetid and assign it to the variable stubs
-        edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
-
-        // loop over stubs just obtained
-        for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
-          edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
-  
-          // matched stub to tracking particle (access TrackingParticle object)
-          // find the associated TrackingParticle corresponding to a given stub
-          // this is where matching to TP takes place
-          // edm::Ptr<TrackingParticle> match_stub = MCTruthTTStubHandle->findTrackingParticlePtr(stubIter);
-          edm::Ptr<TrackingParticle> match_stub = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
-
-          // if the following is not null, it means that a valid associated tracking particle was found for the stub
-          if (match_stub.isNull() == false) {
-            // retrieve the event ID (event number) associated with the tracking particle
-            int tmp_eventid = match_stub->eventId().event();
-
-            if (tmp_eventid > 0)
-              continue;  // this means stub from pileup track
-
-            matchStub_eta = match_stub->p4().eta();
-            myTP_phi = match_stub->p4().phi();
-
-            float stub_eta_res = matchStub_eta - tmp_tp_eta;
-            float stub_phi_res = myTP_phi - tmp_tp_phi;
-
-            stub_res_eta->Fill(stub_eta_res);
-            stub_res_phi->Fill(stub_phi_res);
-            check_matchStub_eta->Fill(matchStub_eta);
-            check_tmp_tp_eta->Fill(tmp_tp_eta);
-                        
-            // std::cout << "matchStub_eta value: " << matchStub_eta << std::endl;
-            // std::cout << "tmp_tp_eta value: " << tmp_tp_eta << std::endl;
-
-            // Fill resolution plots for different abs(eta) bins:
-            // (0, 0.4), (0.4, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
-            if (std::fabs(tmp_tp_eta) >= 0 && std::fabs(tmp_tp_eta) < 0.4) {
-              stub_reseta_eta0to0p4->Fill(stub_eta_res);
-              stub_resphi_eta0to0p4->Fill(stub_phi_res);
-          } else if (std::fabs(tmp_tp_eta) >= 0.4 && std::fabs(tmp_tp_eta) < 0.7) {
-              stub_reseta_eta0p4to0p7->Fill(stub_eta_res);
-              stub_resphi_eta0p4to0p7->Fill(stub_phi_res); 
-          } else if (std::fabs(tmp_tp_eta) >= 0.7 && std::fabs(tmp_tp_eta) < 1.0) {
-              stub_reseta_eta0p7to1->Fill(stub_eta_res);
-              stub_resphi_eta0p7to1->Fill(stub_phi_res); 
-          } else if (std::fabs(tmp_tp_eta) >= 1.0 && std::fabs(tmp_tp_eta) < 1.2) {
-              stub_reseta_eta1to1p2->Fill(stub_eta_res);
-              stub_resphi_eta1to1p2->Fill(stub_phi_res);
-          } else if (std::fabs(tmp_tp_eta) >= 1.2 && std::fabs(tmp_tp_eta) < 1.6) {
-              stub_reseta_eta1p2to1p6->Fill(stub_eta_res);
-              stub_resphi_eta1p2to1p6->Fill(stub_phi_res); 
-          } else if (std::fabs(tmp_tp_eta) >= 1.6 && std::fabs(tmp_tp_eta) < 2.0) {
-              stub_reseta_eta1p6to2->Fill(stub_eta_res);
-              stub_resphi_eta1p6to2->Fill(stub_phi_res);
-          } else if (std::fabs(tmp_tp_eta) >= 2.0 && std::fabs(tmp_tp_eta) < 2.4) {
-              stub_reseta_eta2to2p4->Fill(stub_eta_res);
-              stub_resphi_eta2to2p4->Fill(stub_phi_res);
-            } 
-          }     
-        } // end loop over stubs
-      } // end loop over L1 stubs
-
-
-//-------------------------------------------------------------------------------------------------
+      float tmp_matchStub_eta = -999;
+      float tmp_matchStub_phi = -999;
 
       tmp_matchtrk_pt = matchedTracks[i_track]->momentum().perp();
       tmp_matchtrk_eta = matchedTracks[i_track]->momentum().eta();
@@ -401,7 +301,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       match_tp_VtxR->Fill(tmp_tp_VtxR);
       match_tp_VtxZ->Fill(tmp_tp_VtxZ);
 
-      std::cout << "tmp_tp_eta outside value: " << tmp_tp_eta << std::endl;
+      // std::cout << "tmp_tp_eta outside value: " << tmp_tp_eta << std::endl;
       // Eta and pT histograms for resolution
       float pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
       float test_pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
@@ -486,6 +386,131 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         else if (tmp_tp_pt >= 8)
           respt_eta2to2p4_pt8toInf->Fill(pt_res);
       }
+
+      //-------------------------------------------------------------------------------------------------      
+      // declare L1StubInputTag as an edm::InputTag variable 
+      // create a placeholder for an input tag that will be used to specify the collection of data to be processed
+      edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
+
+      // L1 Stubs
+      // handle points to collection of TTStub objects
+      edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
+      iEvent.getByToken(ttStubToken_, TTStubHandle);
+
+      // more for TTStubs
+      // the TrackerGeometry object provides information about the layout of the tracker detector
+      // including positions of the various detector components, their sizes, shapes, etc.
+      // this information is needed when dealing with detector hits (or stubs) to map their positions in the detector volume
+      edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
+      const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+
+      // Loop over L1 stubs
+      //-------------------------------------------------------------------------------------------------   
+      // loop over all detector elements   
+      for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
+        DetId detid = (*gd)->geographicalId();
+        // if not Tracker Outer Barrel and if not Tracker Inner Disks, continue
+        if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
+          continue;
+        if (!tTopo->isLower(detid))
+          continue;                              // loop on the stacks: choose the lower arbitrarily
+        DetId stackDetid = tTopo->stack(detid);  // Stub module detid
+
+        if (TTStubHandle->find(stackDetid) == TTStubHandle->end())
+          continue;
+
+        // access the TTStub corresponding to the stackDetid and assign it to the variable stubs
+        edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+
+        int j_track = -1;
+
+        // loop over stubs just obtained
+        for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+          edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
+  
+          float stub_dmatch_pt = 999;
+          float stub_dmatch_eta = 999;
+          float stub_dmatch_phi = 999;
+
+          std::cout << "before stub gets matched TP" << std::endl;
+
+          // matched stub to tracking particle (access TrackingParticle object)
+          // find the associated TrackingParticle corresponding to a given stub
+          // this is where matching to TP takes place
+          edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
+          std::cout << "after stub gets matched TP" << std::endl;
+
+
+          // if the following is not null, it means that a valid associated tracking particle was found for the stub
+          if (my_tp.isNull() == false) {
+            // retrieve the event ID (event number) associated with the tracking particle
+            int tmp_eventid = my_tp->eventId().event();
+            std::cout << "tmp_eventid: " << tmp_eventid << std::endl;
+
+            if (tmp_eventid > 0)
+              continue;  // this means stub from pileup track
+          }
+
+          std::cout << "before if stub_dmatch_pt statement" << std::endl;
+          stub_dmatch_pt = std::fabs(my_tp->p4().pt() - tmp_tp_pt);
+          stub_dmatch_eta = std::fabs(my_tp->p4().eta() - tmp_tp_eta);
+          stub_dmatch_phi = std::fabs(my_tp->p4().phi() - tmp_tp_phi);
+
+          std::cout << "stub_dmatch_pt value: " << stub_dmatch_pt << std::endl;
+          std::cout << "stub_dmatch_eta value: " << stub_dmatch_eta << std::endl;
+          std::cout << "stub_dmatch_phi value: " << stub_dmatch_phi << std::endl;
+
+          // ensure that track is uniquely matched to the TP we are looking at!
+          if (stub_dmatch_pt < 0.1 && stub_dmatch_eta < 0.1 && stub_dmatch_phi < 0.1) {
+            tp_nMatch++;
+            std::cout << "inside if stub_dmatch_pt statement" << std::endl;
+            if (j_track < 0) {
+              j_track = trkCounter;
+            }
+          }
+          trkCounter++;
+        } // end loop over stubs
+
+        tmp_matchStub_eta = matchedTracks[j_track]->momentum().eta();
+        tmp_matchStub_phi = matchedTracks[j_track]->momentum().phi();
+
+        float stub_eta_res = tmp_matchStub_eta - tmp_tp_eta;
+        float stub_phi_res = tmp_matchStub_phi - tmp_tp_phi;
+
+        stub_res_eta->Fill(stub_eta_res);
+        stub_res_phi->Fill(stub_phi_res);
+        check_matchStub_eta->Fill(tmp_matchStub_eta);
+        check_tmp_tp_eta->Fill(tmp_tp_eta);
+                    
+        // std::cout << "matchStub_eta value: " << tmp_matchStub_phi << std::endl;
+        // std::cout << "tmp_tp_eta value: " << tmp_tp_eta << std::endl;
+
+        // Fill resolution plots for different abs(eta) bins:
+        // (0, 0.4), (0.4, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
+        if (std::fabs(tmp_tp_eta) >= 0 && std::fabs(tmp_tp_eta) < 0.4) {
+          stub_reseta_eta0to0p4->Fill(stub_eta_res);
+          stub_resphi_eta0to0p4->Fill(stub_phi_res);
+      } else if (std::fabs(tmp_tp_eta) >= 0.4 && std::fabs(tmp_tp_eta) < 0.7) {
+          stub_reseta_eta0p4to0p7->Fill(stub_eta_res);
+          stub_resphi_eta0p4to0p7->Fill(stub_phi_res); 
+      } else if (std::fabs(tmp_tp_eta) >= 0.7 && std::fabs(tmp_tp_eta) < 1.0) {
+          stub_reseta_eta0p7to1->Fill(stub_eta_res);
+          stub_resphi_eta0p7to1->Fill(stub_phi_res); 
+      } else if (std::fabs(tmp_tp_eta) >= 1.0 && std::fabs(tmp_tp_eta) < 1.2) {
+          stub_reseta_eta1to1p2->Fill(stub_eta_res);
+          stub_resphi_eta1to1p2->Fill(stub_phi_res);
+      } else if (std::fabs(tmp_tp_eta) >= 1.2 && std::fabs(tmp_tp_eta) < 1.6) {
+          stub_reseta_eta1p2to1p6->Fill(stub_eta_res);
+          stub_resphi_eta1p2to1p6->Fill(stub_phi_res); 
+      } else if (std::fabs(tmp_tp_eta) >= 1.6 && std::fabs(tmp_tp_eta) < 2.0) {
+          stub_reseta_eta1p6to2->Fill(stub_eta_res);
+          stub_resphi_eta1p6to2->Fill(stub_phi_res);
+      } else if (std::fabs(tmp_tp_eta) >= 2.0 && std::fabs(tmp_tp_eta) < 2.4) {
+          stub_reseta_eta2to2p4->Fill(stub_eta_res);
+          stub_resphi_eta2to2p4->Fill(stub_phi_res); 
+      }     
+      } // end loop over L1 stubs
+//-------------------------------------------------------------------------------------------------
     }  //if MC TTTrack handle is valid 
   }    //end loop over tracking particles
 }  // end of method

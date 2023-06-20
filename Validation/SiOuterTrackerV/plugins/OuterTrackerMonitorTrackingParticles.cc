@@ -80,45 +80,44 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   iEvent.getByToken(ttClusterMCTruthToken_, MCTruthTTClusterHandle);
   edm::Handle<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTStubHandle;
   iEvent.getByToken(ttStubMCTruthToken_, MCTruthTTStubHandle);
-  edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle; // handle points to collection of TTStub objects
+
+  //-------------------------------------------------------------------------------------------------
+  // declare L1StubInputTag as an edm::InputTag variable 
+  // create a placeholder for an input tag that will be used to specify the collection of data to be processed
+  edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
+
+  // retrieves a configuration parameter named "L1StubInputTag" of type edm::InputTag from the iConfig object and assigns its value to the L1StubInputTag variable
+  // this used to read iConfig.getParameter but I had to change it to conf_.getParameter because of the constructor (need to check out exactly why)
+  // L1StubInputTag = conf_.getParameter<edm::InputTag>("L1StubInputTag");
+
+  // L1 Stubs
+  edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> > > TTStubHandle;
   iEvent.getByToken(ttStubToken_, TTStubHandle);
+
+  // more for TTStubs
   edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
+  const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
 
   // Geometries
-      const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
-      const TrackerGeometry *const theTrackerGeom = tGeomHandle.product();
+  const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
 
   // Loop over tracking particles
-  int this_tp = 0; // initialize counter to keep track of the current index within the tracking particle collection
-  // loop over all tracking particles referenced by trackingParticleHandle
-  // iterTP is a reference to the current tracking particle
-  for (const auto &iterTP : *trackingParticleHandle) { 
-    // create a pointer (tp_ptr) to the current tracking particle
+  int this_tp = 0;
+  for (const auto &iterTP : *trackingParticleHandle) {
     edm::Ptr<TrackingParticle> tp_ptr(trackingParticleHandle, this_tp);
     this_tp++;
 
     // int tmp_eventid = iterTP.eventId().event();
-    float tmp_tp_pt = iterTP.pt(); // get transverse momentum (pt) of the current tracking particle and store it
-    float tmp_tp_phi = iterTP.phi(); // get azimuthal angle (phi) of the current tracking particle and store it
-    float tmp_tp_eta = iterTP.eta(); // get pseudorapidity (eta) of the current tracking particle and store it
+    float tmp_tp_pt = iterTP.pt();
+    float tmp_tp_phi = iterTP.phi();
+    float tmp_tp_eta = iterTP.eta();
 
-    // print TP number and value of eta to compare later to matched stubs
-    // std::cout << "This is the TP number: " << this_tp << std::endl;
-    std::cout << "For TP number " << this_tp << " eta is " << tmp_tp_eta << std::endl;
-
-    // calculates a variable nStubLayerTP that represents the number of distinct layers in which stubs 
-    // associated with a specific tracking particle (tp_ptr) are found
-    // Calculate nLayers variable
-    // vector theStubRefs is created to store references to stubs associated with the tracking particle tp_ptr
+    //Calculate nLayers variable
     std::vector<edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>, TTStub<Ref_Phase2TrackerDigi_>>>
         theStubRefs = MCTruthTTStubHandle->findTTStubRefs(tp_ptr);
 
-    // keep track of which layers contain stubs associated with tp_ptr
-    // set integer array of size 11 with all elements set to zero
     int hasStubInLayer[11] = {0};
-    // loop over stubs associated with tp_ptr
     for (unsigned int is = 0; is < theStubRefs.size(); is++) {
-      // determine detector layer stub is found
       DetId detid(theStubRefs.at(is)->getDetId());
       int layer = -1;
       if (detid.subdetId() == StripSubdetector::TOB)
@@ -238,9 +237,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         // further require L1 track to be (loosely) genuine, that there is only
         // one TP matched to the track
         // + have >= L1Tk_minNStub stubs for it to be a valid match
-        // counts the number of stubs associated with the track (tmp_trk_nstub) and checks if this is below a certain threshold
         int tmp_trk_nstub = thisTrack->getStubRefs().size();
-        // std::cout << "tmp_trk_nstub value: " << tmp_trk_nstub << std::endl;
         if (tmp_trk_nstub < L1Tk_minNStub)
           continue;
         float dmatch_pt = 999;
@@ -248,7 +245,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         float dmatch_phi = 999;
         int match_id = 999;
 
-        // get "thisTrack" matched TP (my_tp)
         edm::Ptr<TrackingParticle> my_tp = MCTruthTTTrackHandle->findTrackingParticlePtr(thisTrack);
         dmatch_pt = std::fabs(my_tp->p4().pt() - tmp_tp_pt);
         dmatch_eta = std::fabs(my_tp->p4().eta() - tmp_tp_eta);
@@ -277,8 +273,54 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float tmp_matchtrk_chi2dof = -999;
       int tmp_matchTrk_nStub = -999;
       float tmp_matchtrk_d0 = -999;
-      //float tmp_matchStub_eta = -999;
-      //float tmp_matchStub_phi = -999;
+      float myTP_eta = -999;
+      // float myTP_phi = -999;
+
+      
+      /*
+      //-------------------------------------------------------------------------------------------------      
+      // Loop over L1 stubs
+      //-------------------------------------------------------------------------------------------------      
+      for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
+        DetId detid = (*gd)->geographicalId();
+        if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
+          continue;
+        if (!tTopo->isLower(detid))
+          continue;                              // loop on the stacks: choose the lower arbitrarily
+        DetId stackDetid = tTopo->stack(detid);  // Stub module detid
+
+        if (TTStubHandle->find(stackDetid) == TTStubHandle->end())
+          continue;
+
+        // Get the DetSets of the Clusters
+        edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+        
+        // loop over stubs
+        for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+          edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
+
+          // matched stub to tracking particle? (access TrackingParticle object)
+          // find the associated TrackingParticle corresponding to a given stub
+          edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
+
+          // if the following is not null, it means that a valid associated tracking particle was found for the stub
+          if (my_tp.isNull() == false) {
+            // retrieve the event ID (event number) associated with the tracking particle
+            int tmp_eventid = my_tp->eventId().event();
+
+            if (tmp_eventid > 0)
+              continue;  // this means stub from pileup track
+
+            myTP_eta = my_tp->p4().eta();
+            // myTP_phi = my_tp->p4().phi();
+            std::cout << "myTP_eta value: " << myTP_eta << std::endl;
+          }
+
+        } // end loop over stubs
+      } // end loop over L1 stubs
+//-------------------------------------------------------------------------------------------------
+      */
+      
 
       tmp_matchtrk_pt = matchedTracks[i_track]->momentum().perp();
       tmp_matchtrk_eta = matchedTracks[i_track]->momentum().eta();
@@ -305,7 +347,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       match_tp_VtxR->Fill(tmp_tp_VtxR);
       match_tp_VtxZ->Fill(tmp_tp_VtxZ);
 
-      // std::cout << "tmp_tp_eta outside value: " << tmp_tp_eta << std::endl;
       // Eta and pT histograms for resolution
       float pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
       float test_pt_diff = tmp_matchtrk_pt - tmp_tp_pt;
@@ -314,12 +355,16 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float phi_res = tmp_matchtrk_phi - tmp_tp_phi;
       float VtxZ_res = tmp_matchtrk_VtxZ - tmp_tp_VtxZ;
       float d0_res = tmp_matchtrk_d0 - tmp_tp_d0;
+      float stub_eta_res = myTP_eta - tmp_tp_eta;
+      // float stub_phi_res = myTP_phi - tmp_tp_phi;
 
       // fill total resolution histograms
       res_pt->Fill(pt_diff);
       test_res_pt->Fill(test_pt_diff);
       res_ptRel->Fill(pt_res);
       res_eta->Fill(eta_res);
+      stub_res_eta->Fill(stub_eta_res);
+      // stub_res_phi->Fill(stub_phi_res);
 
       // Fill resolution plots for different abs(eta) bins:
       // (0, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
@@ -390,129 +435,13 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         else if (tmp_tp_pt >= 8)
           respt_eta2to2p4_pt8toInf->Fill(pt_res);
       }
-
-      //-------------------------------------------------------------------------------------------------      
-      // declare L1StubInputTag as an edm::InputTag variable 
-      // create a placeholder for an input tag that will be used to specify the collection of data to be processed
-      edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
-
-      
-      /*
-      // Loop over L1 stubs
-      //-------------------------------------------------------------------------------------------------   
-      // loop over all detector elements   
-      for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
-        DetId detid = (*gd)->geographicalId();
-        // if not Tracker Outer Barrel and if not Tracker Inner Disks, continue
-        if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
-          continue;
-        if (!tTopo->isLower(detid))
-          continue;                              // loop on the stacks: choose the lower arbitrarily
-        DetId stackDetid = tTopo->stack(detid);  // Stub module detid
-
-        if (TTStubHandle->find(stackDetid) == TTStubHandle->end())
-          continue;
-
-        // access the TTStub corresponding to the stackDetid and assign it to the variable stubs
-        edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
-
-        int i_stub = -1;
-        int stubCounter = 0;
-
-        // loop over stubs just obtained
-        for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
-          edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
-  
-          float stub_dmatch_pt = 999;
-          float stub_dmatch_eta = 999;
-          float stub_dmatch_phi = 999;
-
-          // matched stub to tracking particle (access TrackingParticle object)
-          // find the associated TrackingParticle corresponding to a given stub
-          // this is where matching to TP takes place
-          edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
-         
-          stub_dmatch_pt = std::fabs(my_tp->p4().pt() - tmp_tp_pt);
-          stub_dmatch_eta = std::fabs(my_tp->p4().eta() - tmp_tp_eta);
-          stub_dmatch_phi = std::fabs(my_tp->p4().phi() - tmp_tp_phi);
-
-          std::cout << "stub_dmatch_pt value: " << stub_dmatch_pt << std::endl;
-          std::cout << "stub_dmatch_eta value: " << stub_dmatch_eta << std::endl;
-          std::cout << "stub_dmatch_phi value: " << stub_dmatch_phi << std::endl;
-
-          // if the following is not null, it means that a valid associated tracking particle was found for the stub
-          if (my_tp.isNull() == false) {
-            // retrieve the event ID (event number) associated with the tracking particle
-            int tmp_eventid = my_tp->eventId().event();
-            std::cout << "tmp_eventid: " << tmp_eventid << std::endl;
-
-            //if (tmp_eventid > 0)
-              //continue;  // this means stub from pileup track
-          }
- 
-          std::cout << "before if stub_dmatch cuts" << std::endl;
-          // ensure that stub is uniquely matched to the TP we are looking at!
-          if (stub_dmatch_pt < 0.1 && stub_dmatch_eta < 0.1 && stub_dmatch_phi < 0.1) {
-            tp_nMatch++;
-            std::cout << "inside if stub_dmatch_pt statement" << std::endl;
-            if (i_stub < 0) {
-              i_stub = stubCounter;
-            }
-          }
-          std::cout << "after if stub_dmatch cuts" << std::endl;
-          stubCounter++;
-          std::cout << "stubCounter value: " << stubCounter << std::endl;
-        } // end loop over stubs
-
-        std::cout << "after loop over stubs" << std::endl;
-
-        tmp_matchStub_eta = matchedTracks[i_stub]->momentum().eta();
-        tmp_matchStub_phi = matchedTracks[i_stub]->momentum().phi();
-
-        float stub_eta_res = tmp_matchStub_eta - tmp_tp_eta;
-        float stub_phi_res = tmp_matchStub_phi - tmp_tp_phi;
-
-        stub_res_eta->Fill(stub_eta_res);
-        stub_res_phi->Fill(stub_phi_res);
-        check_matchStub_eta->Fill(tmp_matchStub_eta);
-        check_tmp_tp_eta->Fill(tmp_tp_eta);
-                    
-        // std::cout << "matchStub_eta value: " << tmp_matchStub_phi << std::endl;
-        // std::cout << "tmp_tp_eta value: " << tmp_tp_eta << std::endl;
-
-        // Fill resolution plots for different abs(eta) bins:
-        // (0, 0.4), (0.4, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
-        if (std::fabs(tmp_tp_eta) >= 0 && std::fabs(tmp_tp_eta) < 0.4) {
-          stub_reseta_eta0to0p4->Fill(stub_eta_res);
-          stub_resphi_eta0to0p4->Fill(stub_phi_res);
-      } else if (std::fabs(tmp_tp_eta) >= 0.4 && std::fabs(tmp_tp_eta) < 0.7) {
-          stub_reseta_eta0p4to0p7->Fill(stub_eta_res);
-          stub_resphi_eta0p4to0p7->Fill(stub_phi_res); 
-      } else if (std::fabs(tmp_tp_eta) >= 0.7 && std::fabs(tmp_tp_eta) < 1.0) {
-          stub_reseta_eta0p7to1->Fill(stub_eta_res);
-          stub_resphi_eta0p7to1->Fill(stub_phi_res); 
-      } else if (std::fabs(tmp_tp_eta) >= 1.0 && std::fabs(tmp_tp_eta) < 1.2) {
-          stub_reseta_eta1to1p2->Fill(stub_eta_res);
-          stub_resphi_eta1to1p2->Fill(stub_phi_res);
-      } else if (std::fabs(tmp_tp_eta) >= 1.2 && std::fabs(tmp_tp_eta) < 1.6) {
-          stub_reseta_eta1p2to1p6->Fill(stub_eta_res);
-          stub_resphi_eta1p2to1p6->Fill(stub_phi_res); 
-      } else if (std::fabs(tmp_tp_eta) >= 1.6 && std::fabs(tmp_tp_eta) < 2.0) {
-          stub_reseta_eta1p6to2->Fill(stub_eta_res);
-          stub_resphi_eta1p6to2->Fill(stub_phi_res);
-      } else if (std::fabs(tmp_tp_eta) >= 2.0 && std::fabs(tmp_tp_eta) < 2.4) {
-          stub_reseta_eta2to2p4->Fill(stub_eta_res);
-          stub_resphi_eta2to2p4->Fill(stub_phi_res); 
-      }     
-      } // end loop over L1 stubs
-      */
-//-------------------------------------------------------------------------------------------------
-    }  // if MC TTTrack handle is valid 
+    }  //if MC TTTrack handle is valid 
   }    //end loop over tracking particles
+
+  //float myTP_eta = -999;
 
   for (auto gd = theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
     DetId detid = (*gd)->geographicalId();
-    // if not Tracker Outer Barrel and if not Tracker Inner Disks, continue
     if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
       continue;
     if (!tTopo->isLower(detid))
@@ -522,21 +451,22 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     if (TTStubHandle->find(stackDetid) == TTStubHandle->end())
       continue;
 
-    // access the TTStub corresponding to the stackDetid and assign it to the variable stubs
+    /*
+    // Get the DetSets of the Clusters
     edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
     
-    // loop over stubs just obtained
+    // loop over stubs
     for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
       edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
       // Get associated tracking particle
       edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
-      // check if this associated tracking particle is the same as our true tracking particle
-      if (my_tp == tp_ptr) {
-        std::cout << "Found stub associated with true tracking particle" << std::endl;
-      }
-    }
-  }
 
+      myTP_eta = my_tp->p4().eta();
+      std::cout << "myTP_eta value: " << myTP_eta << std::endl;
+      
+    } std::cout << "end of analyze function" << std::endl;
+    */
+  }
 }  // end of method
 
 // ------------ method called once each job just before starting event loop
@@ -756,40 +686,6 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_res_eta->setAxisTitle("#eta", 1);
   stub_res_eta->setAxisTitle("# tracking particles", 2);
 
-  
-  // Full stub phi
-  edm::ParameterSet psStubRes_phi = conf_.getParameter<edm::ParameterSet>("TH1StubRes_phi");
-  HistoName = "stub_res_phi";
-  stub_res_phi = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_res_phi->setAxisTitle("#phi", 1);
-  stub_res_phi->setAxisTitle("# tracking particles", 2);
-
-  // check to see what myTP_eta histo looks like
-  edm::ParameterSet check_psRes_eta = conf_.getParameter<edm::ParameterSet>("check_TH1Res_eta");
-  HistoName = "check_matchStub_eta";
-  check_matchStub_eta = iBooker.book1D(HistoName,
-                           HistoName,
-                           check_psRes_eta.getParameter<int32_t>("Nbinsx"),
-                           check_psRes_eta.getParameter<double>("xmin"),
-                           check_psRes_eta.getParameter<double>("xmax"));
-  check_matchStub_eta->setAxisTitle("#eta", 1);
-  check_matchStub_eta->setAxisTitle("# tracking particles", 2);
-
-  // check to see what tmp_tp_eta histo looks like
-  edm::ParameterSet check_tmp_psRes_eta = conf_.getParameter<edm::ParameterSet>("check_tmp_TH1Res_eta");
-  HistoName = "check_tmp_tp_eta";
-  check_tmp_tp_eta = iBooker.book1D(HistoName,
-                           HistoName,
-                           check_psRes_eta.getParameter<int32_t>("Nbinsx"),
-                           check_psRes_eta.getParameter<double>("xmin"),
-                           check_psRes_eta.getParameter<double>("xmax"));
-  check_tmp_tp_eta->setAxisTitle("#eta", 1);
-  check_tmp_tp_eta->setAxisTitle("# tracking particles", 2);
-
   // Relative pT
   edm::ParameterSet psRes_ptRel = conf_.getParameter<edm::ParameterSet>("TH1Res_ptRel");
   HistoName = "res_ptRel";
@@ -861,77 +757,6 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                     psRes_eta.getParameter<double>("xmax"));
   reseta_eta2to2p4->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
   reseta_eta2to2p4->setAxisTitle("# tracking particles", 2);
-
-  // Eta parts (for resolution)
-  // Stub Eta 1 (0 to 0.4)
-  HistoName = "stub_reseta_eta0to0p4";
-  stub_reseta_eta0to0p4 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_eta.getParameter<double>("xmin"),
-                           psStubRes_eta.getParameter<double>("xmax"));
-  stub_reseta_eta0to0p4->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  stub_reseta_eta0to0p4->setAxisTitle("# tracking particles", 2);
-  
-  // Stub Eta 2 (0.4 to 0.7)
-  HistoName = "stub_reseta_eta0p4to0p7";
-  stub_reseta_eta0p4to0p7 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_eta.getParameter<double>("xmin"),
-                           psStubRes_eta.getParameter<double>("xmax"));
-  stub_reseta_eta0p4to0p7->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  stub_reseta_eta0p4to0p7->setAxisTitle("# tracking particles", 2);
-
-  // Stub Eta 3 (0.7 to 1.0)
-  HistoName = "stub_reseta_eta0p7to1";
-  stub_reseta_eta0p7to1 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_eta.getParameter<double>("xmin"),
-                           psStubRes_eta.getParameter<double>("xmax"));
-  stub_reseta_eta0p7to1->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  stub_reseta_eta0p7to1->setAxisTitle("# tracking particles", 2);
-
-  // Stub Eta 4 (1.0 to 1.2)
-  HistoName = "stub_reseta_eta1to1p2";
-  stub_reseta_eta1to1p2 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_eta.getParameter<double>("xmin"),
-                           psStubRes_eta.getParameter<double>("xmax"));
-  stub_reseta_eta1to1p2->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  stub_reseta_eta1to1p2->setAxisTitle("# tracking particles", 2);
-
-  // Stub Eta 5 (1.2 to 1.6)
-  HistoName = "stub_reseta_eta1p2to1p6";
-  stub_reseta_eta1p2to1p6 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_eta.getParameter<double>("xmin"),
-                           psStubRes_eta.getParameter<double>("xmax"));
-  stub_reseta_eta1p2to1p6->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  stub_reseta_eta1p2to1p6->setAxisTitle("# tracking particles", 2);
-
-  // Stub Eta 6 (1.2 to 2.0)
-  HistoName = "stub_reseta_eta1p6to2";
-  stub_reseta_eta1p6to2 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_eta.getParameter<double>("xmin"),
-                           psStubRes_eta.getParameter<double>("xmax"));
-  stub_reseta_eta1p6to2->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  stub_reseta_eta1p6to2->setAxisTitle("# tracking particles", 2);
-
-  // Stub Eta 7 (2.0 to 2.4)
-  HistoName = "stub_reseta_eta2to2p4";
-  stub_reseta_eta2to2p4 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_eta.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_eta.getParameter<double>("xmin"),
-                           psStubRes_eta.getParameter<double>("xmax"));
-  stub_reseta_eta2to2p4->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  stub_reseta_eta2to2p4->setAxisTitle("# tracking particles", 2);
 
   // pT parts for resolution (pT res vs eta)
   // pT a (2 to 3 GeV)
@@ -1178,77 +1003,6 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                     psRes_phi.getParameter<double>("xmax"));
   resphi_eta2to2p4->setAxisTitle("#phi_{trk} - #phi_{tp}", 1);
   resphi_eta2to2p4->setAxisTitle("# tracking particles", 2);
-
-  // Phi parts (for resolution)
-  // Eta 1 (0 to 0.4)
-  HistoName = "stub_resphi_eta0to0p4";
-  stub_resphi_eta0to0p4 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_resphi_eta0to0p4->setAxisTitle("#phi", 1);
-  stub_resphi_eta0to0p4->setAxisTitle("# tracking particles", 2);
-
-  // Eta 2 (0.4 to 0.7)
-  HistoName = "stub_resphi_eta0p4to0p7";
-  stub_resphi_eta0p4to0p7 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_resphi_eta0p4to0p7->setAxisTitle("#phi", 1);
-  stub_resphi_eta0p4to0p7->setAxisTitle("# tracking particles", 2);
-
-  // Eta 3 (0.7 to 1.0)
-  HistoName = "stub_resphi_eta0p7to1";
-  stub_resphi_eta0p7to1 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_resphi_eta0p7to1->setAxisTitle("#phi", 1);
-  stub_resphi_eta0p7to1->setAxisTitle("# tracking particles", 2);
-
-  // Eta 4 (1.0 to 1.2)
-  HistoName = "stub_resphi_eta1to1p2";
-  stub_resphi_eta1to1p2 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_resphi_eta1to1p2->setAxisTitle("#phi", 1);
-  stub_resphi_eta1to1p2->setAxisTitle("# tracking particles", 2);
-
-  // Eta 5 (1.2 to 1.6)
-  HistoName = "stub_resphi_eta1p2to1p6";
-  stub_resphi_eta1p2to1p6 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_resphi_eta1p2to1p6->setAxisTitle("#phi", 1);
-  stub_resphi_eta1p2to1p6->setAxisTitle("# tracking particles", 2);
-
-  // Eta 6 (1.6 to 2.0)
-  HistoName = "stub_resphi_eta1p6to2";
-  stub_resphi_eta1p6to2 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_resphi_eta1p6to2->setAxisTitle("#phi", 1);
-  stub_resphi_eta1p6to2->setAxisTitle("# tracking particles", 2);
-
-  // Eta 6 (2.0 to 2.4)
-  HistoName = "stub_resphi_eta2to2p4";
-  stub_resphi_eta2to2p4 = iBooker.book1D(HistoName,
-                           HistoName,
-                           psStubRes_phi.getParameter<int32_t>("Nbinsx"),
-                           psStubRes_phi.getParameter<double>("xmin"),
-                           psStubRes_phi.getParameter<double>("xmax"));
-  stub_resphi_eta2to2p4->setAxisTitle("#phi", 1);
-  stub_resphi_eta2to2p4->setAxisTitle("# tracking particles", 2);
 
   // VtxZ parts (for resolution)
   // Eta 1 (0 to 0.7)

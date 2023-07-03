@@ -8,6 +8,7 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
     MCTruthStubInputTag = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"), #truth stub associator
     MCTruthTrackInputTag = cms.InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks"), #truth track associator
     MCTruthClusterInputTag = cms.InputTag("TTClusterAssociatorFromPixelDigis", "ClusterAccepted"), #truth cluster associator
+    L1StubInputTag = cms.InputTag("TTStubsFromPhase2TrackerDigis","StubAccepted"),
     L1Tk_minNStub = cms.int32(4),       # L1 tracks with >= 4 stubs
     L1Tk_maxChi2dof = cms.double(25.0),# L1 tracks with Chi2 <= X
     TP_minNStub = cms.int32(4),      # require TP to have >= X number of stubs associated with it
@@ -93,6 +94,20 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-0.1)
         ),
 
+# counts vs stub rawBend
+    TH1Stub_rawBend = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(8.0),
+        xmin = cms.double(-8.0)
+        ),
+
+# counts vs stub bend offset
+    TH1Stub_bendOffset = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(6.0),
+        xmin = cms.double(-6.0)
+        ),
+
 # tracking particles vs relative pT (for resolution plots)
     TH1Res_pt = cms.PSet(
         Nbinsx = cms.int32(100),
@@ -107,15 +122,15 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-0.01)
         ),
 
-# tracking particles vs stub eta (for stub resolution)
-    TH1StubRes_eta = cms.PSet(
+# tracking particles vs phi (for resolution)
+    TH1Res_phi = cms.PSet(
         Nbinsx = cms.int32(100),
         xmax = cms.double(0.01),
         xmin = cms.double(-0.01)
         ),
 
 # tracking particles vs phi (for resolution)
-    TH1Res_phi = cms.PSet(
+    TH1StubRes_phi = cms.PSet(
         Nbinsx = cms.int32(100),
         xmax = cms.double(0.01),
         xmin = cms.double(-0.01)

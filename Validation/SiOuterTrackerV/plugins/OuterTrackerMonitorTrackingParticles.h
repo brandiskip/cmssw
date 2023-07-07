@@ -48,20 +48,13 @@ public:
 
   // 1D intermediate resolution plots (pT and eta)
   MonitorElement *res_eta = nullptr;    // for all eta and pT
-  MonitorElement *stub_res_eta = nullptr; 
-  MonitorElement *stub_reseta_eta0to0p4 = nullptr;
-  MonitorElement *stub_reseta_eta0p4to0p7 = nullptr;
-  MonitorElement *stub_reseta_eta0p7to1 = nullptr;
-  MonitorElement *stub_reseta_eta1to1p2 = nullptr;
-  MonitorElement *stub_reseta_eta1p2to1p6 = nullptr;
-  MonitorElement *stub_reseta_eta1p6to2 = nullptr;
-  MonitorElement *stub_reseta_eta2to2p4 = nullptr;
-  MonitorElement *check_matchStub_eta = nullptr;
-  MonitorElement *check_tmp_tp_eta = nullptr;
   MonitorElement *stub_res_phi = nullptr;
-  MonitorElement *test_res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
+  MonitorElement *stub_r = nullptr;
+  MonitorElement *stub_rawBend = nullptr;
+  MonitorElement *stub_bendOffset = nullptr;
+  MonitorElement *bend_of_tp = nullptr;
   MonitorElement *respt_eta0to0p7_pt2to3 = nullptr;
   MonitorElement *respt_eta0p7to1_pt2to3 = nullptr;
   MonitorElement *respt_eta1to1p2_pt2to3 = nullptr;
@@ -92,13 +85,6 @@ public:
   MonitorElement *resphi_eta1p2to1p6 = nullptr;
   MonitorElement *resphi_eta1p6to2 = nullptr;
   MonitorElement *resphi_eta2to2p4 = nullptr;
-  MonitorElement *stub_resphi_eta0to0p4 = nullptr;
-  MonitorElement *stub_resphi_eta0p4to0p7 = nullptr;
-  MonitorElement *stub_resphi_eta0p7to1 = nullptr;
-  MonitorElement *stub_resphi_eta1to1p2 = nullptr;
-  MonitorElement *stub_resphi_eta1p2to1p6 = nullptr;
-  MonitorElement *stub_resphi_eta1p6to2 = nullptr;
-  MonitorElement *stub_resphi_eta2to2p4 = nullptr;
   MonitorElement *resVtxZ_eta0to0p7 = nullptr;
   MonitorElement *resVtxZ_eta0p7to1 = nullptr;
   MonitorElement *resVtxZ_eta1to1p2 = nullptr;
@@ -127,6 +113,9 @@ private:
   edm::EDGetTokenT<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>>
       ttTrackMCTruthToken_;  // MC truth association map for tracks
   edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> getTokenTrackerGeom_;
+  const edm::ESInputTag magneticFieldInputTag_;
+  edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> magneticFieldToken_;
+
 
   int L1Tk_minNStub;
   double L1Tk_maxChi2dof;

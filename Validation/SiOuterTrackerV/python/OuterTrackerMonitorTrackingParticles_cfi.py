@@ -94,6 +94,13 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-0.1)
         ),
 
+# rad of stubs
+    TH1Stub_rad = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(120.0),
+        xmin = cms.double(0.0)
+        ),
+
 # counts vs stub rawBend
     TH1Stub_rawBend = cms.PSet(
         Nbinsx = cms.int32(100),
@@ -106,6 +113,13 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         Nbinsx = cms.int32(100),
         xmax = cms.double(6.0),
         xmin = cms.double(-6.0)
+        ),
+
+# counts vs tp bend
+    TH1Stub_tpBend = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(8.0),
+        xmin = cms.double(-8.0)
         ),
 
 # tracking particles vs relative pT (for resolution plots)

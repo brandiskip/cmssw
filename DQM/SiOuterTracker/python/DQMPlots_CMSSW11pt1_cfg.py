@@ -29,7 +29,8 @@ process.maxEvents = cms.untracked.PSet(
 # Input source
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-        "/store/relval/CMSSW_12_4_0_pre3/RelValTTbar_14TeV/GEN-SIM-RECO/PU_123X_mcRun4_realistic_v11_TRK2026D88PU200MB2-v5/2580000/031e8f52-b71b-404e-b2f1-241f6c987f4e.root",
+        "/store/mc/CMSSW_12_6_0/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_125X_mcRun4_realistic_v5_2026D88PU200RV183v2-v1/30000/0959f326-3f52-48d8-9fcf-65fc41de4e27.root",
+       # "/store/relval/CMSSW_12_6_0_pre5/RelValTTbar_14TeV/GEN-SIM-RECO/PU_125X_mcRun4_realistic_v5_2026D88PU200-v2/2590000/00c702b4-db39-4ed9-9e04-72926c1fe6cf.root",
         ),
     secondaryFileNames = cms.untracked.vstring()
 )
@@ -53,7 +54,7 @@ process.DQMoutput = cms.OutputModule("DQMRootOutputModule",
 
 from Configuration.AlCa.GlobalTag import GlobalTag
 #process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', '')
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T25', '')
 
 process.validation_step11 = cms.EndPath(process.globalValidationOuterTracker)
 from DQM.SiOuterTracker.OuterTrackerSourceConfig_cff import *

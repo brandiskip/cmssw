@@ -58,7 +58,7 @@ process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.19 $')
 )
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T25', '')
 
 process.postValidationOuterTracker_step = cms.Path(process.postValidationOuterTracker)
 from DQM.SiOuterTracker.OuterTrackerClientConfig_cff import *

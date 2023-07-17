@@ -115,11 +115,60 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-6.0)
         ),
 
+# stub inner cluster position
+    TH1Stub_inClusPos = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(120.0),
+        xmin = cms.double(0.0)
+        ),
+
+# counts vs stub bendFE
+    TH1Stub_bendFE = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(8.0),
+        xmin = cms.double(-8.0)
+        ),
+
+# counts vs track bend
+    TH1Track_Bend = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(8.0),
+        xmin = cms.double(-8.0)
+        ),
+
 # counts vs tp bend
     TH1Stub_tpBend = cms.PSet(
         Nbinsx = cms.int32(100),
         xmax = cms.double(8.0),
         xmin = cms.double(-8.0)
+        ),
+
+# events vs num of stubs 0to5
+    TH1StubInEvent0to5 = cms.PSet(
+        Nbinsx = cms.int32(30),
+        xmax = cms.double(8.0),
+        xmin = cms.double(0.0)
+        ),
+
+# events vs num of stubs 5to15
+    TH1StubInEvent5to15 = cms.PSet(
+        Nbinsx = cms.int32(20),
+        xmax = cms.double(20.0),
+        xmin = cms.double(0.0)
+        ),
+
+# events vs num of stubs 15up
+    TH1StubInEvent15up = cms.PSet(
+        Nbinsx = cms.int32(20),
+        xmax = cms.double(35.0),
+        xmin = cms.double(0.0)
+        ),
+
+# stub bend resolution    
+    TH1Bend_Res = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmax = cms.double(10.0),
+        xmin = cms.double(-10.0)
         ),
 
 # tracking particles vs relative pT (for resolution plots)

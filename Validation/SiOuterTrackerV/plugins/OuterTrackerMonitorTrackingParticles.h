@@ -54,7 +54,14 @@ public:
   MonitorElement *stub_r = nullptr;
   MonitorElement *stub_rawBend = nullptr;
   MonitorElement *stub_bendOffset = nullptr;
+  MonitorElement *stub_inClusPos = nullptr;
+  MonitorElement *stub_bendFE = nullptr;
+  MonitorElement *track_bend = nullptr;
+  MonitorElement *stubsInEvent0to5 = nullptr;
+  MonitorElement *stubsInEvent5to15 = nullptr;
+  MonitorElement *stubsInEvent15up = nullptr;
   MonitorElement *bend_of_tp = nullptr;
+  MonitorElement *bend_res = nullptr;
   MonitorElement *respt_eta0to0p7_pt2to3 = nullptr;
   MonitorElement *respt_eta0p7to1_pt2to3 = nullptr;
   MonitorElement *respt_eta1to1p2_pt2to3 = nullptr;

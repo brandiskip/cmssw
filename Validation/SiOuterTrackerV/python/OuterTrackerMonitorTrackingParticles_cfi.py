@@ -143,24 +143,10 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-8.0)
         ),
 
-# events vs num of stubs 0to5
-    TH1StubInEvent0to5 = cms.PSet(
-        Nbinsx = cms.int32(30),
-        xmax = cms.double(8.0),
-        xmin = cms.double(0.0)
-        ),
-
-# events vs num of stubs 5to15
-    TH1StubInEvent5to15 = cms.PSet(
-        Nbinsx = cms.int32(20),
-        xmax = cms.double(20.0),
-        xmin = cms.double(0.0)
-        ),
-
-# events vs num of stubs 15up
-    TH1StubInEvent15up = cms.PSet(
-        Nbinsx = cms.int32(20),
-        xmax = cms.double(35.0),
+# events vs num of stubs
+    TH1StubInEvent = cms.PSet(
+        Nbinsx = cms.int32(16),
+        xmax = cms.double(16.0),
         xmin = cms.double(0.0)
         ),
 

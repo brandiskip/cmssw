@@ -51,15 +51,13 @@ public:
   MonitorElement *stub_res_phi = nullptr;
   MonitorElement *res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
-  MonitorElement *stub_r = nullptr;
+  MonitorElement *stub_R = nullptr;
   MonitorElement *stub_rawBend = nullptr;
   MonitorElement *stub_bendOffset = nullptr;
   MonitorElement *stub_inClusPos = nullptr;
   MonitorElement *stub_bendFE = nullptr;
   MonitorElement *track_bend = nullptr;
-  MonitorElement *stubsInEvent0to5 = nullptr;
-  MonitorElement *stubsInEvent5to15 = nullptr;
-  MonitorElement *stubsInEvent15up = nullptr;
+  MonitorElement *numOfStubs = nullptr;
   MonitorElement *bend_of_tp = nullptr;
   MonitorElement *bend_res = nullptr;
   MonitorElement *respt_eta0to0p7_pt2to3 = nullptr;

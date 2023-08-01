@@ -87,7 +87,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   edm::ESHandle<TrackerGeometry> tGeomHandle = iSetup.getHandle(getTokenTrackerGeom_);
 
   // Geometries
-  const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+  const TrackerGeometry *const theTrackerGeom = tGeomHandle.product();
   const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
 
   edm::InputTag L1StubInputTag("TTStubsFromPhase2TrackerDigis","StubAccepted");
@@ -380,7 +380,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   // float myTP_phi = -999;
   int myTP_charge = -999;
   float myTP_pt = -999;
-  float stub_rad = -999;
+  float stub_r = -999;
   //float innerClust = -999;
   //float outerClust = -999;
 
@@ -397,23 +397,19 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     
     // Get the DetSets of the Clusters
     edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+    numOfStubs->Fill(stubs.size());
     const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit(detid);
     const GeomDetUnit* det1 = theTrackerGeom->idToDetUnit(tTopo->partnerDetId(detid));
     const PixelGeomDetUnit* unit = reinterpret_cast<const PixelGeomDetUnit*>(det0);
     const PixelTopology& topo = unit->specificTopology();
     const auto* theGeomDet = dynamic_cast<const PixelGeomDetUnit*>(det0);
     //const PixelTopology* topol = dynamic_cast<const PixelTopology*>(&(theGeomDet->specificTopology()));
-    
-    // Add a counter for stubs
-    int stubCounter = 0;
 
     // loop over stubs
     // what is the difference between TTStubHandle and Phase2TrackerDigiTTStubHandle
     for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
       edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_> >, TTStub<Ref_Phase2TrackerDigi_> > tempStubPtr = edmNew::makeRefTo(TTStubHandle, stubIter);
-      // Increment the stubCounter each time a stub is found
-      stubCounter++;
-        
+      
       MeasurementPoint coords = tempStubPtr->clusterRef(0)->findAverageLocalCoordinatesCentered(); // find average local coords (centered) of the 0th cluster (cluster from innermost sensor)
       //LocalPoint clustlp = topol->localPosition(coords); // convert coords from a measurement point to a local point in the sensor's coordinate system
       //GlobalPoint posStub = theGeomDet->surface().toGlobal(clustlp); // convert local coords to global coords
@@ -436,9 +432,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       Global3DPoint posStub = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(mp));
       */
 
-      stub_r->Fill(posStub.perp()); // used for histogram
-      // fix naming
-      stub_rad = posStub.perp(); // used to calculate dphi
+      stub_R->Fill(posStub.perp()); // used for histogram
+      stub_r = posStub.perp(); // used to calculate dphi
 
       // Calculation of sensor spacing obtained from TMTT: https://github.com/CMS-TMTT/cmssw/blob/TMTT_938/L1Trigger/TrackFindingTMTT/src/Stub.cc#L138-L146
       float stripPitch = topo.pitch().first;
@@ -461,8 +456,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
      // Get associated tracking particle
       edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
 
-      //float myTP_phi = -999;
-
       // if the following is not null, it means that a valid associated tracking particle was found for the stub
       if (my_tp.isNull() == false) {
         // retrieve the event ID (event number) associated with the tracking particle
@@ -476,8 +469,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         myTP_pt = my_tp->p4().pt();
 
         double bfield_{3.8};  //B-field in T
-        double c_{2.99792458E8};  //speed of light m/s
-        double dphi = asin(((bfield_*c_)/2.0E11) * stub_rad * myTP_charge / myTP_pt); 
+        double c_{2.99792458E10};  //speed of light cm/s
+        double dphi = asin(((bfield_*c_)/2.0E13) * stub_r * myTP_charge / myTP_pt); 
         double dphiOverBend = (stripPitch / sensorSpacing);
         float trackBend = dphi / dphiOverBend;
         track_bend->Fill(trackBend);
@@ -486,17 +479,60 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         
       }
     }
-    if (stubCounter > 0 && stubCounter <= 5) {
-      stubsInEvent0to5->Fill(stubCounter);
-    }
-    else if (stubCounter > 5 && stubCounter <= 15){
-      stubsInEvent5to15->Fill(stubCounter);
-    } 
-    else if (stubCounter > 15){
-      stubsInEvent15up->Fill(stubCounter);
-    } 
 
   }
+  /*
+  // loop over stubs
+  if (MCTruthTTTrackHandle.isValid()) {
+    for (const auto& aTrack : *MCTruthTTTrackHandle) {
+      const auto& stubRefs = aTrack.getStubRefs();
+      int nStubs = stubRefs.size();
+      std::cout << "nStubs: " << nStubs << std::endl;
+
+      for (const auto& stubRef : stubRefs) {
+
+        // Get associated tracking particle
+        edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(stubRef);
+
+        DetId detIdStub = theTrackerGeom->idToDet((stubRef->clusterRef(0))->getDetId())->geographicalId();
+        MeasurementPoint coords = stubRef->clusterRef(0)->findAverageLocalCoordinatesCentered();
+        const GeomDet* theGeomDet = theTrackerGeom->idToDet(detIdStub);
+        Global3DPoint posStub = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(coords));
+
+        float stub_r = posStub.perp();
+        float stub_z = posStub.z();
+        
+        bool isBarrel = (detIdStub.subdetId() == StripSubdetector::TOB);
+
+        const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit(detIdStub);
+        const GeomDetUnit* det1 = theTrackerGeom->idToDetUnit(tTopo->partnerDetId(detIdStub));
+        const PixelGeomDetUnit* unit = reinterpret_cast<const PixelGeomDetUnit*>(det0);
+        const PixelTopology& topo = unit->specificTopology();
+
+        // Calculation of snesor spacing obtained from TMTT: https://github.com/CMS-TMTT/cmssw/blob/TMTT_938/L1Trigger/TrackFindingTMTT/src/Stub.cc#L138-L146
+        float stripPitch = topo.pitch().first;
+
+        float modMinR = std::min(det0->position().perp(), det1->position().perp());
+        float modMaxR = std::max(det0->position().perp(), det1->position().perp());
+        float modMinZ = std::min(det0->position().z(), det1->position().z());
+        float modMaxZ = std::max(det0->position().z(), det1->position().z());
+        float sensorSpacing = sqrt((modMaxR - modMinR) * (modMaxR - modMinR) + (modMaxZ - modMinZ) * (modMaxZ - modMinZ));
+
+        // Approximation of phiOverBendCorrection, from TMTT: https://github.com/CMS-TMTT/cmssw/blob/TMTT_938/L1Trigger/TrackFindingTMTT/src/Stub.cc#L440-L448
+        bool tiltedBarrel = (isBarrel && tTopo->tobSide(detIdStub) != 3);
+        float gradient = 0.886454;
+        float intercept = 0.504148;
+        float correction;
+        if (tiltedBarrel)
+          correction = gradient * std::abs(stub_z) / stub_r + intercept;
+        else if (isBarrel)
+          correction = 1;
+        else
+          correction = std::abs(stub_z) / stub_r;
+
+      }
+    }
+  }*/
 }  // end of method
 
 // ------------ method called once each job just before starting event loop
@@ -696,14 +732,14 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
 
   // Stub radius
   edm::ParameterSet rad_of_stub = conf_.getParameter<edm::ParameterSet>("TH1Stub_rad");
-  HistoName = "stub_r";
-  stub_r = iBooker.book1D(HistoName,
+  HistoName = "stub_R";
+  stub_R = iBooker.book1D(HistoName,
                            HistoName,
                            rad_of_stub.getParameter<int32_t>("Nbinsx"),
                            rad_of_stub.getParameter<double>("xmin"),
                            rad_of_stub.getParameter<double>("xmax"));
-  stub_r->setAxisTitle("radius [cm]", 1);
-  stub_r->setAxisTitle("counts ", 2);
+  stub_R->setAxisTitle("radius [cm]", 1);
+  stub_R->setAxisTitle("counts ", 2);
 
   // Stub raw bend
   edm::ParameterSet stub_raw_bend = conf_.getParameter<edm::ParameterSet>("TH1Stub_rawBend");
@@ -760,38 +796,16 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   track_bend->setAxisTitle("position", 1);
   track_bend->setAxisTitle("counts ", 2);
 
-  // Stubs in event 0 to 5
-  edm::ParameterSet stubs_In_Event0to5 = conf_.getParameter<edm::ParameterSet>("TH1StubInEvent0to5");
-  HistoName = "stubsInEvent0to5";
-  stubsInEvent0to5 = iBooker.book1D(HistoName,
+  // Stubs in event
+  edm::ParameterSet stubs_In_Event = conf_.getParameter<edm::ParameterSet>("TH1StubInEvent");
+  HistoName = "# of stubs";
+  numOfStubs = iBooker.book1D(HistoName,
                             HistoName,
-                            stubs_In_Event0to5.getParameter<int32_t>("Nbinsx"),
-                            stubs_In_Event0to5.getParameter<double>("xmin"),
-                            stubs_In_Event0to5.getParameter<double>("xmax"));
-  stubsInEvent0to5->setAxisTitle("# of stubs", 1);
-  stubsInEvent0to5->setAxisTitle("events ", 2);
-
-  // Stubs in event 5 to 15
-  edm::ParameterSet stubs_In_Event5to15 = conf_.getParameter<edm::ParameterSet>("TH1StubInEvent5to15");
-  HistoName = "stubsInEvent5to15";
-  stubsInEvent5to15 = iBooker.book1D(HistoName,
-                            HistoName,
-                            stubs_In_Event5to15.getParameter<int32_t>("Nbinsx"),
-                            stubs_In_Event5to15.getParameter<double>("xmin"),
-                            stubs_In_Event5to15.getParameter<double>("xmax"));
-  stubsInEvent5to15->setAxisTitle("# of stubs", 1);
-  stubsInEvent5to15->setAxisTitle("events ", 2);
-
-  // Stubs in event 15 up
-  edm::ParameterSet stubs_In_Event15up = conf_.getParameter<edm::ParameterSet>("TH1StubInEvent15up");
-  HistoName = "stubsInEvent15up";
-  stubsInEvent15up = iBooker.book1D(HistoName,
-                            HistoName,
-                            stubs_In_Event15up.getParameter<int32_t>("Nbinsx"),
-                            stubs_In_Event15up.getParameter<double>("xmin"),
-                            stubs_In_Event15up.getParameter<double>("xmax"));
-  stubsInEvent15up->setAxisTitle("# of stubs", 1);
-  stubsInEvent15up->setAxisTitle("events ", 2);
+                            stubs_In_Event.getParameter<int32_t>("Nbinsx"),
+                            stubs_In_Event.getParameter<double>("xmin"),
+                            stubs_In_Event.getParameter<double>("xmax"));
+  numOfStubs->setAxisTitle("det layer", 1);
+  numOfStubs->setAxisTitle("# of stubs ", 2);
 
   // bend resolution
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");

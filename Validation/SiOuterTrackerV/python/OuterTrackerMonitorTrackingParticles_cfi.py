@@ -17,6 +17,13 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
     TP_maxEta = cms.double(2.4),     # only save TPs with |eta| < X
     TP_maxVtxZ = cms.double(15.0),     # only save TPs with |z0| < X cm
 
+#TTStub Barrel Layers
+    TH1TTStub_Layers = cms.PSet(
+        Nbinsx = cms.int32(7),
+        xmin = cms.double(0.5),
+        xmax = cms.double(7.5)
+        ),
+
 # tracking particles vs eta
     TH1TrackParts_Eta = cms.PSet(
         Nbinsx = cms.int32(45),
@@ -94,6 +101,13 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-0.1)
         ),
 
+# Stub associated tp pT
+    TH1TP_pt = cms.PSet(
+        Nbinsx = cms.int32(99),
+        xmax = cms.double(100.),
+        xmin = cms.double(0.)
+        ),
+
 # rad of stubs
     TH1Stub_rad = cms.PSet(
         Nbinsx = cms.int32(100),
@@ -124,16 +138,16 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
 
 # counts vs stub bendFE
     TH1Stub_bendFE = cms.PSet(
-        Nbinsx = cms.int32(100),
-        xmax = cms.double(8.0),
-        xmin = cms.double(-8.0)
+        Nbinsx = cms.int32(29),
+        xmax = cms.double(15.0),
+        xmin = cms.double(-15.0)
         ),
 
 # counts vs track bend
     TH1Track_Bend = cms.PSet(
-        Nbinsx = cms.int32(100),
-        xmax = cms.double(8.0),
-        xmin = cms.double(-8.0)
+        Nbinsx = cms.int32(29),
+        xmax = cms.double(15.0),
+        xmin = cms.double(-15.0)
         ),
 
 # counts vs tp bend
@@ -150,11 +164,35 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(0.0)
         ),
 
-# stub bend resolution    
+# stub bend resolution
     TH1Bend_Res = cms.PSet(
-        Nbinsx = cms.int32(100),
-        xmax = cms.double(10.0),
-        xmin = cms.double(-10.0)
+        Nbinsx = cms.int32(29),
+        xmax = cms.double(15.0),
+        xmin = cms.double(-15.0)
+        ),
+
+# 2D histo track bend vs stub bend
+    TH2TrackVsStub = cms.PSet(
+        Nbinsx = cms.int32(54), # Binning for track bend
+        xmin = cms.double(-12.0),
+        xmax = cms.double(12.0),
+        Nbinsy = cms.int32(54), # Binning for stub bend
+        ymin = cms.double(-12.0),
+        ymax = cms.double(12.0)
+        ),
+
+# genuine stubs in barrel layers
+    TH1Barrel_Layers = cms.PSet(
+        Nbinsx = cms.int32(6),
+        xmax = cms.double(7.0),
+        xmin = cms.double(1.0)
+        ),
+    
+# genuine stubs in endcap layers
+    TH1Endcap_Layers = cms.PSet(
+        Nbinsx = cms.int32(6),
+        xmax = cms.double(6.5),
+        xmin = cms.double(0.5)
         ),
 
 # tracking particles vs relative pT (for resolution plots)

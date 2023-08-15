@@ -27,6 +27,9 @@ public:
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
 
+  // Number of stubs
+  MonitorElement *Stub_Barrel = nullptr;       // TTStub per layer
+
   // Tracking particle distributions
   MonitorElement *trackParts_Eta = nullptr;
   MonitorElement *trackParts_Phi = nullptr;
@@ -46,11 +49,19 @@ public:
   MonitorElement *match_tp_VtxR = nullptr;     // numerator (also known as vxy)
   MonitorElement *match_tp_VtxZ = nullptr;     // numerator
 
+  // 2D plots
+  MonitorElement *trackBend_vs_stubBend = nullptr;
+  MonitorElement *barrel_trackBend_vs_stubBend = nullptr;
+  MonitorElement *endcap_trackBend_vs_stubBend = nullptr;
+  MonitorElement *endcap_fw_trackBend_vs_stubBend = nullptr;
+  MonitorElement *endcap_bw_trackBend_vs_stubBend = nullptr;
+
   // 1D intermediate resolution plots (pT and eta)
   MonitorElement *res_eta = nullptr;    // for all eta and pT
   MonitorElement *stub_res_phi = nullptr;
   MonitorElement *res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
+  MonitorElement *TP_pT = nullptr;
   MonitorElement *stub_R = nullptr;
   MonitorElement *stub_rawBend = nullptr;
   MonitorElement *stub_bendOffset = nullptr;
@@ -60,6 +71,10 @@ public:
   MonitorElement *numOfStubs = nullptr;
   MonitorElement *bend_of_tp = nullptr;
   MonitorElement *bend_res = nullptr;
+  MonitorElement *barrelHistogram_genuine = nullptr;
+  MonitorElement *endcapHistogram_genuine = nullptr;
+  MonitorElement *endcap_disc_Fw_genuine = nullptr;
+  MonitorElement *endcap_disc_Bw_genuine = nullptr;
   MonitorElement *respt_eta0to0p7_pt2to3 = nullptr;
   MonitorElement *respt_eta0p7to1_pt2to3 = nullptr;
   MonitorElement *respt_eta1to1p2_pt2to3 = nullptr;

@@ -70,6 +70,34 @@ OuterTrackerMonitorTrackingParticles::~OuterTrackerMonitorTrackingParticles() = 
 
 // member functions
 
+float phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
+    // Get R0, R1, Z0, Z1 values
+    float R0 = det0->position().perp();
+    float R1 = det1->position().perp();
+    float Z0 = det0->position().z();
+    float Z1 = det1->position().z();
+
+    bool isTiltedBarrel = (isBarrel == 1) && (tTopo->tobSide(detid) != 1);
+
+    float tiltAngle = 0; // Initialize to 0 (meaning no tilt)
+    if (isTiltedBarrel) {
+        float deltaR = std::abs(R1 - R0);
+        float deltaZ = (R1 - R0 > 0) ? (Z1 - Z0) : -(Z1 - Z0);
+        tiltAngle = atan(deltaR / deltaZ);
+    }
+
+    float correction;
+    if (isBarrel && tTopo->tobSide(detid) != 3) {  // Assuming this condition represents tiltedBarrel
+        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
+    } else if (isBarrel) {
+        correction = 1;
+    } else {
+        correction = std::abs(stub_z) / stub_r;
+    }
+
+    return correction;
+  }
+
 // ------------ method called for each event  ------------
 void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, const edm::EventSetup &iSetup) {
   // Tracking Particles
@@ -381,10 +409,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   int myTP_charge = -999;
   float myTP_pt = -999;
   float myTP_eta = -999;
+  float myTP_dxy = -999;
   float stub_r = -999;
   float stub_z = -999;
-  //float innerClust = -999;
-  //float outerClust = -999;
   double bfield_{3.8};  //B-field in T
   double c_{2.99792458E10};  //speed of light cm/s
 
@@ -420,7 +447,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         continue; // skip this iteration if not genuine
         }
 
-
       // Get associated tracking particle
       edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
 
@@ -432,7 +458,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         if (tmp_eventid > 0)
           continue;  // this means stub from pileup track
         */
-        
+
         int isBarrel = 0;
         int layer = -999999;
         if (detid.subdetId() == StripSubdetector::TOB) {
@@ -456,23 +482,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         //LocalPoint clustlp = topol->localPosition(coords); // convert coords from a measurement point to a local point in the sensor's coordinate system
         //GlobalPoint posStub = theGeomDet->surface().toGlobal(clustlp); // convert local coords to global coords
         Global3DPoint posStub = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(coords));
-        
-        /*
-        MeasurementPoint innerCluster = tempStubPtr->clusterRef(0)->findAverageLocalCoordinatesCentered();
-        MeasurementPoint outerCluster = tempStubPtr->clusterRef(1)->findAverageLocalCoordinatesCentered();
-        Global3DPoint posInCluster = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(innerCluster));
-        Global3DPoint posOutCluster = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(outerCluster));
-
-        innerClust = posInCluster.perp();
-        outerClust = posOutCluster.perp();
-        std::cout << "innerClust: " << innerClust << std::endl;
-        std::cout << "outerClust: " << outerClust << std::endl;
-          
-        /// Define position stub by position inner cluster
-        MeasurementPoint mp = (tempStubPtr->clusterRef(0))->findAverageLocalCoordinates();
-        const GeomDet *theGeomDet = tkGeom_->idToDet(detIdStub);
-        Global3DPoint posStub = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(mp));
-        */
 
         stub_R->Fill(posStub.perp()); // used for histogram
         stub_r = posStub.perp(); // used to calculate dphi
@@ -491,6 +500,11 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         myTP_charge = my_tp->charge();
         myTP_pt = my_tp->p4().pt();
         myTP_eta = my_tp->p4().eta();
+
+        float myTP_x0 = my_tp->vertex().x();
+        float myTP_y0 = my_tp->vertex().y();
+        float myTP_z0 = my_tp->vertex().z();
+        myTP_dxy = sqrt(myTP_x0 * myTP_x0 + myTP_y0 * myTP_y0);
         
         if (myTP_charge == 0) continue;
         if (myTP_pt < TP_minPt) continue;
@@ -500,14 +514,18 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         float trigOffset = tempStubPtr->bendOffset();
         float trigPos = tempStubPtr->innerClusterPosition();
         float trigBend = tempStubPtr->bendFE();
-        
+
         if (!isBarrel && stub_z < 0.0){
           trigBend = -trigBend; 
         }
-
-        float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
-                        (stripPitch * 2.0E13 * myTP_pt);
+        std::cout << "before function is called" << std::endl;
+        float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo, detid, det0, det1);
+        std::cout << "correction value: " << correctionValue << std::endl;
+        
+        float trackBend = -asin(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
+                        (stripPitch * 2.0E13 * myTP_pt * correctionValue);
         float bendRes = trackBend - trigBend;
+        
 
         // fill histograms for associated tracking particle from genuine stub
         TP_pT->Fill(myTP_pt);
@@ -519,6 +537,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         stub_inClusPos->Fill(trigPos);
         stub_bendFE->Fill(trigBend);
         bend_res->Fill(bendRes);
+        std::cout << "bendRes: " << std::endl;
 
         // Fill the histogram for barrel stubs
         if (isBarrel == 1) {

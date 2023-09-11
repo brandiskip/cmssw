@@ -26,14 +26,17 @@ public:
   ~OuterTrackerMonitorTrackingParticles() override;
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
+  float phiOverBendCorrection(bool, float, float, const TrackerTopology*, uint32_t, const GeomDetUnit*, const GeomDetUnit*);
 
   // Number of stubs
   MonitorElement *Stub_Barrel = nullptr;       // TTStub per layer
+  MonitorElement *stubz = nullptr;
 
   // Tracking particle distributions
   MonitorElement *trackParts_Eta = nullptr;
   MonitorElement *trackParts_Phi = nullptr;
   MonitorElement *trackParts_Pt = nullptr;
+  MonitorElement *TP_z0 = nullptr;
 
   // pT and eta for efficiency plots
   MonitorElement *tp_pt = nullptr;             // denominator
@@ -52,16 +55,46 @@ public:
   // 2D plots
   MonitorElement *trackBend_vs_stubBend = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend = nullptr;
+  MonitorElement *barrel_trackBend_vs_stubBend_L1 = nullptr;
+  MonitorElement *barrel_trackBend_vs_stubBend_L2 = nullptr;
+  MonitorElement *barrel_trackBend_vs_stubBend_L3 = nullptr;
+  MonitorElement *barrel_trackBend_vs_stubBend_L4 = nullptr;
+  MonitorElement *barrel_trackBend_vs_stubBend_L5 = nullptr;
+  MonitorElement *barrel_trackBend_vs_stubBend_L6 = nullptr;
   MonitorElement *endcap_trackBend_vs_stubBend = nullptr;
   MonitorElement *endcap_fw_trackBend_vs_stubBend = nullptr;
   MonitorElement *endcap_bw_trackBend_vs_stubBend = nullptr;
 
-  // 1D intermediate resolution plots (pT and eta)
-  MonitorElement *res_eta = nullptr;    // for all eta and pT
+  // 1D stub bend resolution plots
+  MonitorElement *bend_res = nullptr;
+  MonitorElement *bend_res_barrel = nullptr;
+  MonitorElement *bend_res_barrel_L1 = nullptr;
+  MonitorElement *bend_res_barrel_L2 = nullptr;
+  MonitorElement *bend_res_barrel_L3 = nullptr;
+  MonitorElement *bend_res_barrel_L4 = nullptr;
+  MonitorElement *bend_res_barrel_L5 = nullptr;
+  MonitorElement *bend_res_barrel_L6 = nullptr;
+  MonitorElement *bend_res_endcap = nullptr;
+  MonitorElement *bend_res_fw_endcap = nullptr;
+  MonitorElement *bend_res_fw_endcap_D1 = nullptr;
+  MonitorElement *bend_res_fw_endcap_D2 = nullptr;
+  MonitorElement *bend_res_fw_endcap_D3 = nullptr;
+  MonitorElement *bend_res_fw_endcap_D4 = nullptr;
+  MonitorElement *bend_res_fw_endcap_D5 = nullptr;
+  MonitorElement *bend_res_bw_endcap = nullptr;
+  MonitorElement *bend_res_bw_endcap_D1 = nullptr;
+  MonitorElement *bend_res_bw_endcap_D2 = nullptr;
+  MonitorElement *bend_res_bw_endcap_D3 = nullptr;
+  MonitorElement *bend_res_bw_endcap_D4 = nullptr;
+  MonitorElement *bend_res_bw_endcap_D5 = nullptr;
   MonitorElement *stub_res_phi = nullptr;
-  MonitorElement *res_pt = nullptr;     // for all eta and pT
-  MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
-  MonitorElement *TP_pT = nullptr;
+  MonitorElement *z_res = nullptr;
+  
+  // 1D stub and associated tp plots
+  MonitorElement *barrelHistogram_genuine = nullptr;
+  MonitorElement *endcapHistogram_genuine = nullptr;
+  MonitorElement *endcap_disc_Fw_genuine = nullptr;
+  MonitorElement *endcap_disc_Bw_genuine = nullptr;
   MonitorElement *stub_R = nullptr;
   MonitorElement *stub_rawBend = nullptr;
   MonitorElement *stub_bendOffset = nullptr;
@@ -70,11 +103,18 @@ public:
   MonitorElement *track_bend = nullptr;
   MonitorElement *numOfStubs = nullptr;
   MonitorElement *bend_of_tp = nullptr;
-  MonitorElement *bend_res = nullptr;
-  MonitorElement *barrelHistogram_genuine = nullptr;
-  MonitorElement *endcapHistogram_genuine = nullptr;
-  MonitorElement *endcap_disc_Fw_genuine = nullptr;
-  MonitorElement *endcap_disc_Bw_genuine = nullptr;
+  MonitorElement *TP_pT = nullptr;
+  MonitorElement *TP_pT_bendres_g1p5 = nullptr;
+  MonitorElement *TP_pT_bendres_0_to_1p5 = nullptr;
+  MonitorElement *TP_eta_bendres_g1p5 = nullptr;
+  MonitorElement *TP_eta_bendres_0_to_1p5 = nullptr;
+  MonitorElement *TP_dxy_bendres_g1p5 = nullptr;
+  MonitorElement *TP_dxy_bendres_0_to_1p5 = nullptr;
+
+  // 1D intermediate resolution plots (pT and eta)
+  MonitorElement *res_eta = nullptr;    // for all eta and pT
+  MonitorElement *res_pt = nullptr;     // for all eta and pT
+  MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
   MonitorElement *respt_eta0to0p7_pt2to3 = nullptr;
   MonitorElement *respt_eta0p7to1_pt2to3 = nullptr;
   MonitorElement *respt_eta1to1p2_pt2to3 = nullptr;

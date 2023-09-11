@@ -101,8 +101,22 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-0.1)
         ),
 
+# Stub associated to eta
+    TH1TP_eta = cms.PSet(
+        Nbinsx = cms.int32(50),
+        xmax = cms.double(2.5),
+        xmin = cms.double(-2.5)
+        ),
+
 # Stub associated tp pT
     TH1TP_pt = cms.PSet(
+        Nbinsx = cms.int32(39),
+        xmax = cms.double(40.),
+        xmin = cms.double(0.)
+        ),
+
+# Stub associated tp dxy
+    TH1TP_dxy = cms.PSet(
         Nbinsx = cms.int32(99),
         xmax = cms.double(100.),
         xmin = cms.double(0.)
@@ -113,6 +127,13 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         Nbinsx = cms.int32(100),
         xmax = cms.double(120.0),
         xmin = cms.double(0.0)
+        ),
+
+# position of stub in z
+    TH1Stub_z = cms.PSet(
+        Nbinsx = cms.int32(299),
+        xmax = cms.double(300.0),
+        xmin = cms.double(-300.0)
         ),
 
 # counts vs stub rawBend
@@ -166,19 +187,19 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
 
 # stub bend resolution
     TH1Bend_Res = cms.PSet(
-        Nbinsx = cms.int32(29),
-        xmax = cms.double(15.0),
-        xmin = cms.double(-15.0)
+        Nbinsx = cms.int32(59),
+        xmax = cms.double(5.0),
+        xmin = cms.double(-5.0)
         ),
 
 # 2D histo track bend vs stub bend
     TH2TrackVsStub = cms.PSet(
-        Nbinsx = cms.int32(54), # Binning for track bend
-        xmin = cms.double(-12.0),
-        xmax = cms.double(12.0),
-        Nbinsy = cms.int32(54), # Binning for stub bend
-        ymin = cms.double(-12.0),
-        ymax = cms.double(12.0)
+        Nbinsx = cms.int32(29), # Binning for track bend
+        xmin = cms.double(-7.0),
+        xmax = cms.double(7.0),
+        Nbinsy = cms.int32(29), # Binning for stub bend
+        ymin = cms.double(-7.0),
+        ymax = cms.double(7.0)
         ),
 
 # genuine stubs in barrel layers

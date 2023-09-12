@@ -70,7 +70,7 @@ OuterTrackerMonitorTrackingParticles::~OuterTrackerMonitorTrackingParticles() = 
 
 // member functions
 
-float phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
+float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
     // Get R0, R1, Z0, Z1 values
     float R0 = det0->position().perp();
     float R1 = det1->position().perp();
@@ -97,7 +97,7 @@ float phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const Tra
 
     return correction;
   }
-
+  
 // ------------ method called for each event  ------------
 void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, const edm::EventSetup &iSetup) {
   // Tracking Particles
@@ -452,12 +452,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
       // if the following is not null, it means that a valid associated tracking particle was found for the stub
       if (my_tp.isNull() == false) {
-        // retrieve the event ID (event number) associated with the tracking particle
-        int tmp_eventid = my_tp->eventId().event();
-        /*
-        if (tmp_eventid > 0)
-          continue;  // this means stub from pileup track
-        */
 
         int isBarrel = 0;
         int layer = -999999;
@@ -503,7 +497,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
         float myTP_x0 = my_tp->vertex().x();
         float myTP_y0 = my_tp->vertex().y();
-        float myTP_z0 = my_tp->vertex().z();
+        //float myTP_z0 = my_tp->vertex().z();
         myTP_dxy = sqrt(myTP_x0 * myTP_x0 + myTP_y0 * myTP_y0);
         
         if (myTP_charge == 0) continue;
@@ -518,14 +512,22 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         if (!isBarrel && stub_z < 0.0){
           trigBend = -trigBend; 
         }
-        std::cout << "before function is called" << std::endl;
-        float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo, detid, det0, det1);
-        std::cout << "correction value: " << correctionValue << std::endl;
         
-        float trackBend = -asin(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
+        float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo, detid, det0, det1);
+        float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
                         (stripPitch * 2.0E13 * myTP_pt * correctionValue);
+        std::cout << "trackBend: " << trackBend << std::endl;
         float bendRes = trackBend - trigBend;
         
+        if (std::abs(bendRes) > 1.5){
+          TP_pT_bendres_g1p5->Fill(myTP_pt);
+          TP_eta_bendres_g1p5->Fill(myTP_eta);
+          TP_dxy_bendres_g1p5->Fill(myTP_dxy);
+      } else {
+          TP_pT_bendres_0_to_1p5->Fill(myTP_pt);
+          TP_eta_bendres_0_to_1p5->Fill(myTP_eta);
+          TP_dxy_bendres_0_to_1p5->Fill(myTP_dxy);
+      }
 
         // fill histograms for associated tracking particle from genuine stub
         TP_pT->Fill(myTP_pt);
@@ -537,26 +539,69 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         stub_inClusPos->Fill(trigPos);
         stub_bendFE->Fill(trigBend);
         bend_res->Fill(bendRes);
-        std::cout << "bendRes: " << std::endl;
 
         // Fill the histogram for barrel stubs
         if (isBarrel == 1) {
-          //std::cout << "barrelLayer: " << layer << std::endl; 
           barrelHistogram_genuine->Fill(layer); // layer is the variable determined from your provided code
           barrel_trackBend_vs_stubBend->Fill(trackBend, trigBend);
+          bend_res_barrel->Fill(bendRes);
+          if (layer == 1){
+            bend_res_barrel_L1->Fill(bendRes);
+            barrel_trackBend_vs_stubBend_L1->Fill(trackBend, trigBend);
+        } else if (layer == 2){
+            bend_res_barrel_L2->Fill(bendRes);
+            barrel_trackBend_vs_stubBend_L2->Fill(trackBend, trigBend);
+        } else if (layer == 3){
+            bend_res_barrel_L3->Fill(bendRes);
+            barrel_trackBend_vs_stubBend_L3->Fill(trackBend, trigBend);
+        } else if (layer == 4){
+            bend_res_barrel_L4->Fill(bendRes);
+            barrel_trackBend_vs_stubBend_L4->Fill(trackBend, trigBend);
+        } else if (layer == 5){
+            bend_res_barrel_L5->Fill(bendRes);
+            barrel_trackBend_vs_stubBend_L5->Fill(trackBend, trigBend);
+        } else if (layer == 6){
+            bend_res_barrel_L6->Fill(bendRes);
+            barrel_trackBend_vs_stubBend_L6->Fill(trackBend, trigBend);
+        }
       } else if (isBarrel == 0) {
           endcapHistogram_genuine->Fill(layer);
           endcap_trackBend_vs_stubBend->Fill(trackBend, trigBend);
+          bend_res_endcap->Fill(bendRes);
           if (stub_z > 0){
             endcap_disc_Fw_genuine->Fill(layer);
             endcap_fw_trackBend_vs_stubBend->Fill(trackBend, trigBend);
+            bend_res_fw_endcap->Fill(bendRes);
+            if (layer == 1){
+              bend_res_fw_endcap_D1->Fill(bendRes);
+          } else if (layer == 2) {
+              bend_res_fw_endcap_D2->Fill(bendRes);
+          } else if (layer == 3) {
+              bend_res_fw_endcap_D3->Fill(bendRes);
+          } else if (layer == 4) {
+              bend_res_fw_endcap_D4->Fill(bendRes);
+          } else if (layer == 5) {
+              bend_res_fw_endcap_D5->Fill(bendRes);
+          }
         } else {
             endcap_disc_Bw_genuine->Fill(layer);
             endcap_bw_trackBend_vs_stubBend->Fill(trackBend, trigBend);
+            bend_res_bw_endcap->Fill(bendRes);
+            if (layer == 1){
+              bend_res_bw_endcap_D1->Fill(bendRes);
+          } else if (layer == 2) {
+              bend_res_bw_endcap_D2->Fill(bendRes);
+          } else if (layer == 3) {
+              bend_res_bw_endcap_D3->Fill(bendRes);
+          } else if (layer == 4) {
+              bend_res_bw_endcap_D4->Fill(bendRes);
+          } else if (layer == 5) {
+              bend_res_bw_endcap_D5->Fill(bendRes);
+          } 
         }
-      }
         // Fill 2D histogram
         trackBend_vs_stubBend->Fill(trackBend, trigBend);
+        }
       }
     }
   }
@@ -764,6 +809,84 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   barrel_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
   barrel_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
 
+  HistoName = "barrel_trackBend_vs_stubBend_L1";
+  barrel_trackBend_vs_stubBend_L1 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L1->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L1->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L2";
+  barrel_trackBend_vs_stubBend_L2 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L2->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L2->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L3";
+  barrel_trackBend_vs_stubBend_L3 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L3->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L3->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L4";
+  barrel_trackBend_vs_stubBend_L4 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L4->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L4->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L5";
+  barrel_trackBend_vs_stubBend_L5 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L5->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L5->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L6";
+  barrel_trackBend_vs_stubBend_L6 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L6->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L6->setAxisTitle("Stub Bend", 2);
+
   // 2D: endcap trackBend vs. stubBend
   HistoName = "endcap trackBend_vs_stubBend";
   endcap_trackBend_vs_stubBend = iBooker.book2D(
@@ -828,6 +951,45 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   res_eta->setAxisTitle("#eta", 1);
   res_eta->setAxisTitle("# tracking particles", 2);
 
+  edm::ParameterSet psTP_eta = conf_.getParameter<edm::ParameterSet>("TH1TP_eta");
+  HistoName = "TP_eta_bendres_g1p5";
+  TP_eta_bendres_g1p5 = iBooker.book1D(HistoName,
+                          HistoName,
+                          psTP_eta.getParameter<int32_t>("Nbinsx"),
+                          psTP_eta.getParameter<double>("xmin"),
+                          psTP_eta.getParameter<double>("xmax"));
+  TP_eta_bendres_g1p5->setAxisTitle("#eta_{trk}", 1);
+  TP_eta_bendres_g1p5->setAxisTitle("# associated tracking particles", 2);
+
+  HistoName = "TP_eta_bendres_0_to_1p5";
+  TP_eta_bendres_0_to_1p5= iBooker.book1D(HistoName,
+                          HistoName,
+                          psTP_eta.getParameter<int32_t>("Nbinsx"),
+                          psTP_eta.getParameter<double>("xmin"),
+                          psTP_eta.getParameter<double>("xmax"));
+  TP_eta_bendres_0_to_1p5->setAxisTitle("#eta_{trk}", 1);
+  TP_eta_bendres_0_to_1p5->setAxisTitle("# associated tracking particles", 2);
+
+  // Stub associated TP dxy
+  edm::ParameterSet psTP_dxy = conf_.getParameter<edm::ParameterSet>("TH1TP_dxy");
+  HistoName = "TP_dxy_bendres_g1p5";
+  TP_dxy_bendres_g1p5 = iBooker.book1D(HistoName,
+                          HistoName,
+                          psTP_dxy.getParameter<int32_t>("Nbinsx"),
+                          psTP_dxy.getParameter<double>("xmin"),
+                          psTP_dxy.getParameter<double>("xmax"));
+  TP_dxy_bendres_g1p5->setAxisTitle("dxy", 1);
+  TP_dxy_bendres_g1p5->setAxisTitle("# associated tracking particles", 2);
+
+  HistoName = "TP_dxy_bendres_0_to_1p5";
+  TP_dxy_bendres_0_to_1p5 = iBooker.book1D(HistoName,
+                          HistoName,
+                          psTP_dxy.getParameter<int32_t>("Nbinsx"),
+                          psTP_dxy.getParameter<double>("xmin"),
+                          psTP_dxy.getParameter<double>("xmax"));
+  TP_dxy_bendres_0_to_1p5->setAxisTitle("dxy", 1);
+  TP_dxy_bendres_0_to_1p5->setAxisTitle("# associated tracking particles", 2);
+
   // Stub associated tp pT
   edm::ParameterSet psTP_pt = conf_.getParameter<edm::ParameterSet>("TH1TP_pt");
   HistoName = "all stub associated tp pT";
@@ -839,6 +1001,24 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   TP_pT->setAxisTitle("p_{T} [GeV]", 1);
   TP_pT->setAxisTitle("# associated tracking particles", 2);
 
+  HistoName = "TP_pT_bendres_g1p5";
+  TP_pT_bendres_g1p5 = iBooker.book1D(HistoName,
+                          HistoName,
+                          psTP_pt.getParameter<int32_t>("Nbinsx"),
+                          psTP_pt.getParameter<double>("xmin"),
+                          psTP_pt.getParameter<double>("xmax"));
+  TP_pT_bendres_g1p5->setAxisTitle("p_{T} [GeV]", 1);
+  TP_pT_bendres_g1p5->setAxisTitle("# associated tracking particles", 2);
+
+  HistoName = "TP_pT_bendres_0_to_1p5";
+  TP_pT_bendres_0_to_1p5 = iBooker.book1D(HistoName,
+                          HistoName,
+                          psTP_pt.getParameter<int32_t>("Nbinsx"),
+                          psTP_pt.getParameter<double>("xmin"),
+                          psTP_pt.getParameter<double>("xmax"));
+  TP_pT_bendres_0_to_1p5->setAxisTitle("p_{T} [GeV]", 1);
+  TP_pT_bendres_0_to_1p5->setAxisTitle("# associated tracking particles", 2);
+
   // Stub radius
   edm::ParameterSet rad_of_stub = conf_.getParameter<edm::ParameterSet>("TH1Stub_rad");
   HistoName = "stub_R";
@@ -849,6 +1029,26 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                            rad_of_stub.getParameter<double>("xmax"));
   stub_R->setAxisTitle("radius [cm]", 1);
   stub_R->setAxisTitle("counts ", 2);
+
+  // Stub in z
+  edm::ParameterSet posStubz = conf_.getParameter<edm::ParameterSet>("TH1Stub_z");
+  HistoName = "stubz";
+  stubz = iBooker.book1D(HistoName,
+                           HistoName,
+                           posStubz.getParameter<int32_t>("Nbinsx"),
+                           posStubz.getParameter<double>("xmin"),
+                           posStubz.getParameter<double>("xmax"));
+  stubz->setAxisTitle("radius [cm]", 1);
+  stubz->setAxisTitle("counts ", 2);
+
+  HistoName = "TP_z0";
+  TP_z0 = iBooker.book1D(HistoName,
+                           HistoName,
+                           posStubz.getParameter<int32_t>("Nbinsx"),
+                           posStubz.getParameter<double>("xmin"),
+                           posStubz.getParameter<double>("xmax"));
+  TP_z0->setAxisTitle("radius [cm]", 1);
+  TP_z0->setAxisTitle("counts ", 2);
 
   // Stub raw bend
   edm::ParameterSet stub_raw_bend = conf_.getParameter<edm::ParameterSet>("TH1Stub_rawBend");
@@ -872,7 +1072,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_bendOffset->setAxisTitle("rawBend", 1);
   stub_bendOffset->setAxisTitle("counts", 2);
 
-  // Stub raw bend
+  // Stub trigPos
   edm::ParameterSet stub_inClus_Pos = conf_.getParameter<edm::ParameterSet>("TH1Stub_inClusPos");
   HistoName = "stub_inClusPos";
   stub_inClusPos = iBooker.book1D(HistoName,
@@ -926,6 +1126,186 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             psBend_Res.getParameter<double>("xmax"));
   bend_res->setAxisTitle("stub bend - tp bend", 1);
   bend_res->setAxisTitle("events ", 2);
+
+  HistoName = "bend resolution barrel";
+  bend_res_barrel = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution L1";
+  bend_res_barrel_L1 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L1->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L1->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution L2";
+  bend_res_barrel_L2 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L2->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L2->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution L3";
+  bend_res_barrel_L3 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L3->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L3->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution L4";
+  bend_res_barrel_L4 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L4->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L4->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution L5";
+  bend_res_barrel_L5 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L5->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L5->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution L6";
+  bend_res_barrel_L6 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L6->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L6->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution endcaps";
+  bend_res_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_endcap->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_endcap->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution endcaps fw";
+  bend_res_fw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution +D1";
+  bend_res_fw_endcap_D1 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D1->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution +D2";
+  bend_res_fw_endcap_D2 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D2->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution +D3";
+  bend_res_fw_endcap_D3 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D3->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D3->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution +D4";
+  bend_res_fw_endcap_D4 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D4->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D4->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution +D5";
+  bend_res_fw_endcap_D5 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D5->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D5->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution endcaps bw";
+  bend_res_bw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution -D1";
+  bend_res_bw_endcap_D1 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D1->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution -D2";
+  bend_res_bw_endcap_D2 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D2->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution -D3";
+  bend_res_bw_endcap_D3 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D3->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D3->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution -D4";
+  bend_res_bw_endcap_D4 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D4->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D4->setAxisTitle("counts", 2);
+
+  HistoName = "bend resolution -D5";
+  bend_res_bw_endcap_D5 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D5->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D5->setAxisTitle("counts", 2);
 
   // stub in barrel layers
   edm::ParameterSet barrel_layers = conf_.getParameter<edm::ParameterSet>("TH1Barrel_Layers");

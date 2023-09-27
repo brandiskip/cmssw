@@ -27,6 +27,7 @@
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+//#include "L1Trigger/TrackFindingTracklet/interface/Settings.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
@@ -72,6 +73,7 @@ OuterTrackerMonitorTrackingParticles::~OuterTrackerMonitorTrackingParticles() = 
 
 float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
     // Get R0, R1, Z0, Z1 values
+    // split resolution values between positive and negative z
     float R0 = det0->position().perp();
     float R1 = det1->position().perp();
     float Z0 = det0->position().z();
@@ -79,20 +81,31 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
 
     bool isTiltedBarrel = (isBarrel == 1) && (tTopo->tobSide(detid) != 1);
 
-    float tiltAngle = 0; // Initialize to 0 (meaning no tilt)
+    //static double pi = 4.0 * atan(1.0);
+    //float tiltAngle = pi/2; // Initialize to 90
+    float tiltAngle = 0; // Initialize to 0 (meaning no tilt, in the endcaps)
     if (isTiltedBarrel) {
+        //std::cout << "Z0: " << Z0 << std::endl;
+        //std::cout << "Z1: " << Z1 << std::endl;
         float deltaR = std::abs(R1 - R0);
-        float deltaZ = (R1 - R0 > 0) ? (Z1 - Z0) : -(Z1 - Z0);
+        float deltaZ = (R1 - R0 > 0) ? (Z1 - Z0) : -(Z1 - Z0); // if module parallel, tilt angle should be π/2 and deltaZ would approach zero
+        hist_deltaZ->Fill(deltaZ);
+        hist_deltaR->Fill(deltaR);
         tiltAngle = atan(deltaR / deltaZ);
-    }
+        hist_tiltAngle->Fill(tiltAngle);
+        hist_tiltAngle_vs_deltaZ->Fill(deltaZ, tiltAngle);
+      }
 
     float correction;
     if (isBarrel && tTopo->tobSide(detid) != 3) {  // Assuming this condition represents tiltedBarrel
-        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
+        //correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
+        correction = cos(tiltAngle) * stub_z / stub_r + sin(tiltAngle);
+        //std::cout << "cosine of tiltAngle: " << cos(tiltAngle) << std::endl;
+        //std::cout << "sine of tiltAngle: " << sin(tiltAngle) << std::endl;
     } else if (isBarrel) {
         correction = 1;
     } else {
-        correction = std::abs(stub_z) / stub_r;
+        correction = std::abs(stub_z) / stub_r; // if tiltAngle = 0, stub (not module) is parallel to the beam line, if tiltAngle = 90, stub is perpendicular to beamline
     }
 
     return correction;
@@ -516,7 +529,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo, detid, det0, det1);
         float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
                         (stripPitch * 2.0E13 * myTP_pt * correctionValue);
-        std::cout << "trackBend: " << trackBend << std::endl;
         float bendRes = trackBend - trigBend;
         
         if (std::abs(bendRes) > 1.5){
@@ -539,6 +551,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         stub_inClusPos->Fill(trigPos);
         stub_bendFE->Fill(trigBend);
         bend_res->Fill(bendRes);
+
+        // Fill 2D histogram
+        trackBend_vs_stubBend->Fill(trackBend, trigBend);
 
         // Fill the histogram for barrel stubs
         if (isBarrel == 1) {
@@ -597,10 +612,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
               bend_res_bw_endcap_D4->Fill(bendRes);
           } else if (layer == 5) {
               bend_res_bw_endcap_D5->Fill(bendRes);
-          } 
-        }
-        // Fill 2D histogram
-        trackBend_vs_stubBend->Fill(trackBend, trigBend);
+            } 
+          }
         }
       }
     }
@@ -781,6 +794,20 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   iBooker.setCurrentFolder(topFolderName_ + "/Tracks/Resolution");
 
   // 2D: trackBend vs. stubBend
+  edm::ParameterSet pstiltAngleVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2tiltAngleVsDeltaZ");
+  HistoName = "tiltAngle_vs_deltaZ";
+  hist_tiltAngle_vs_deltaZ= iBooker.book2D(
+      HistoName, 
+      HistoName,
+      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsx"),
+      pstiltAngleVsDeltaZ.getParameter<double>("xmin"),
+      pstiltAngleVsDeltaZ.getParameter<double>("xmax"),
+      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsy"),
+      pstiltAngleVsDeltaZ.getParameter<double>("ymin"),
+      pstiltAngleVsDeltaZ.getParameter<double>("ymax"));
+  hist_tiltAngle_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
+  hist_tiltAngle_vs_deltaZ->setAxisTitle("tiltAngle [radians]", 2);
+
   edm::ParameterSet psTrackVsStub = conf_.getParameter<edm::ParameterSet>("TH2TrackVsStub");
   HistoName = "trackBend_vs_stubBend";
   trackBend_vs_stubBend = iBooker.book2D(
@@ -792,7 +819,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTrackVsStub.getParameter<int32_t>("Nbinsy"),
       psTrackVsStub.getParameter<double>("ymin"),
       psTrackVsStub.getParameter<double>("ymax"));
-  trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
+  trackBend_vs_stubBend->setAxisTitle("Truth Particle Bend", 1);
   trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
 
   // 2D: barrel trackBend vs. stubBend
@@ -928,6 +955,36 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTrackVsStub.getParameter<double>("ymax"));
   endcap_bw_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
   endcap_bw_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
+
+  edm::ParameterSet psDelta_Z = conf_.getParameter<edm::ParameterSet>("TH1delta_Z");
+  HistoName = "delta_Z";
+  hist_deltaZ = iBooker.book1D(HistoName,
+                          HistoName,
+                          psDelta_Z.getParameter<int32_t>("Nbinsx"),
+                          psDelta_Z.getParameter<double>("xmin"),
+                          psDelta_Z.getParameter<double>("xmax"));
+  hist_deltaZ->setAxisTitle("delta_Z [cm]", 1);
+  hist_deltaZ->setAxisTitle("count", 2);
+
+  edm::ParameterSet psDelta_R = conf_.getParameter<edm::ParameterSet>("TH1delta_R");
+  HistoName = "delta_R";
+  hist_deltaR = iBooker.book1D(HistoName,
+                          HistoName,
+                          psDelta_R.getParameter<int32_t>("Nbinsx"),
+                          psDelta_R.getParameter<double>("xmin"),
+                          psDelta_R.getParameter<double>("xmax"));
+  hist_deltaR->setAxisTitle("delta_R [cm]", 1);
+  hist_deltaR->setAxisTitle("count", 2);
+
+  edm::ParameterSet pstiltAngle = conf_.getParameter<edm::ParameterSet>("TH1tilt_Angle");
+  HistoName = "tiltAngle";
+  hist_tiltAngle = iBooker.book1D(HistoName,
+                          HistoName,
+                          pstiltAngle.getParameter<int32_t>("Nbinsx"),
+                          pstiltAngle.getParameter<double>("xmin"),
+                          pstiltAngle.getParameter<double>("xmax"));
+  hist_tiltAngle->setAxisTitle("tiltAngle [radians]", 1);
+  hist_tiltAngle->setAxisTitle("count", 2);
 
   // full pT
   edm::ParameterSet psRes_pt = conf_.getParameter<edm::ParameterSet>("TH1Res_pt");
@@ -1118,7 +1175,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
 
   // bend resolution
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
-  HistoName = "bend_res";
+  HistoName = "bend resolution";
   bend_res = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),

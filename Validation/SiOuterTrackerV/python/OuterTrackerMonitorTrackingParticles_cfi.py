@@ -17,6 +17,27 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
     TP_maxEta = cms.double(2.4),     # only save TPs with |eta| < X
     TP_maxVtxZ = cms.double(15.0),     # only save TPs with |z0| < X cm
 
+# deltaZ vs count
+TH1delta_Z = cms.PSet(
+        Nbinsx = cms.int32(49),
+        xmin = cms.double(-0.01),
+        xmax = cms.double(0.45)
+        ),
+
+# deltaR vs count
+TH1delta_R = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmin = cms.double(0.0),
+        xmax = cms.double(0.5)
+        ),
+
+# tiltAngle vs count
+TH1tilt_Angle = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmin = cms.double(-1.6),
+        xmax = cms.double(1.6)
+        ),
+
 #TTStub Barrel Layers
     TH1TTStub_Layers = cms.PSet(
         Nbinsx = cms.int32(7),
@@ -191,6 +212,16 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmax = cms.double(5.0),
         xmin = cms.double(-5.0)
         ),
+
+# 2D histo tiltAngle vs deltaZ
+    TH2tiltAngleVsDeltaZ = cms.PSet(
+        Nbinsx = cms.int32(49), 
+        xmin = cms.double(-0.01),
+        xmax = cms.double(0.5),
+        Nbinsy = cms.int32(27), 
+        ymin = cms.double(-1.8),
+        ymax = cms.double(1.8)
+        ),    
 
 # 2D histo track bend vs stub bend
     TH2TrackVsStub = cms.PSet(

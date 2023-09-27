@@ -32,6 +32,14 @@ public:
   MonitorElement *Stub_Barrel = nullptr;       // TTStub per layer
   MonitorElement *stubz = nullptr;
 
+  // 1D correction factor
+  MonitorElement *hist_deltaZ = nullptr;
+  MonitorElement *hist_deltaR = nullptr;
+  MonitorElement *hist_tiltAngle = nullptr;
+
+  // 2D correction factor
+  MonitorElement *hist_tiltAngle_vs_deltaZ = nullptr;
+
   // Tracking particle distributions
   MonitorElement *trackParts_Eta = nullptr;
   MonitorElement *trackParts_Phi = nullptr;
@@ -64,7 +72,7 @@ public:
   MonitorElement *endcap_trackBend_vs_stubBend = nullptr;
   MonitorElement *endcap_fw_trackBend_vs_stubBend = nullptr;
   MonitorElement *endcap_bw_trackBend_vs_stubBend = nullptr;
-
+ 
   // 1D stub bend resolution plots
   MonitorElement *bend_res = nullptr;
   MonitorElement *bend_res_barrel = nullptr;

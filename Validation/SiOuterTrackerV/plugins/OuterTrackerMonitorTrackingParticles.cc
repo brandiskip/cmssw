@@ -23,11 +23,12 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/Records/interface/StackedTrackerGeometryRecord.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
-//#include "L1Trigger/TrackFindingTracklet/interface/Settings.h"
+#include "L1Trigger/TrackFindingTracklet/interface/Settings.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
@@ -38,13 +39,12 @@
 
 #include "OuterTrackerMonitorTrackingParticles.h"
 
-#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
-
+using namespace trklet;
 //
 // constructors and destructor
 //
-OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig)
-    : m_topoToken(esConsumes()), conf_(iConfig) {
+OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig, const Settings& settings)
+    : m_topoToken(esConsumes()), conf_(iConfig), settings_(settings) {
   topFolderName_ = conf_.getParameter<std::string>("TopFolderName");
   trackingParticleToken_ =
       consumes<std::vector<TrackingParticle>>(conf_.getParameter<edm::InputTag>("trackingParticleToken"));
@@ -79,7 +79,9 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     float Z0 = det0->position().z();
     float Z1 = det1->position().z();
 
-    bool isTiltedBarrel = (isBarrel == 1) && (tTopo->tobSide(detid) != 1);
+    bool isTiltedBarrel = (isBarrel && tTopo->tobSide(detid) != 3);
+    //float gradient = 0.886454;
+    //float intercept = 0.504148;
 
     //static double pi = 4.0 * atan(1.0);
     //float tiltAngle = pi/2; // Initialize to 90
@@ -87,19 +89,25 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     if (isTiltedBarrel) {
         //std::cout << "Z0: " << Z0 << std::endl;
         //std::cout << "Z1: " << Z1 << std::endl;
+        //std::cout << "R0: " << R0 << std::endl;
+        //std::cout << "R1: " << R1 << std::endl;
         float deltaR = std::abs(R1 - R0);
         float deltaZ = (R1 - R0 > 0) ? (Z1 - Z0) : -(Z1 - Z0); // if module parallel, tilt angle should be π/2 and deltaZ would approach zero
+        //std::cout << "deltaZ: " << deltaZ << std::endl;
         hist_deltaZ->Fill(deltaZ);
         hist_deltaR->Fill(deltaR);
         tiltAngle = atan(deltaR / deltaZ);
         hist_tiltAngle->Fill(tiltAngle);
         hist_tiltAngle_vs_deltaZ->Fill(deltaZ, tiltAngle);
+        hist_deltaR_vs_deltaZ->Fill(Z0, R0);
+        hist_Z0_vs_deltaZ->Fill(deltaZ, Z0);
       }
 
     float correction;
     if (isBarrel && tTopo->tobSide(detid) != 3) {  // Assuming this condition represents tiltedBarrel
-        //correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
-        correction = cos(tiltAngle) * stub_z / stub_r + sin(tiltAngle);
+        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
+        //correction = cos(tiltAngle) * stub_z / stub_r + sin(tiltAngle);
+        //correction = gradient * std::abs(stub_z) / stub_r + sin(tiltAngle);
         //std::cout << "cosine of tiltAngle: " << cos(tiltAngle) << std::endl;
         //std::cout << "sine of tiltAngle: " << sin(tiltAngle) << std::endl;
     } else if (isBarrel) {
@@ -110,6 +118,40 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
 
     return correction;
   }
+
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0) const {
+
+    double tp_phi = -99;
+    double tp_r = -99;
+    double tp_z = -99;
+
+    // Get values from the tracking particle my_tp
+    double myTP_pt = my_tp->pt();
+    double myTP_eta = my_tp->eta();
+    double myTP_charge = my_tp->charge();
+    
+    // Derive other necessary parameters (for simplicity, assume q/pT is roughly charge/pt in 1/GeV units)
+    // this code came from a suggestion by chatGPT, need to confirm
+    double myTP_rinv = myTP_charge / (myTP_pt * 0.3 * 13.8);  // 0.3 is conversion factor to get curvature in 1/cm for B in T
+
+    if (theGeomDet->subDetector() == GeomDetEnumerators::TOB) {  
+        tp_r = position.perp(); // here I need to figure out how to calculate r of tp
+        tp_phi = my_tp->phi() - std::asin(tp_r * myTP_rinv / 2);
+        tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
+        tp_phi = reco::reduceRange(tp_phi);  
+        tp_z = my_tp->vz() + 2 / myTP_rinv * std::asin(tp_r * myTP_rinv / 2);
+    } else {
+        tp_z = myTP_z0;
+        tp_phi = my_tp->phi() - (tp_z - my_tp->vz()) * myTP_rinv / 2 / myTP_pt;  
+        tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
+        tp_phi = reco::reduceRange(tp_phi);
+        tp_r = 2 / myTP_rinv * std::sin((tp_z - my_tp->vz()) * myTP_rinv / 2 / myTP_pt);
+    }
+
+    std::vector<double> tpDerived_coords{tp_r, tp_z, tp_phi};
+    return tpDerived_coords;
+}
+
   
 // ------------ method called for each event  ------------
 void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, const edm::EventSetup &iSetup) {
@@ -510,7 +552,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
         float myTP_x0 = my_tp->vertex().x();
         float myTP_y0 = my_tp->vertex().y();
-        //float myTP_z0 = my_tp->vertex().z();
+        float myTP_z0 = my_tp->vertex().z();
         myTP_dxy = sqrt(myTP_x0 * myTP_x0 + myTP_y0 * myTP_y0);
         
         if (myTP_charge == 0) continue;
@@ -529,6 +571,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo, detid, det0, det1);
         float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
                         (stripPitch * 2.0E13 * myTP_pt * correctionValue);
+        
         float bendRes = trackBend - trigBend;
         
         if (std::abs(bendRes) > 1.5){
@@ -807,6 +850,34 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       pstiltAngleVsDeltaZ.getParameter<double>("ymax"));
   hist_tiltAngle_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
   hist_tiltAngle_vs_deltaZ->setAxisTitle("tiltAngle [radians]", 2);
+
+  edm::ParameterSet psDeltaRVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2DeltaRVsDeltaZ");
+  HistoName = "R0_vs_Z0";
+  hist_deltaR_vs_deltaZ= iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psDeltaRVsDeltaZ.getParameter<int32_t>("Nbinsx"),
+      psDeltaRVsDeltaZ.getParameter<double>("xmin"),
+      psDeltaRVsDeltaZ.getParameter<double>("xmax"),
+      psDeltaRVsDeltaZ.getParameter<int32_t>("Nbinsy"),
+      psDeltaRVsDeltaZ.getParameter<double>("ymin"),
+      psDeltaRVsDeltaZ.getParameter<double>("ymax"));
+  hist_deltaR_vs_deltaZ->setAxisTitle("Z0 [cm]", 1);
+  hist_deltaR_vs_deltaZ->setAxisTitle("R0 [cm]", 2);
+
+  edm::ParameterSet psZ0VsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2Z0VsDeltaZ");
+  HistoName = "Z0_vs_deltaZ";
+  hist_Z0_vs_deltaZ= iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psZ0VsDeltaZ.getParameter<int32_t>("Nbinsx"),
+      psZ0VsDeltaZ.getParameter<double>("xmin"),
+      psZ0VsDeltaZ.getParameter<double>("xmax"),
+      psZ0VsDeltaZ.getParameter<int32_t>("Nbinsy"),
+      psZ0VsDeltaZ.getParameter<double>("ymin"),
+      psZ0VsDeltaZ.getParameter<double>("ymax"));
+  hist_Z0_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
+  hist_Z0_vs_deltaZ->setAxisTitle("Z0 [cm]", 2);
 
   edm::ParameterSet psTrackVsStub = conf_.getParameter<edm::ParameterSet>("TH2TrackVsStub");
   HistoName = "trackBend_vs_stubBend";

@@ -22,12 +22,13 @@
 
 class OuterTrackerMonitorTrackingParticles : public DQMEDAnalyzer {
 public:
+  explicit OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &);
   explicit OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &, const trklet::Settings&);
   ~OuterTrackerMonitorTrackingParticles() override;
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   float phiOverBendCorrection(bool, float, float, const TrackerTopology*, uint32_t, const GeomDetUnit*, const GeomDetUnit*);
-  std::vector<double> getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0) const;
+  std::vector<double> getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
 
   // Number of stubs
   MonitorElement *Stub_Barrel = nullptr;       // TTStub per layer

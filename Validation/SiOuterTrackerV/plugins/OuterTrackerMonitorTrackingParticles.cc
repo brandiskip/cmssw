@@ -43,6 +43,10 @@ using namespace trklet;
 //
 // constructors and destructor
 //
+OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig)
+    : OuterTrackerMonitorTrackingParticles(iConfig, trklet::Settings()) {
+}
+
 OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig, const Settings& settings)
     : m_topoToken(esConsumes()), conf_(iConfig), settings_(settings) {
   topFolderName_ = conf_.getParameter<std::string>("TopFolderName");
@@ -119,7 +123,7 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     return correction;
   }
 
-  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0) const {
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const {
 
     double tp_phi = -99;
     double tp_r = -99;
@@ -135,7 +139,7 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     double myTP_rinv = myTP_charge / (myTP_pt * 0.3 * 13.8);  // 0.3 is conversion factor to get curvature in 1/cm for B in T
 
     if (theGeomDet->subDetector() == GeomDetEnumerators::TOB) {  
-        tp_r = position.perp(); // here I need to figure out how to calculate r of tp
+        tp_r = modMinR;
         tp_phi = my_tp->phi() - std::asin(tp_r * myTP_rinv / 2);
         tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
         tp_phi = reco::reduceRange(tp_phi);  
@@ -559,6 +563,11 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         if (myTP_pt < TP_minPt) continue;
         if (std::abs(myTP_eta) > TP_maxEta) continue;
 
+        std::vector<double> tpDerivedCoords = getTPDerivedCoords(iSector, my_tp, theGeomDet, myTP_z0, modMinR);
+        float tp_r = tpDerivedCoords[0];
+        float tp_z = tpDerivedCoords[1];
+        float tp_phi = tpDerivedCoords[2];
+
         float trigDisplace = tempStubPtr->rawBend();
         float trigOffset = tempStubPtr->bendOffset();
         float trigPos = tempStubPtr->innerClusterPosition();
@@ -573,6 +582,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
                         (stripPitch * 2.0E13 * myTP_pt * correctionValue);
         
         float bendRes = trackBend - trigBend;
+        float zRes = tp_z - stub_z;
         
         if (std::abs(bendRes) > 1.5){
           TP_pT_bendres_g1p5->Fill(myTP_pt);
@@ -594,6 +604,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         stub_inClusPos->Fill(trigPos);
         stub_bendFE->Fill(trigBend);
         bend_res->Fill(bendRes);
+        z_res->Fill(zRes);
 
         // Fill 2D histogram
         trackBend_vs_stubBend->Fill(trackBend, trigBend);
@@ -836,197 +847,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   // 1D plots for resolution
   iBooker.setCurrentFolder(topFolderName_ + "/Tracks/Resolution");
 
-  // 2D: trackBend vs. stubBend
-  edm::ParameterSet pstiltAngleVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2tiltAngleVsDeltaZ");
-  HistoName = "tiltAngle_vs_deltaZ";
-  hist_tiltAngle_vs_deltaZ= iBooker.book2D(
-      HistoName, 
-      HistoName,
-      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsx"),
-      pstiltAngleVsDeltaZ.getParameter<double>("xmin"),
-      pstiltAngleVsDeltaZ.getParameter<double>("xmax"),
-      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsy"),
-      pstiltAngleVsDeltaZ.getParameter<double>("ymin"),
-      pstiltAngleVsDeltaZ.getParameter<double>("ymax"));
-  hist_tiltAngle_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
-  hist_tiltAngle_vs_deltaZ->setAxisTitle("tiltAngle [radians]", 2);
-
-  edm::ParameterSet psDeltaRVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2DeltaRVsDeltaZ");
-  HistoName = "R0_vs_Z0";
-  hist_deltaR_vs_deltaZ= iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psDeltaRVsDeltaZ.getParameter<int32_t>("Nbinsx"),
-      psDeltaRVsDeltaZ.getParameter<double>("xmin"),
-      psDeltaRVsDeltaZ.getParameter<double>("xmax"),
-      psDeltaRVsDeltaZ.getParameter<int32_t>("Nbinsy"),
-      psDeltaRVsDeltaZ.getParameter<double>("ymin"),
-      psDeltaRVsDeltaZ.getParameter<double>("ymax"));
-  hist_deltaR_vs_deltaZ->setAxisTitle("Z0 [cm]", 1);
-  hist_deltaR_vs_deltaZ->setAxisTitle("R0 [cm]", 2);
-
-  edm::ParameterSet psZ0VsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2Z0VsDeltaZ");
-  HistoName = "Z0_vs_deltaZ";
-  hist_Z0_vs_deltaZ= iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psZ0VsDeltaZ.getParameter<int32_t>("Nbinsx"),
-      psZ0VsDeltaZ.getParameter<double>("xmin"),
-      psZ0VsDeltaZ.getParameter<double>("xmax"),
-      psZ0VsDeltaZ.getParameter<int32_t>("Nbinsy"),
-      psZ0VsDeltaZ.getParameter<double>("ymin"),
-      psZ0VsDeltaZ.getParameter<double>("ymax"));
-  hist_Z0_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
-  hist_Z0_vs_deltaZ->setAxisTitle("Z0 [cm]", 2);
-
-  edm::ParameterSet psTrackVsStub = conf_.getParameter<edm::ParameterSet>("TH2TrackVsStub");
-  HistoName = "trackBend_vs_stubBend";
-  trackBend_vs_stubBend = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  trackBend_vs_stubBend->setAxisTitle("Truth Particle Bend", 1);
-  trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
-
-  // 2D: barrel trackBend vs. stubBend
-  HistoName = "barrel_trackBend_vs_stubBend";
-  barrel_trackBend_vs_stubBend = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  barrel_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
-  barrel_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
-
-  HistoName = "barrel_trackBend_vs_stubBend_L1";
-  barrel_trackBend_vs_stubBend_L1 = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  barrel_trackBend_vs_stubBend_L1->setAxisTitle("Truth Particle Bend", 1);
-  barrel_trackBend_vs_stubBend_L1->setAxisTitle("Stub Bend", 2);
-
-  HistoName = "barrel_trackBend_vs_stubBend_L2";
-  barrel_trackBend_vs_stubBend_L2 = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  barrel_trackBend_vs_stubBend_L2->setAxisTitle("Truth Particle Bend", 1);
-  barrel_trackBend_vs_stubBend_L2->setAxisTitle("Stub Bend", 2);
-
-  HistoName = "barrel_trackBend_vs_stubBend_L3";
-  barrel_trackBend_vs_stubBend_L3 = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  barrel_trackBend_vs_stubBend_L3->setAxisTitle("Truth Particle Bend", 1);
-  barrel_trackBend_vs_stubBend_L3->setAxisTitle("Stub Bend", 2);
-
-  HistoName = "barrel_trackBend_vs_stubBend_L4";
-  barrel_trackBend_vs_stubBend_L4 = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  barrel_trackBend_vs_stubBend_L4->setAxisTitle("Truth Particle Bend", 1);
-  barrel_trackBend_vs_stubBend_L4->setAxisTitle("Stub Bend", 2);
-
-  HistoName = "barrel_trackBend_vs_stubBend_L5";
-  barrel_trackBend_vs_stubBend_L5 = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  barrel_trackBend_vs_stubBend_L5->setAxisTitle("Truth Particle Bend", 1);
-  barrel_trackBend_vs_stubBend_L5->setAxisTitle("Stub Bend", 2);
-
-  HistoName = "barrel_trackBend_vs_stubBend_L6";
-  barrel_trackBend_vs_stubBend_L6 = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  barrel_trackBend_vs_stubBend_L6->setAxisTitle("Truth Particle Bend", 1);
-  barrel_trackBend_vs_stubBend_L6->setAxisTitle("Stub Bend", 2);
-
-  // 2D: endcap trackBend vs. stubBend
-  HistoName = "endcap trackBend_vs_stubBend";
-  endcap_trackBend_vs_stubBend = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  endcap_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
-  endcap_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
-
-  // 2D: endcap fw trackBend vs. stubBend
-  HistoName = "forward endcap trackBend_vs_stubBend";
-  endcap_fw_trackBend_vs_stubBend = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  endcap_fw_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
-  endcap_fw_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
-
-  // 2D: endcap fw trackBend vs. stubBend
-  HistoName = "backward endcap trackBend_vs_stubBend";
-  endcap_bw_trackBend_vs_stubBend = iBooker.book2D(
-      HistoName, 
-      HistoName,
-      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
-      psTrackVsStub.getParameter<double>("xmin"),
-      psTrackVsStub.getParameter<double>("xmax"),
-      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
-      psTrackVsStub.getParameter<double>("ymin"),
-      psTrackVsStub.getParameter<double>("ymax"));
-  endcap_bw_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
-  endcap_bw_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
-
+  
   edm::ParameterSet psDelta_Z = conf_.getParameter<edm::ParameterSet>("TH1delta_Z");
   HistoName = "delta_Z";
   hist_deltaZ = iBooker.book1D(HistoName,
@@ -1243,6 +1064,17 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             stubs_In_Event.getParameter<double>("xmax"));
   numOfStubs->setAxisTitle("det layer", 1);
   numOfStubs->setAxisTitle("# of stubs ", 2);
+
+  // z-coord resolution
+  edm::ParameterSet psZ_Res = conf_.getParameter<edm::ParameterSet>("TH1Z_Res");
+  HistoName = "z-coordinate resolution";
+  z_res = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  z_res->setAxisTitle("tp_z - stub_z", 1);
+  z_res->setAxisTitle("events ", 2);
 
   // bend resolution
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
@@ -1918,6 +1750,198 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                    psRes_d0.getParameter<double>("xmax"));
   resd0_eta2to2p4->setAxisTitle("d0_{trk} - d0_{tp} [cm]", 1);
   resd0_eta2to2p4->setAxisTitle("# tracking particles", 2);
+
+  // 2D: trackBend vs. stubBend
+  edm::ParameterSet pstiltAngleVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2tiltAngleVsDeltaZ");
+  HistoName = "tiltAngle_vs_deltaZ";
+  hist_tiltAngle_vs_deltaZ= iBooker.book2D(
+      HistoName, 
+      HistoName,
+      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsx"),
+      pstiltAngleVsDeltaZ.getParameter<double>("xmin"),
+      pstiltAngleVsDeltaZ.getParameter<double>("xmax"),
+      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsy"),
+      pstiltAngleVsDeltaZ.getParameter<double>("ymin"),
+      pstiltAngleVsDeltaZ.getParameter<double>("ymax"));
+  hist_tiltAngle_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
+  hist_tiltAngle_vs_deltaZ->setAxisTitle("tiltAngle [radians]", 2);
+
+  edm::ParameterSet psDeltaRVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2DeltaRVsDeltaZ");
+  HistoName = "R0_vs_Z0";
+  hist_deltaR_vs_deltaZ= iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psDeltaRVsDeltaZ.getParameter<int32_t>("Nbinsx"),
+      psDeltaRVsDeltaZ.getParameter<double>("xmin"),
+      psDeltaRVsDeltaZ.getParameter<double>("xmax"),
+      psDeltaRVsDeltaZ.getParameter<int32_t>("Nbinsy"),
+      psDeltaRVsDeltaZ.getParameter<double>("ymin"),
+      psDeltaRVsDeltaZ.getParameter<double>("ymax"));
+  hist_deltaR_vs_deltaZ->setAxisTitle("Z0 [cm]", 1);
+  hist_deltaR_vs_deltaZ->setAxisTitle("R0 [cm]", 2);
+
+  edm::ParameterSet psZ0VsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2Z0VsDeltaZ");
+  HistoName = "Z0_vs_deltaZ";
+  hist_Z0_vs_deltaZ= iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psZ0VsDeltaZ.getParameter<int32_t>("Nbinsx"),
+      psZ0VsDeltaZ.getParameter<double>("xmin"),
+      psZ0VsDeltaZ.getParameter<double>("xmax"),
+      psZ0VsDeltaZ.getParameter<int32_t>("Nbinsy"),
+      psZ0VsDeltaZ.getParameter<double>("ymin"),
+      psZ0VsDeltaZ.getParameter<double>("ymax"));
+  hist_Z0_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
+  hist_Z0_vs_deltaZ->setAxisTitle("Z0 [cm]", 2);
+
+  edm::ParameterSet psTrackVsStub = conf_.getParameter<edm::ParameterSet>("TH2TrackVsStub");
+  HistoName = "trackBend_vs_stubBend";
+  trackBend_vs_stubBend = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  trackBend_vs_stubBend->setAxisTitle("Truth Particle Bend", 1);
+  trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
+
+  // 2D: barrel trackBend vs. stubBend
+  HistoName = "barrel_trackBend_vs_stubBend";
+  barrel_trackBend_vs_stubBend = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
+  barrel_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L1";
+  barrel_trackBend_vs_stubBend_L1 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L1->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L1->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L2";
+  barrel_trackBend_vs_stubBend_L2 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L2->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L2->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L3";
+  barrel_trackBend_vs_stubBend_L3 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L3->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L3->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L4";
+  barrel_trackBend_vs_stubBend_L4 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L4->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L4->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L5";
+  barrel_trackBend_vs_stubBend_L5 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L5->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L5->setAxisTitle("Stub Bend", 2);
+
+  HistoName = "barrel_trackBend_vs_stubBend_L6";
+  barrel_trackBend_vs_stubBend_L6 = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  barrel_trackBend_vs_stubBend_L6->setAxisTitle("Truth Particle Bend", 1);
+  barrel_trackBend_vs_stubBend_L6->setAxisTitle("Stub Bend", 2);
+
+  // 2D: endcap trackBend vs. stubBend
+  HistoName = "endcap trackBend_vs_stubBend";
+  endcap_trackBend_vs_stubBend = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  endcap_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
+  endcap_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
+
+  // 2D: endcap fw trackBend vs. stubBend
+  HistoName = "forward endcap trackBend_vs_stubBend";
+  endcap_fw_trackBend_vs_stubBend = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  endcap_fw_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
+  endcap_fw_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
+
+  // 2D: endcap fw trackBend vs. stubBend
+  HistoName = "backward endcap trackBend_vs_stubBend";
+  endcap_bw_trackBend_vs_stubBend = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTrackVsStub.getParameter<int32_t>("Nbinsx"),
+      psTrackVsStub.getParameter<double>("xmin"),
+      psTrackVsStub.getParameter<double>("xmax"),
+      psTrackVsStub.getParameter<int32_t>("Nbinsy"),
+      psTrackVsStub.getParameter<double>("ymin"),
+      psTrackVsStub.getParameter<double>("ymax"));
+  endcap_bw_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
+  endcap_bw_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
+
 
 }  // end of method
 

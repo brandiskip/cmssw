@@ -39,16 +39,22 @@
 
 #include "OuterTrackerMonitorTrackingParticles.h"
 
-using namespace trklet;
+//using namespace trklet;
 //
 // constructors and destructor
 //
+/*
 OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig)
     : OuterTrackerMonitorTrackingParticles(iConfig, trklet::Settings()) {
 }
 
+
 OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig, const Settings& settings)
     : m_topoToken(esConsumes()), conf_(iConfig), settings_(settings) {
+*/
+
+OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig)
+    : m_topoToken(esConsumes()), conf_(iConfig) {
   topFolderName_ = conf_.getParameter<std::string>("TopFolderName");
   trackingParticleToken_ =
       consumes<std::vector<TrackingParticle>>(conf_.getParameter<edm::InputTag>("trackingParticleToken"));
@@ -100,11 +106,17 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
         //std::cout << "deltaZ: " << deltaZ << std::endl;
         hist_deltaZ->Fill(deltaZ);
         hist_deltaR->Fill(deltaR);
-        tiltAngle = atan(deltaR / deltaZ);
+        tiltAngle = atan(deltaR / std::abs(deltaZ));
         hist_tiltAngle->Fill(tiltAngle);
-        hist_tiltAngle_vs_deltaZ->Fill(deltaZ, tiltAngle);
+        hist_tiltAngle_vs_Z0->Fill(Z0, tiltAngle);
         hist_deltaR_vs_deltaZ->Fill(Z0, R0);
         hist_Z0_vs_deltaZ->Fill(deltaZ, Z0);
+        hist_R0_vs_deltaR->Fill(deltaR, R0);
+        /*
+        if (tiltAngle < -0.6 && tiltAngle > -0.8){
+          std::cout << "Z0: " << Z0 << std::endl;
+        }
+        */
       }
 
     float correction;
@@ -114,6 +126,8 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
         //correction = gradient * std::abs(stub_z) / stub_r + sin(tiltAngle);
         //std::cout << "cosine of tiltAngle: " << cos(tiltAngle) << std::endl;
         //std::cout << "sine of tiltAngle: " << sin(tiltAngle) << std::endl;
+        hist_cosTiltAngle->Fill(cos(tiltAngle));
+        hist_sinTiltAngle->Fill(sin(tiltAngle));
     } else if (isBarrel) {
         correction = 1;
     } else {
@@ -123,37 +137,39 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     return correction;
   }
 
-  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const {
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const {
+//std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const {
 
-    double tp_phi = -99;
-    double tp_r = -99;
-    double tp_z = -99;
+  double tp_phi = -99;
+  double tp_r = -99;
+  double tp_z = -99;
+  double bfield_ = 3.8;  //B-field in T
+  double c_ = 2.99792458E10;  //speed of light cm/s
 
-    // Get values from the tracking particle my_tp
-    double myTP_pt = my_tp->pt();
-    double myTP_eta = my_tp->eta();
-    double myTP_charge = my_tp->charge();
-    
-    // Derive other necessary parameters (for simplicity, assume q/pT is roughly charge/pt in 1/GeV units)
-    // this code came from a suggestion by chatGPT, need to confirm
-    double myTP_rinv = myTP_charge / (myTP_pt * 0.3 * 13.8);  // 0.3 is conversion factor to get curvature in 1/cm for B in T
+  // Get values from the tracking particle my_tp
+  double myTP_pt = my_tp->pt();
+  double myTP_eta = my_tp->eta();
+  double myTP_charge = my_tp->charge();
+  double myTP_rinv = (myTP_charge * bfield_) / (myTP_pt);
 
-    if (theGeomDet->subDetector() == GeomDetEnumerators::TOB) {  
-        tp_r = modMinR;
-        tp_phi = my_tp->phi() - std::asin(tp_r * myTP_rinv / 2);
-        tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
-        tp_phi = reco::reduceRange(tp_phi);  
-        tp_z = my_tp->vz() + 2 / myTP_rinv * std::asin(tp_r * myTP_rinv / 2);
-    } else {
-        tp_z = myTP_z0;
-        tp_phi = my_tp->phi() - (tp_z - my_tp->vz()) * myTP_rinv / 2 / myTP_pt;  
-        tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
-        tp_phi = reco::reduceRange(tp_phi);
-        tp_r = 2 / myTP_rinv * std::sin((tp_z - my_tp->vz()) * myTP_rinv / 2 / myTP_pt);
-    }
+  if (theGeomDet->subDetector() == GeomDetEnumerators::TOB) {  
+      tp_r = modMinR;
+      tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
+      //tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
+      tp_phi = reco::reduceRange(tp_phi);  
+      tp_z = myTP_z0 + 2 / myTP_rinv * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
+  } else {
+      tp_z = myTP_z0;
+      tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_pt;  
+      //tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
+      tp_phi = reco::reduceRange(tp_phi);
+      tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_pt);
+  }
 
-    std::vector<double> tpDerived_coords{tp_r, tp_z, tp_phi};
-    return tpDerived_coords;
+  hist_tp_phi->Fill(tp_phi);
+
+  std::vector<double> tpDerived_coords{tp_r, tp_z, tp_phi};
+  return tpDerived_coords;
 }
 
   
@@ -563,7 +579,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         if (myTP_pt < TP_minPt) continue;
         if (std::abs(myTP_eta) > TP_maxEta) continue;
 
-        std::vector<double> tpDerivedCoords = getTPDerivedCoords(iSector, my_tp, theGeomDet, myTP_z0, modMinR);
+        std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, theGeomDet, myTP_z0, modMinR);
+        //std::vector<double> tpDerivedCoords = getTPDerivedCoords(iSector, my_tp, theGeomDet, myTP_z0, modMinR);
         float tp_r = tpDerivedCoords[0];
         float tp_z = tpDerivedCoords[1];
         float tp_phi = tpDerivedCoords[2];
@@ -878,6 +895,16 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   hist_tiltAngle->setAxisTitle("tiltAngle [radians]", 1);
   hist_tiltAngle->setAxisTitle("count", 2);
 
+  edm::ParameterSet pstp_phi = conf_.getParameter<edm::ParameterSet>("TH1tp_phi");
+  HistoName = "tp_phi";
+  hist_tp_phi = iBooker.book1D(HistoName,
+                          HistoName,
+                          pstp_phi.getParameter<int32_t>("Nbinsx"),
+                          pstp_phi.getParameter<double>("xmin"),
+                          pstp_phi.getParameter<double>("xmax"));
+  hist_tp_phi->setAxisTitle("tp_phi [radians]", 1);
+  hist_tp_phi->setAxisTitle("count", 2);
+
   // full pT
   edm::ParameterSet psRes_pt = conf_.getParameter<edm::ParameterSet>("TH1Res_pt");
   HistoName = "res_pt";
@@ -1075,6 +1102,26 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             psZ_Res.getParameter<double>("xmax"));
   z_res->setAxisTitle("tp_z - stub_z", 1);
   z_res->setAxisTitle("events ", 2);
+
+  edm::ParameterSet pscos_tiltAngle = conf_.getParameter<edm::ParameterSet>("TH1cosTiltAngle");
+  HistoName = "cos(tiltAngle)";
+  hist_cosTiltAngle = iBooker.book1D(HistoName,
+                            HistoName,
+                            pscos_tiltAngle.getParameter<int32_t>("Nbinsx"),
+                            pscos_tiltAngle.getParameter<double>("xmin"),
+                            pscos_tiltAngle.getParameter<double>("xmax"));
+  hist_cosTiltAngle->setAxisTitle("cos(tiltAngle)", 1);
+  hist_cosTiltAngle->setAxisTitle("events ", 2);
+
+  edm::ParameterSet pssin_tiltAngle = conf_.getParameter<edm::ParameterSet>("TH1sinTiltAngle");
+  HistoName = "sin(tiltAngle)";
+  hist_sinTiltAngle = iBooker.book1D(HistoName,
+                            HistoName,
+                            pssin_tiltAngle.getParameter<int32_t>("Nbinsx"),
+                            pssin_tiltAngle.getParameter<double>("xmin"),
+                            pssin_tiltAngle.getParameter<double>("xmax"));
+  hist_sinTiltAngle->setAxisTitle("sin(tiltAngle)", 1);
+  hist_sinTiltAngle->setAxisTitle("events ", 2);
 
   // bend resolution
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
@@ -1752,19 +1799,19 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   resd0_eta2to2p4->setAxisTitle("# tracking particles", 2);
 
   // 2D: trackBend vs. stubBend
-  edm::ParameterSet pstiltAngleVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2tiltAngleVsDeltaZ");
-  HistoName = "tiltAngle_vs_deltaZ";
-  hist_tiltAngle_vs_deltaZ= iBooker.book2D(
+  edm::ParameterSet pstiltAngleVsZ0 = conf_.getParameter<edm::ParameterSet>("TH2tiltAngleVsZ0");
+  HistoName = "tiltAngle_vs_Z0";
+  hist_tiltAngle_vs_Z0= iBooker.book2D(
       HistoName, 
       HistoName,
-      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsx"),
-      pstiltAngleVsDeltaZ.getParameter<double>("xmin"),
-      pstiltAngleVsDeltaZ.getParameter<double>("xmax"),
-      pstiltAngleVsDeltaZ.getParameter<int32_t>("Nbinsy"),
-      pstiltAngleVsDeltaZ.getParameter<double>("ymin"),
-      pstiltAngleVsDeltaZ.getParameter<double>("ymax"));
-  hist_tiltAngle_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
-  hist_tiltAngle_vs_deltaZ->setAxisTitle("tiltAngle [radians]", 2);
+      pstiltAngleVsZ0.getParameter<int32_t>("Nbinsx"),
+      pstiltAngleVsZ0.getParameter<double>("xmin"),
+      pstiltAngleVsZ0.getParameter<double>("xmax"),
+      pstiltAngleVsZ0.getParameter<int32_t>("Nbinsy"),
+      pstiltAngleVsZ0.getParameter<double>("ymin"),
+      pstiltAngleVsZ0.getParameter<double>("ymax"));
+  hist_tiltAngle_vs_Z0->setAxisTitle("Z0 [cm]", 1);
+  hist_tiltAngle_vs_Z0->setAxisTitle("tiltAngle [radians]", 2);
 
   edm::ParameterSet psDeltaRVsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2DeltaRVsDeltaZ");
   HistoName = "R0_vs_Z0";
@@ -1782,7 +1829,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
 
   edm::ParameterSet psZ0VsDeltaZ = conf_.getParameter<edm::ParameterSet>("TH2Z0VsDeltaZ");
   HistoName = "Z0_vs_deltaZ";
-  hist_Z0_vs_deltaZ= iBooker.book2D(
+  hist_Z0_vs_deltaZ = iBooker.book2D(
       HistoName, 
       HistoName,
       psZ0VsDeltaZ.getParameter<int32_t>("Nbinsx"),
@@ -1793,6 +1840,20 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psZ0VsDeltaZ.getParameter<double>("ymax"));
   hist_Z0_vs_deltaZ->setAxisTitle("delta_Z [cm]", 1);
   hist_Z0_vs_deltaZ->setAxisTitle("Z0 [cm]", 2);
+
+  edm::ParameterSet psR0VsDeltaR = conf_.getParameter<edm::ParameterSet>("TH2R0VsDeltaR");
+  HistoName = "R0_vs_deltaR";
+  hist_R0_vs_deltaR = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psR0VsDeltaR.getParameter<int32_t>("Nbinsx"),
+      psR0VsDeltaR.getParameter<double>("xmin"),
+      psR0VsDeltaR.getParameter<double>("xmax"),
+      psR0VsDeltaR.getParameter<int32_t>("Nbinsy"),
+      psR0VsDeltaR.getParameter<double>("ymin"),
+      psR0VsDeltaR.getParameter<double>("ymax"));
+  hist_R0_vs_deltaR->setAxisTitle("delta_R [cm]", 1);
+  hist_R0_vs_deltaR->setAxisTitle("R0 [cm]", 2);
 
   edm::ParameterSet psTrackVsStub = conf_.getParameter<edm::ParameterSet>("TH2TrackVsStub");
   HistoName = "trackBend_vs_stubBend";

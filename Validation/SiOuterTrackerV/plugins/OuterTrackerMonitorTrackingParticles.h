@@ -23,12 +23,13 @@
 class OuterTrackerMonitorTrackingParticles : public DQMEDAnalyzer {
 public:
   explicit OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &);
-  explicit OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &, const trklet::Settings&);
+  //explicit OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &, const trklet::Settings&);
   ~OuterTrackerMonitorTrackingParticles() override;
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   float phiOverBendCorrection(bool, float, float, const TrackerTopology*, uint32_t, const GeomDetUnit*, const GeomDetUnit*);
-  std::vector<double> getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
+  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
+  //std::vector<double> getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
 
   // Number of stubs
   MonitorElement *Stub_Barrel = nullptr;       // TTStub per layer
@@ -38,11 +39,15 @@ public:
   MonitorElement *hist_deltaZ = nullptr;
   MonitorElement *hist_deltaR = nullptr;
   MonitorElement *hist_tiltAngle = nullptr;
+  MonitorElement *hist_tp_phi = nullptr;
+  MonitorElement *hist_cosTiltAngle = nullptr;
+  MonitorElement *hist_sinTiltAngle = nullptr;
 
   // 2D correction factor
-  MonitorElement *hist_tiltAngle_vs_deltaZ = nullptr;
+  MonitorElement *hist_tiltAngle_vs_Z0 = nullptr;
   MonitorElement *hist_deltaR_vs_deltaZ =nullptr;
-  MonitorElement *hist_Z0_vs_deltaZ =nullptr;
+  MonitorElement *hist_Z0_vs_deltaZ = nullptr;
+  MonitorElement *hist_R0_vs_deltaR = nullptr;
 
   // Tracking particle distributions
   MonitorElement *trackParts_Eta = nullptr;
@@ -187,7 +192,7 @@ private:
   edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> getTokenTrackerGeom_;
   const edm::ESInputTag magneticFieldInputTag_;
   edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> magneticFieldToken_;
-  trklet::Settings settings_;
+  //trklet::Settings settings_;
 
 
   int L1Tk_minNStub;

@@ -137,7 +137,7 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     return correction;
   }
 
-  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const {
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double myTP_z0, float modMinR) const {
 //std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const {
 
   double tp_phi = -99;
@@ -152,13 +152,15 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
   double myTP_charge = my_tp->charge();
   double myTP_rinv = (myTP_charge * bfield_) / (myTP_pt);
 
-  if (theGeomDet->subDetector() == GeomDetEnumerators::TOB) {  
+  if (isBarrel) { 
+      std::cout << "inside if statement" << std::endl; 
       tp_r = modMinR;
       tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
       //tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
       tp_phi = reco::reduceRange(tp_phi);  
       tp_z = myTP_z0 + 2 / myTP_rinv * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
   } else {
+      std::cout << "inside else statement" << std::endl; 
       tp_z = myTP_z0;
       tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_pt;  
       //tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
@@ -487,6 +489,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   float myTP_dxy = -999;
   float stub_r = -999;
   float stub_z = -999;
+  float stub_phi = -999;
   double bfield_{3.8};  //B-field in T
   double c_{2.99792458E10};  //speed of light cm/s
 
@@ -555,6 +558,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         stub_R->Fill(posStub.perp()); // used for histogram
         stub_r = posStub.perp(); // used to calculate dphi
         stub_z = posStub.z();
+        stub_phi = posStub.phi();
 
         // Calculation of sensor spacing obtained from TMTT: https://github.com/CMS-TMTT/cmssw/blob/TMTT_938/L1Trigger/TrackFindingTMTT/src/Stub.cc#L138-L146
         float stripPitch = topo.pitch().first;
@@ -579,7 +583,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         if (myTP_pt < TP_minPt) continue;
         if (std::abs(myTP_eta) > TP_maxEta) continue;
 
-        std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, theGeomDet, myTP_z0, modMinR);
+        std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, myTP_z0, modMinR);
         //std::vector<double> tpDerivedCoords = getTPDerivedCoords(iSector, my_tp, theGeomDet, myTP_z0, modMinR);
         float tp_r = tpDerivedCoords[0];
         float tp_z = tpDerivedCoords[1];
@@ -600,6 +604,15 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         
         float bendRes = trackBend - trigBend;
         float zRes = tp_z - stub_z;
+        //std::cout << "DetUnit subdetector: " << theGeomDet->subDetector() << std::endl;
+        /*if (theGeomDet->subDetector() == "Phase2OTBarrel") {
+          std::cout << "tp_phi: " << tp_phi << std::endl;
+          std::cout << "stub_phi: " << stub_phi << std::endl;
+          float phiRes = tp_phi - stub_phi;  
+          hist_phi_res->Fill(phiRes);
+        }
+        */
+        float phiRes = tp_phi - stub_phi;
         
         if (std::abs(bendRes) > 1.5){
           TP_pT_bendres_g1p5->Fill(myTP_pt);
@@ -620,11 +633,16 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         stub_bendOffset->Fill(trigOffset);
         stub_inClusPos->Fill(trigPos);
         stub_bendFE->Fill(trigBend);
+        hist_stub_phi->Fill(stub_phi);
+        stubz->Fill(stub_z);
         bend_res->Fill(bendRes);
         z_res->Fill(zRes);
+        hist_phi_res->Fill(phiRes);
 
         // Fill 2D histogram
         trackBend_vs_stubBend->Fill(trackBend, trigBend);
+        trackPhi_vs_stubPhi->Fill(tp_phi, stub_phi);
+        trackZ_vs_stubZ->Fill(tp_z, stub_z);
 
         // Fill the histogram for barrel stubs
         if (isBarrel == 1) {
@@ -905,6 +923,15 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   hist_tp_phi->setAxisTitle("tp_phi [radians]", 1);
   hist_tp_phi->setAxisTitle("count", 2);
 
+  HistoName = "stub_phi";
+  hist_stub_phi = iBooker.book1D(HistoName,
+                          HistoName,
+                          pstp_phi.getParameter<int32_t>("Nbinsx"),
+                          pstp_phi.getParameter<double>("xmin"),
+                          pstp_phi.getParameter<double>("xmax"));
+  hist_stub_phi->setAxisTitle("stub_phi [radians]", 1);
+  hist_stub_phi->setAxisTitle("count", 2);
+
   // full pT
   edm::ParameterSet psRes_pt = conf_.getParameter<edm::ParameterSet>("TH1Res_pt");
   HistoName = "res_pt";
@@ -1092,7 +1119,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   numOfStubs->setAxisTitle("det layer", 1);
   numOfStubs->setAxisTitle("# of stubs ", 2);
 
-  // z-coord resolution
+  // stub vs tp z-coord resolution
   edm::ParameterSet psZ_Res = conf_.getParameter<edm::ParameterSet>("TH1Z_Res");
   HistoName = "z-coordinate resolution";
   z_res = iBooker.book1D(HistoName,
@@ -1102,6 +1129,17 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             psZ_Res.getParameter<double>("xmax"));
   z_res->setAxisTitle("tp_z - stub_z", 1);
   z_res->setAxisTitle("events ", 2);
+
+  // stub vs tp phi resolution
+  edm::ParameterSet psPhi_Res = conf_.getParameter<edm::ParameterSet>("TH1Phi_Res");
+  HistoName = "phi resolution";
+  hist_phi_res = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  hist_phi_res->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  hist_phi_res->setAxisTitle("# counts", 2);
 
   edm::ParameterSet pscos_tiltAngle = conf_.getParameter<edm::ParameterSet>("TH1cosTiltAngle");
   HistoName = "cos(tiltAngle)";
@@ -1855,6 +1893,34 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   hist_R0_vs_deltaR->setAxisTitle("delta_R [cm]", 1);
   hist_R0_vs_deltaR->setAxisTitle("R0 [cm]", 2);
 
+  edm::ParameterSet psTpPhiVsStubPhi = conf_.getParameter<edm::ParameterSet>("TH2TpPhiVsStubPhi");
+  HistoName = "trackPhi_vs_stubPhi";
+  trackPhi_vs_stubPhi = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTpPhiVsStubPhi.getParameter<int32_t>("Nbinsx"),
+      psTpPhiVsStubPhi.getParameter<double>("xmin"),
+      psTpPhiVsStubPhi.getParameter<double>("xmax"),
+      psTpPhiVsStubPhi.getParameter<int32_t>("Nbinsy"),
+      psTpPhiVsStubPhi.getParameter<double>("ymin"),
+      psTpPhiVsStubPhi.getParameter<double>("ymax"));
+  trackPhi_vs_stubPhi->setAxisTitle("track phi [radians]", 1);
+  trackPhi_vs_stubPhi->setAxisTitle("stub phi [radians]", 2);
+
+  edm::ParameterSet psTpZVsStubZ = conf_.getParameter<edm::ParameterSet>("TH2TpZVsStubZ");
+  HistoName = "trackZ_vs_stubZ";
+  trackZ_vs_stubZ = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
+      psTpZVsStubZ.getParameter<double>("xmin"),
+      psTpZVsStubZ.getParameter<double>("xmax"),
+      psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
+      psTpZVsStubZ.getParameter<double>("ymin"),
+      psTpZVsStubZ.getParameter<double>("ymax"));
+  trackZ_vs_stubZ->setAxisTitle("track z [cm]", 1);
+  trackZ_vs_stubZ->setAxisTitle("stub z [cm]", 2);
+
   edm::ParameterSet psTrackVsStub = conf_.getParameter<edm::ParameterSet>("TH2TrackVsStub");
   HistoName = "trackBend_vs_stubBend";
   trackBend_vs_stubBend = iBooker.book2D(
@@ -2002,6 +2068,8 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTrackVsStub.getParameter<double>("ymax"));
   endcap_bw_trackBend_vs_stubBend->setAxisTitle("Track Bend", 1);
   endcap_bw_trackBend_vs_stubBend->setAxisTitle("Stub Bend", 2);
+
+
 
 
 }  // end of method

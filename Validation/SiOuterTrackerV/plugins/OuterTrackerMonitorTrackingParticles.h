@@ -28,7 +28,7 @@ public:
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   float phiOverBendCorrection(bool, float, float, const TrackerTopology*, uint32_t, const GeomDetUnit*, const GeomDetUnit*);
-  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
+  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double myTP_z0, float modMinR) const;
   //std::vector<double> getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
 
   // Number of stubs
@@ -40,6 +40,7 @@ public:
   MonitorElement *hist_deltaR = nullptr;
   MonitorElement *hist_tiltAngle = nullptr;
   MonitorElement *hist_tp_phi = nullptr;
+  MonitorElement *hist_stub_phi = nullptr;
   MonitorElement *hist_cosTiltAngle = nullptr;
   MonitorElement *hist_sinTiltAngle = nullptr;
 
@@ -70,7 +71,9 @@ public:
   MonitorElement *match_tp_VtxZ = nullptr;     // numerator
 
   // 2D plots
+  MonitorElement *trackPhi_vs_stubPhi = nullptr;
   MonitorElement *trackBend_vs_stubBend = nullptr;
+  MonitorElement *trackZ_vs_stubZ = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend_L1 = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend_L2 = nullptr;
@@ -106,6 +109,7 @@ public:
   MonitorElement *bend_res_bw_endcap_D5 = nullptr;
   MonitorElement *stub_res_phi = nullptr;
   MonitorElement *z_res = nullptr;
+  MonitorElement *hist_phi_res = nullptr;
   
   // 1D stub and associated tp plots
   MonitorElement *barrelHistogram_genuine = nullptr;

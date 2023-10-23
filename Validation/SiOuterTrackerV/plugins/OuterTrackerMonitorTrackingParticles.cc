@@ -137,7 +137,7 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     return correction;
   }
 
-  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double myTP_z0, float modMinR) const {
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMinZ, float modMinR) const {
 //std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const {
 
   double tp_phi = -99;
@@ -150,6 +150,8 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
   double myTP_pt = my_tp->pt();
   double myTP_eta = my_tp->eta();
   double myTP_charge = my_tp->charge();
+  float myTP_z0 = my_tp->vertex().z();
+  double myTP_t = my_tp->tanl();
   double myTP_rinv = (myTP_charge * bfield_) / (myTP_pt);
 
   if (isBarrel) { 
@@ -157,13 +159,13 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
       tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
       //tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
       tp_phi = reco::reduceRange(tp_phi);  
-      tp_z = myTP_z0 + 2 / myTP_rinv * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
+      tp_z = myTP_z0 + 2 * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
   } else {
-      tp_z = myTP_z0;
-      tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_pt;  
+      tp_z = modMinZ;
+      tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t;  
       //tp_phi = tp_phi + iSector * settings_.dphisector() - 0.5 * settings_.dphisectorHG();
       tp_phi = reco::reduceRange(tp_phi);
-      tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_pt);
+      tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t);
   }
 
   hist_tp_phi->Fill(tp_phi);
@@ -583,7 +585,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         if (myTP_pt < TP_minPt) continue;
         if (std::abs(myTP_eta) > TP_maxEta) continue;
 
-        std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, myTP_z0, modMinR);
+        std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMinZ, modMinR);
         //std::vector<double> tpDerivedCoords = getTPDerivedCoords(iSector, my_tp, theGeomDet, myTP_z0, modMinR);
         float tp_r = tpDerivedCoords[0];
         float tp_z = tpDerivedCoords[1];
@@ -637,9 +639,11 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         hist_phi_res->Fill(phiRes);
         if (isBarrel){
           hist_phi_res_barrel->Fill(phiRes);
+          z_res_barrel->Fill(zRes);
           trackPhi_vs_stubPhi_barrel->Fill(tp_phi, stub_phi);
         } else{
           hist_phi_res_endcap->Fill(phiRes);
+          z_res_endcap->Fill(zRes);
           trackPhi_vs_stubPhi_endcap->Fill(tp_phi, stub_phi);
         }
         stub_eff_vs_TPpt->Fill(myTP_pt, efficiency);
@@ -1144,6 +1148,24 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             psZ_Res.getParameter<double>("xmax"));
   z_res->setAxisTitle("tp_z - stub_z", 1);
   z_res->setAxisTitle("events ", 2);
+
+  HistoName = "z-coordinate resolution barrel";
+  z_res_barrel = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  z_res_barrel->setAxisTitle("tp_z - stub_z", 1);
+  z_res_barrel->setAxisTitle("events ", 2);
+
+  HistoName = "z-coordinate resolution endcaps";
+  z_res_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  z_res_endcap->setAxisTitle("tp_z - stub_z", 1);
+  z_res_endcap->setAxisTitle("events ", 2);
 
   // stub vs tp phi resolution
   edm::ParameterSet psPhi_Res = conf_.getParameter<edm::ParameterSet>("TH1Phi_Res");

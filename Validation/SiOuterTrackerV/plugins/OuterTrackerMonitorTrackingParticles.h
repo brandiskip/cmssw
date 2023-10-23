@@ -56,6 +56,9 @@ public:
   MonitorElement *trackParts_Pt = nullptr;
   MonitorElement *TP_z0 = nullptr;
 
+  // stub efficiency
+  MonitorElement *stub_eff_vs_TPpt = nullptr;
+
   // pT and eta for efficiency plots
   MonitorElement *tp_pt = nullptr;             // denominator
   MonitorElement *tp_pt_zoom = nullptr;        // denominator
@@ -72,6 +75,8 @@ public:
 
   // 2D plots
   MonitorElement *trackPhi_vs_stubPhi = nullptr;
+  MonitorElement *trackPhi_vs_stubPhi_barrel = nullptr;
+  MonitorElement *trackPhi_vs_stubPhi_endcap = nullptr;
   MonitorElement *trackBend_vs_stubBend = nullptr;
   MonitorElement *trackZ_vs_stubZ = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend = nullptr;
@@ -110,6 +115,8 @@ public:
   MonitorElement *stub_res_phi = nullptr;
   MonitorElement *z_res = nullptr;
   MonitorElement *hist_phi_res = nullptr;
+  MonitorElement *hist_phi_res_barrel = nullptr;
+  MonitorElement *hist_phi_res_endcap = nullptr;
   
   // 1D stub and associated tp plots
   MonitorElement *barrelHistogram_genuine = nullptr;

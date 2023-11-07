@@ -28,12 +28,14 @@ public:
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   float phiOverBendCorrection(bool, float, float, const TrackerTopology*, uint32_t, const GeomDetUnit*, const GeomDetUnit*);
-  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double myTP_z0, float modMinR) const;
+  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const;
   //std::vector<double> getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
 
   // Number of stubs
   MonitorElement *Stub_Barrel = nullptr;       // TTStub per layer
-  MonitorElement *stubz = nullptr;
+  MonitorElement *hist_stub_z = nullptr;
+  MonitorElement *hist_stub_z_barrel = nullptr;
+  MonitorElement *hist_stub_z_endcap = nullptr;
 
   // 1D correction factor
   MonitorElement *hist_deltaZ = nullptr;
@@ -55,9 +57,9 @@ public:
   MonitorElement *trackParts_Phi = nullptr;
   MonitorElement *trackParts_Pt = nullptr;
   MonitorElement *TP_z0 = nullptr;
-
-  // stub efficiency
-  MonitorElement *stub_eff_vs_TPpt = nullptr;
+  MonitorElement *hist_tp_z = nullptr;
+  MonitorElement *hist_tp_z_barrel = nullptr;
+  MonitorElement *hist_tp_z_endcap = nullptr;
 
   // pT and eta for efficiency plots
   MonitorElement *tp_pt = nullptr;             // denominator
@@ -114,8 +116,20 @@ public:
   MonitorElement *bend_res_bw_endcap_D5 = nullptr;
   MonitorElement *stub_res_phi = nullptr;
   MonitorElement *z_res = nullptr;
+  MonitorElement *z_res_barrel = nullptr;
+  MonitorElement *z_res_barrel_L1 = nullptr;
+  MonitorElement *z_res_barrel_L2 = nullptr;
+  MonitorElement *z_res_barrel_L3 = nullptr;
+  MonitorElement *z_res_barrel_L4 = nullptr;
+  MonitorElement *z_res_barrel_L5 = nullptr;
+  MonitorElement *z_res_barrel_L6 = nullptr;
+  MonitorElement *z_res_barrel_isPS = nullptr;
+  MonitorElement *z_res_barrel_is2S = nullptr;
+  MonitorElement *z_res_endcap = nullptr;
   MonitorElement *hist_phi_res = nullptr;
   MonitorElement *hist_phi_res_barrel = nullptr;
+  MonitorElement *phi_res_barrel_isPS = nullptr;
+  MonitorElement *phi_res_barrel_is2S = nullptr;
   MonitorElement *hist_phi_res_endcap = nullptr;
   
   // 1D stub and associated tp plots

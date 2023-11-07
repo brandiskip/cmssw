@@ -18,21 +18,42 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
     TP_maxVtxZ = cms.double(15.0),     # only save TPs with |z0| < X cm
 
 # deltaZ vs count
-TH1delta_Z = cms.PSet(
+    TH1delta_Z = cms.PSet(
         Nbinsx = cms.int32(49),
         xmin = cms.double(-0.45),
         xmax = cms.double(0.45)
         ),
 
 # deltaR vs count
-TH1delta_R = cms.PSet(
+    TH1delta_R = cms.PSet(
         Nbinsx = cms.int32(100),
         xmin = cms.double(0.0),
         xmax = cms.double(0.5)
         ),
 
 # tiltAngle vs count
-TH1tilt_Angle = cms.PSet(
+    TH1tilt_Angle = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmin = cms.double(-1.6),
+        xmax = cms.double(1.6)
+        ),
+
+# tp_phi vs count
+    TH1tp_phi = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmin = cms.double(-4),
+        xmax = cms.double(4)
+        ),
+
+# cosTiltAngle vs count
+    TH1cosTiltAngle = cms.PSet(
+        Nbinsx = cms.int32(100),
+        xmin = cms.double(-1.6),
+        xmax = cms.double(1.6)
+        ),
+
+# sinTiltAngle vs count
+    TH1sinTiltAngle = cms.PSet(
         Nbinsx = cms.int32(100),
         xmin = cms.double(-1.6),
         xmax = cms.double(1.6)
@@ -115,13 +136,6 @@ TH1tilt_Angle = cms.PSet(
         xmin = cms.double(-30)
         ),
 
-# test to reproduce tracking particles vs relative pT (below)
-    test_TH1Res_pt = cms.PSet(
-        Nbinsx = cms.int32(200),
-        xmax = cms.double(0.1),
-        xmin = cms.double(-0.1)
-        ),
-
 # Stub associated to eta
     TH1TP_eta = cms.PSet(
         Nbinsx = cms.int32(50),
@@ -147,7 +161,7 @@ TH1tilt_Angle = cms.PSet(
     TH1Stub_rad = cms.PSet(
         Nbinsx = cms.int32(100),
         xmax = cms.double(120.0),
-        xmin = cms.double(0.0)
+        xmin = cms.double(-120.0)
         ),
 
 # position of stub in z
@@ -220,11 +234,18 @@ TH1tilt_Angle = cms.PSet(
         xmin = cms.double(-5.0)
         ),
 
-# 2D histo tiltAngle vs deltaZ
-    TH2tiltAngleVsDeltaZ = cms.PSet(
+# tp_phi - stub_phi resolution
+    TH1Phi_Res = cms.PSet(
+        Nbinsx = cms.int32(39),
+        xmax = cms.double(0.2),
+        xmin = cms.double(-0.2)
+        ),
+
+# 2D histo tiltAngle vs Z0
+    TH2tiltAngleVsZ0 = cms.PSet(
         Nbinsx = cms.int32(49), 
-        xmin = cms.double(-0.01),
-        xmax = cms.double(0.5),
+        xmin = cms.double(-120.0),
+        xmax = cms.double(120.0),
         Nbinsy = cms.int32(27), 
         ymin = cms.double(-1.8),
         ymax = cms.double(1.8)
@@ -248,6 +269,36 @@ TH1tilt_Angle = cms.PSet(
         Nbinsy = cms.int32(59), 
         ymin = cms.double(-120.0),
         ymax = cms.double(120.0)
+        ),    
+
+# 2D histo R0 vs deltaR
+    TH2R0VsDeltaR = cms.PSet(
+        Nbinsx = cms.int32(49), 
+        xmin = cms.double(0.0),
+        xmax = cms.double(0.5),
+        Nbinsy = cms.int32(29), 
+        ymin = cms.double(0.0),
+        ymax = cms.double(60.0)
+        ),    
+
+# 2D histo track_phi vs stub_phi
+    TH2TpPhiVsStubPhi = cms.PSet(
+        Nbinsx = cms.int32(99), 
+        xmin = cms.double(-3.5),
+        xmax = cms.double(3.5),
+        Nbinsy = cms.int32(99), 
+        ymin = cms.double(-3.5),
+        ymax = cms.double(3.5)
+        ),    
+
+# 2D histo track_z vs stub_z    
+    TH2TpZVsStubZ = cms.PSet(
+        Nbinsx = cms.int32(59), 
+        xmin = cms.double(-130.0),
+        xmax = cms.double(130.0),
+        Nbinsy = cms.int32(59), 
+        ymin = cms.double(-130.0),
+        ymax = cms.double(130.0)
         ),    
 
 # 2D histo track bend vs stub bend

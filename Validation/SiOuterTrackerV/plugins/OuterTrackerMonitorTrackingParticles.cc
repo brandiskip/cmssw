@@ -502,6 +502,22 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (my_tp.isNull())
           continue;
 
+      // Find clusters related to tracking particle
+      std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(my_tp);
+
+      int genuineClusterCount = 0;
+
+      // Loop through each cluster and check if it's genuine
+      for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
+        bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
+        if (isGenuine) {
+            ++genuineClusterCount;
+        }
+      }
+
+      std::cout << "Genuine Cluster Count for tp_pdgID " << my_tp->pdgId() << ": " << genuineClusterCount << std::endl;
+
+
       int isBarrel = 0;
         int layer = -999999;
         if (detid.subdetId() == StripSubdetector::TOB) {

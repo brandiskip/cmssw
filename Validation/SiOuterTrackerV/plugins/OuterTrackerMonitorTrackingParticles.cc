@@ -105,7 +105,9 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     return correction;
   }
 
-  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const {
+  //std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const {
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const {
+
 
   double tp_phi = -99;
   double tp_r = -99;
@@ -121,7 +123,8 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
   double myTP_rinv = (myTP_charge * bfield_) / (myTP_pt);
 
   if (isBarrel) { 
-      tp_r = (modMaxR + modMinR) / 2;
+      //tp_r = (modMaxR + modMinR) / 2;
+      tp_r = stub_r;
       tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
       tp_phi = reco::reduceRange(tp_phi);  
       tp_z = myTP_z0 + (2.0E13 / c_) * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
@@ -275,6 +278,21 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
     if (nStubTP < TP_minNStub || nStubLayerTP < TP_minNLayersStub)
       continue;  //nStub cut not included in denominator of efficiency plots
+
+    // Find clusters related to tracking particle
+    std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
+
+    int genuineClusterCount = 0;
+
+    // Loop through each cluster and check if it's genuine
+    for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
+      bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
+      if (isGenuine) {
+          ++genuineClusterCount;
+      }
+    }
+
+    std::cout << "Genuine Cluster Count for tp_ptr_pdgID " << tp_ptr->pdgId() << ": " << genuineClusterCount << std::endl;
 
     // ----------------------------------------------------------------------------------------------
     // look for L1 tracks matched to the tracking particle
@@ -502,22 +520,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (my_tp.isNull())
           continue;
 
-      // Find clusters related to tracking particle
-      std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(my_tp);
-
-      int genuineClusterCount = 0;
-
-      // Loop through each cluster and check if it's genuine
-      for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
-        bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
-        if (isGenuine) {
-            ++genuineClusterCount;
-        }
-      }
-
-      std::cout << "Genuine Cluster Count for tp_pdgID " << my_tp->pdgId() << ": " << genuineClusterCount << std::endl;
-
-
       int isBarrel = 0;
         int layer = -999999;
         if (detid.subdetId() == StripSubdetector::TOB) {
@@ -547,9 +549,13 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float stub_maxZ = std::max(innerClusterGlobalPos.z(), outerClusterGlobalPos.z());
       float stub_minZ = std::min(innerClusterGlobalPos.z(), outerClusterGlobalPos.z());
 
+      // Determine maximum and minimum R positions of the stubs
+      float stub_maxR = std::max(innerClusterGlobalPos.perp(), outerClusterGlobalPos.perp());
+      float stub_minR = std::min(innerClusterGlobalPos.perp(), outerClusterGlobalPos.perp());
+
       // stub parameters
       stub_phi = innerClusterGlobalPos.phi();
-      stub_r = innerClusterGlobalPos.perp();
+      stub_r  = (stub_maxR + stub_minR) / 2;
       float stub_z_avg = (stub_maxZ + stub_minZ) / 2;
 
       myTP_charge = my_tp->charge();
@@ -564,7 +570,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (myTP_pt < TP_minPt) continue;
       if (std::abs(myTP_eta) > TP_maxEta) continue;
 
-      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, modMaxR, modMinR);
+      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r);
       float tp_z = tpDerivedCoords[1];
       float tp_phi = tpDerivedCoords[2];
 

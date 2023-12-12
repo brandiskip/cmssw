@@ -28,8 +28,9 @@ public:
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   float phiOverBendCorrection(bool, float, float, const TrackerTopology*, uint32_t, const GeomDetUnit*, const GeomDetUnit*);
-  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const;
-  //std::vector<double> getTPDerivedCoords(unsigned int iSector, edm::Ptr<TrackingParticle> my_tp, const GeomDetUnit* theGeomDet, double myTP_z0, float modMinR) const;
+  //std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const;
+  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double modMaxZ, double modMinZ, float stub_r_avg) const;
+
 
   // Number of stubs
   MonitorElement *Stub_Barrel = nullptr;       // TTStub per layer
@@ -80,7 +81,31 @@ public:
   MonitorElement *trackPhi_vs_stubPhi_barrel = nullptr;
   MonitorElement *trackPhi_vs_stubPhi_endcap = nullptr;
   MonitorElement *trackBend_vs_stubBend = nullptr;
-  MonitorElement *trackZ_vs_stubZ = nullptr;
+  MonitorElement *stub_maxZ_vs_minZ = nullptr;
+  MonitorElement *modMaxZ_vs_modMinZ = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ = nullptr;
+  MonitorElement *stub_maxZ_vs_minZ_highPt = nullptr;
+  MonitorElement *modMaxZ_vs_modMinZ_highPt = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_highPt = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L1 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted_pT_2to3 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted_pT_3to5 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted_pT_5to10 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L2 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted_pT_2to3 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted_pT_3to5 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted_pT_5to10 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L3 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted_pT_2to3 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted_pT_3to5 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted_pT_5to10 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L4 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L5 = nullptr;
+  MonitorElement *stub_avgZ_vs_tpZ_L6 = nullptr;
+  MonitorElement *modMaxR_vs_modMinR = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend_L1 = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend_L2 = nullptr;
@@ -115,7 +140,9 @@ public:
   MonitorElement *bend_res_bw_endcap_D4 = nullptr;
   MonitorElement *bend_res_bw_endcap_D5 = nullptr;
   MonitorElement *stub_res_phi = nullptr;
-  MonitorElement *z_res = nullptr;
+  MonitorElement *stub_z_res = nullptr;
+  MonitorElement *stub_z_res_g0 = nullptr;
+  MonitorElement *stub_z_res_l0 = nullptr;
   MonitorElement *z_res_barrel = nullptr;
   MonitorElement *z_res_barrel_L1 = nullptr;
   MonitorElement *z_res_barrel_L2 = nullptr;
@@ -123,21 +150,28 @@ public:
   MonitorElement *z_res_barrel_L4 = nullptr;
   MonitorElement *z_res_barrel_L5 = nullptr;
   MonitorElement *z_res_barrel_L6 = nullptr;
-  MonitorElement *z_res_barrel_isPS = nullptr;
-  MonitorElement *z_res_barrel_is2S = nullptr;
+  MonitorElement *z_res_isPS = nullptr;
+  MonitorElement *z_res_isPS_barrel = nullptr;
+  MonitorElement *z_res_isPS_endcap = nullptr;
+  MonitorElement *z_res_is2S = nullptr;
+  MonitorElement *z_res_is2S_barrel = nullptr;
+  MonitorElement *z_res_is2S_endcap = nullptr;
   MonitorElement *z_res_endcap = nullptr;
-  MonitorElement *hist_phi_res = nullptr;
-  MonitorElement *hist_phi_res_barrel = nullptr;
-  MonitorElement *phi_res_barrel_isPS = nullptr;
-  MonitorElement *phi_res_barrel_is2S = nullptr;
-  MonitorElement *hist_phi_res_endcap = nullptr;
+  MonitorElement *stub_phi_res = nullptr;
+  MonitorElement *stub_phi_res_barrel = nullptr;
+  MonitorElement *stub_phi_res_isPS = nullptr;
+  MonitorElement *stub_phi_res_isPS_barrel = nullptr;
+  MonitorElement *stub_phi_res_isPS_endcap = nullptr;
+  MonitorElement *stub_phi_res_is2S = nullptr;
+  MonitorElement *stub_phi_res_is2S_barrel = nullptr;
+  MonitorElement *stub_phi_res_is2S_endcap = nullptr;
+  MonitorElement *stub_phi_res_endcap = nullptr;
   
   // 1D stub and associated tp plots
   MonitorElement *barrelHistogram_genuine = nullptr;
   MonitorElement *endcapHistogram_genuine = nullptr;
   MonitorElement *endcap_disc_Fw_genuine = nullptr;
   MonitorElement *endcap_disc_Bw_genuine = nullptr;
-  MonitorElement *stub_R = nullptr;
   MonitorElement *stub_rawBend = nullptr;
   MonitorElement *stub_bendOffset = nullptr;
   MonitorElement *stub_inClusPos = nullptr;

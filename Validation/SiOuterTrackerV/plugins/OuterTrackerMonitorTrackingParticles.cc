@@ -67,7 +67,7 @@ OuterTrackerMonitorTrackingParticles::~OuterTrackerMonitorTrackingParticles() = 
 
 // member functions
 
-float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
+float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r_avg, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
     // Get R0, R1, Z0, Z1 values
     // split resolution values between positive and negative z
     float R0 = det0->position().perp();
@@ -93,20 +93,20 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
 
     float correction;
     if (isBarrel && tTopo->tobSide(detid) != 3) {  // Assuming this condition represents tiltedBarrel
-        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
+        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r_avg + sin(tiltAngle);
         hist_cosTiltAngle->Fill(cos(tiltAngle));
         hist_sinTiltAngle->Fill(sin(tiltAngle));
     } else if (isBarrel) {
         correction = 1;
     } else {
-        correction = std::abs(stub_z) / stub_r; // if tiltAngle = 0, stub (not module) is parallel to the beam line, if tiltAngle = 90, stub is perpendicular to beamline
+        correction = std::abs(stub_z) / stub_r_avg; // if tiltAngle = 0, stub (not module) is parallel to the beam line, if tiltAngle = 90, stub is perpendicular to beamline
     }
 
     return correction;
   }
 
   //std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const {
-  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const {
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r_avg) const {
 
 
   double tp_phi = -99;
@@ -124,7 +124,7 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
 
   if (isBarrel) { 
       //tp_r = (modMaxR + modMinR) / 2;
-      tp_r = stub_r;
+      tp_r = stub_r_avg;
       tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
       tp_phi = reco::reduceRange(tp_phi);  
       tp_z = myTP_z0 + (2.0E13 / c_) * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
@@ -291,8 +291,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           ++genuineClusterCount;
       }
     }
-
-    std::cout << "Genuine Cluster Count for tp_ptr_pdgID " << tp_ptr->pdgId() << ": " << genuineClusterCount << std::endl;
 
     // ----------------------------------------------------------------------------------------------
     // look for L1 tracks matched to the tracking particle
@@ -469,7 +467,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   float myTP_pt = -999;
   float myTP_eta = -999;
   float myTP_dxy = -999;
-  float stub_r = -999;
+  float stub_r_avg = -999;
   float stub_phi = -999;
   double bfield_{3.8};  //B-field in T
   double c_{2.99792458E10};  //speed of light cm/s
@@ -555,8 +553,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
       // stub parameters
       stub_phi = innerClusterGlobalPos.phi();
-      stub_r  = (stub_maxR + stub_minR) / 2;
+      stub_r_avg  = (stub_maxR + stub_minR) / 2;
       float stub_z_avg = (stub_maxZ + stub_minZ) / 2;
+      //float stub_z_avg = innerClusterGlobalPos.z();
 
       myTP_charge = my_tp->charge();
       myTP_pt = my_tp->p4().pt();
@@ -570,7 +569,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (myTP_pt < TP_minPt) continue;
       if (std::abs(myTP_eta) > TP_maxEta) continue;
 
-      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r);
+      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r_avg);
+      //std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, modMaxR, modMinR);
       float tp_z = tpDerivedCoords[1];
       float tp_phi = tpDerivedCoords[2];
 
@@ -585,8 +585,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
       bool isTiltedBarrel = (isBarrel && tTopo->tobSide(detid) != 3);
       
-      float correctionValue = phiOverBendCorrection(isBarrel, stub_maxZ, stub_r, tTopo, detid, det0, det1);
-      float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
+      float correctionValue = phiOverBendCorrection(isBarrel, stub_z_avg, stub_r_avg, tTopo, detid, det0, det1);
+      float trackBend = -(sensorSpacing * stub_r_avg * bfield_ * c_ * myTP_charge) /
                       (stripPitch * 2.0E13 * myTP_pt * correctionValue);
       
       float bendRes = trackBend - trigBend;

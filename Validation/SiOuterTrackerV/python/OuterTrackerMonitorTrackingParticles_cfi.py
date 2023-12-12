@@ -157,13 +157,6 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(0.)
         ),
 
-# rad of stubs
-    TH1Stub_rad = cms.PSet(
-        Nbinsx = cms.int32(100),
-        xmax = cms.double(120.0),
-        xmin = cms.double(-120.0)
-        ),
-
 # position of stub in z
     TH1Stub_z = cms.PSet(
         Nbinsx = cms.int32(299),
@@ -229,9 +222,16 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
 
 # tp_z - stub_z resolution
     TH1Z_Res = cms.PSet(
-        Nbinsx = cms.int32(59),
-        xmax = cms.double(5.0),
-        xmin = cms.double(-5.0)
+        Nbinsx = cms.int32(11),
+        xmax = cms.double(5.5),
+        xmin = cms.double(-5.5)
+        ),
+
+# tp_z - stub_z resolution endcap only
+    TH1Z_Res_Endcap = cms.PSet(
+        Nbinsx = cms.int32(121),
+        xmax = cms.double(1.0),
+        xmin = cms.double(-1.0)
         ),
 
 # tp_phi - stub_phi resolution
@@ -294,11 +294,21 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
 # 2D histo track_z vs stub_z    
     TH2TpZVsStubZ = cms.PSet(
         Nbinsx = cms.int32(59), 
-        xmin = cms.double(-130.0),
-        xmax = cms.double(130.0),
+        xmin = cms.double(-120.0),
+        xmax = cms.double(120.0),
         Nbinsy = cms.int32(59), 
-        ymin = cms.double(-130.0),
-        ymax = cms.double(130.0)
+        ymin = cms.double(-120.0),
+        ymax = cms.double(120.0)
+        ),    
+
+# 2D histo modMaxR vs modMinR    
+    TH2MaxRvsMinR = cms.PSet(
+        Nbinsx = cms.int32(59), 
+        xmin = cms.double(0.0),
+        xmax = cms.double(120.0),
+        Nbinsy = cms.int32(59), 
+        ymin = cms.double(0.0),
+        ymax = cms.double(120.0)
         ),    
 
 # 2D histo track bend vs stub bend

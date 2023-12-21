@@ -67,7 +67,7 @@ OuterTrackerMonitorTrackingParticles::~OuterTrackerMonitorTrackingParticles() = 
 
 // member functions
 
-float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r_avg, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
+float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
     // Get R0, R1, Z0, Z1 values
     // split resolution values between positive and negative z
     float R0 = det0->position().perp();
@@ -93,20 +93,20 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
 
     float correction;
     if (isBarrel && tTopo->tobSide(detid) != 3) {  // Assuming this condition represents tiltedBarrel
-        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r_avg + sin(tiltAngle);
+        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
         hist_cosTiltAngle->Fill(cos(tiltAngle));
         hist_sinTiltAngle->Fill(sin(tiltAngle));
     } else if (isBarrel) {
         correction = 1;
     } else {
-        correction = std::abs(stub_z) / stub_r_avg; // if tiltAngle = 0, stub (not module) is parallel to the beam line, if tiltAngle = 90, stub is perpendicular to beamline
+        correction = std::abs(stub_z) / stub_r; // if tiltAngle = 0, stub (not module) is parallel to the beam line, if tiltAngle = 90, stub is perpendicular to beamline
     }
 
     return correction;
   }
 
   //std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const {
-  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r_avg) const {
+  std::vector<double> OuterTrackerMonitorTrackingParticles::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const {
 
 
   double tp_phi = -99;
@@ -124,7 +124,7 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
 
   if (isBarrel) { 
       //tp_r = (modMaxR + modMinR) / 2;
-      tp_r = stub_r_avg;
+      tp_r = stub_r;
       tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
       tp_phi = reco::reduceRange(tp_phi);  
       tp_z = myTP_z0 + (2.0E13 / c_) * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
@@ -282,13 +282,35 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     // Find clusters related to tracking particle
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
-    int genuineClusterCount = 0;
+    std::vector<double> den;
+    std::vector<double> num;
 
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
+
+      DetId clusdetid = associatedClusters[k]->getDetId();
+      DetId stackDetid = tTopo->stack(clusdetid);
+      const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit(clusdetid);
+      const PixelGeomDetUnit* theGeomDet = dynamic_cast<const PixelGeomDetUnit*>(det0);
+      const PixelTopology* topol = dynamic_cast<const PixelTopology*>(&(theGeomDet->specificTopology())); 
+      GlobalPoint coords = theGeomDet->surface().toGlobal(topol->localPosition(associatedClusters[k]->findAverageLocalCoordinatesCentered()));
+
       bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
       if (isGenuine) {
-          ++genuineClusterCount;
+          den.push_back(tmp_tp_pt);
+          std::cout << "den[" << den.size() - 1 << "] = " << den.back() << std::endl;
+      }
+
+      if (TTStubHandle->find(stackDetid) != TTStubHandle->end()) {
+        edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+        for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+            GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
+            GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
+            if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
+                num.push_back(tmp_tp_pt);
+                std::cout << "num[" << den.size() - 1 << "] = " << num.back() << std::endl;
+            }
+         }
       }
     }
 
@@ -467,7 +489,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
   float myTP_pt = -999;
   float myTP_eta = -999;
   float myTP_dxy = -999;
-  float stub_r_avg = -999;
+  float stub_r = -999;
   float stub_phi = -999;
   double bfield_{3.8};  //B-field in T
   double c_{2.99792458E10};  //speed of light cm/s
@@ -547,15 +569,10 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       float stub_maxZ = std::max(innerClusterGlobalPos.z(), outerClusterGlobalPos.z());
       float stub_minZ = std::min(innerClusterGlobalPos.z(), outerClusterGlobalPos.z());
 
-      // Determine maximum and minimum R positions of the stubs
-      float stub_maxR = std::max(innerClusterGlobalPos.perp(), outerClusterGlobalPos.perp());
-      float stub_minR = std::min(innerClusterGlobalPos.perp(), outerClusterGlobalPos.perp());
-
       // stub parameters
       stub_phi = innerClusterGlobalPos.phi();
-      stub_r_avg  = (stub_maxR + stub_minR) / 2;
-      float stub_z_avg = (stub_maxZ + stub_minZ) / 2;
-      //float stub_z_avg = innerClusterGlobalPos.z();
+      stub_r = innerClusterGlobalPos.perp();
+      float stub_z = innerClusterGlobalPos.z();
 
       myTP_charge = my_tp->charge();
       myTP_pt = my_tp->p4().pt();
@@ -569,8 +586,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (myTP_pt < TP_minPt) continue;
       if (std::abs(myTP_eta) > TP_maxEta) continue;
 
-      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r_avg);
-      //std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, modMaxR, modMinR);
+      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r);
       float tp_z = tpDerivedCoords[1];
       float tp_phi = tpDerivedCoords[2];
 
@@ -585,12 +601,12 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
 
       bool isTiltedBarrel = (isBarrel && tTopo->tobSide(detid) != 3);
       
-      float correctionValue = phiOverBendCorrection(isBarrel, stub_z_avg, stub_r_avg, tTopo, detid, det0, det1);
-      float trackBend = -(sensorSpacing * stub_r_avg * bfield_ * c_ * myTP_charge) /
+      float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo, detid, det0, det1);
+      float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
                       (stripPitch * 2.0E13 * myTP_pt * correctionValue);
       
       float bendRes = trackBend - trigBend;
-      float zRes = tp_z - stub_z_avg;
+      float zRes = tp_z - stub_z;
       float phiRes = tp_phi - stub_phi;
 
       // Fill is PS module histograms
@@ -646,7 +662,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       stub_bendFE->Fill(trigBend);
       hist_stub_phi->Fill(stub_phi);
       hist_tp_z->Fill(tp_z);
-      hist_stub_z->Fill(stub_z_avg);
+      hist_stub_z->Fill(stub_z);
       bend_res->Fill(bendRes);
       stub_z_res->Fill(zRes);
       stub_phi_res->Fill(phiRes);
@@ -656,13 +672,13 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         z_res_barrel->Fill(zRes);
         trackPhi_vs_stubPhi_barrel->Fill(tp_phi, stub_phi);
         hist_tp_z_barrel->Fill(tp_z);
-        hist_stub_z_barrel->Fill(stub_z_avg);
+        hist_stub_z_barrel->Fill(stub_z);
       } else{
         stub_phi_res_endcap->Fill(phiRes);
         z_res_endcap->Fill(zRes);
         trackPhi_vs_stubPhi_endcap->Fill(tp_phi, stub_phi);
         hist_tp_z_endcap->Fill(tp_z);
-        hist_stub_z_endcap->Fill(stub_z_avg);
+        hist_stub_z_endcap->Fill(stub_z);
       }
 
       // Fill 2D histogram
@@ -670,13 +686,13 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       trackPhi_vs_stubPhi->Fill(tp_phi, stub_phi);
       stub_maxZ_vs_minZ->Fill(stub_maxZ, stub_minZ);
       modMaxZ_vs_modMinZ->Fill(modMaxZ, modMinZ);
-      stub_avgZ_vs_tpZ->Fill(stub_z_avg, tp_z);
+      stub_Z_vs_tpZ->Fill(stub_z, tp_z);
       modMaxR_vs_modMinR->Fill(modMaxR, modMinR);
 
       if (myTP_pt > 10){
         stub_maxZ_vs_minZ_highPt->Fill(stub_maxZ, stub_minZ);
         modMaxZ_vs_modMinZ_highPt->Fill(modMaxZ, modMinZ);
-        stub_avgZ_vs_tpZ_highPt->Fill(stub_z_avg, tp_z);
+        stub_Z_vs_tpZ_highPt->Fill(stub_z, tp_z);
       }
 
       // Fill the histogram for barrel stubs
@@ -688,68 +704,68 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           bend_res_barrel_L1->Fill(bendRes);
           barrel_trackBend_vs_stubBend_L1->Fill(trackBend, trigBend);
           z_res_barrel_L1->Fill(zRes);
-          stub_avgZ_vs_tpZ_L1->Fill(stub_z_avg, tp_z);
+          stub_Z_vs_tpZ_L1->Fill(stub_z, tp_z);
           if (isTiltedBarrel){
-            stub_avgZ_vs_tpZ_L1_tilted->Fill(stub_z_avg, tp_z);
+            stub_Z_vs_tpZ_L1_tilted->Fill(stub_z, tp_z);
             if (myTP_pt >=2 && myTP_pt < 3){
-              stub_avgZ_vs_tpZ_L1_tilted_pT_2to3->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L1_tilted_pT_2to3->Fill(stub_z, tp_z);
             }
             else if (myTP_pt >= 3 && myTP_pt < 5){
-              stub_avgZ_vs_tpZ_L1_tilted_pT_3to5->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L1_tilted_pT_3to5->Fill(stub_z, tp_z);
             }
             else if (myTP_pt >= 5 && myTP_pt <= 10){
-              stub_avgZ_vs_tpZ_L1_tilted_pT_5to10->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L1_tilted_pT_5to10->Fill(stub_z, tp_z);
             }
           } 
       } else if (layer == 2){
           bend_res_barrel_L2->Fill(bendRes);
           barrel_trackBend_vs_stubBend_L2->Fill(trackBend, trigBend);
           z_res_barrel_L2->Fill(zRes);
-          stub_avgZ_vs_tpZ_L2->Fill(stub_z_avg, tp_z);
+          stub_Z_vs_tpZ_L2->Fill(stub_z, tp_z);
           if (isTiltedBarrel){
-            stub_avgZ_vs_tpZ_L2_tilted->Fill(stub_z_avg, tp_z);
+            stub_Z_vs_tpZ_L2_tilted->Fill(stub_z, tp_z);
             if (myTP_pt >=2 && myTP_pt < 3){
-              stub_avgZ_vs_tpZ_L2_tilted_pT_2to3->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L2_tilted_pT_2to3->Fill(stub_z, tp_z);
             }
             else if (myTP_pt >= 3 && myTP_pt < 5){
-              stub_avgZ_vs_tpZ_L2_tilted_pT_3to5->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L2_tilted_pT_3to5->Fill(stub_z, tp_z);
             }
             else if (myTP_pt >= 5 && myTP_pt <= 10){
-              stub_avgZ_vs_tpZ_L2_tilted_pT_5to10->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L2_tilted_pT_5to10->Fill(stub_z, tp_z);
             }
           }
       } else if (layer == 3){
           bend_res_barrel_L3->Fill(bendRes);
           barrel_trackBend_vs_stubBend_L3->Fill(trackBend, trigBend);
           z_res_barrel_L3->Fill(zRes);
-          stub_avgZ_vs_tpZ_L3->Fill(stub_z_avg, tp_z);
+          stub_Z_vs_tpZ_L3->Fill(stub_z, tp_z);
           if (isTiltedBarrel){
-            stub_avgZ_vs_tpZ_L3_tilted->Fill(stub_z_avg, tp_z);
+            stub_Z_vs_tpZ_L3_tilted->Fill(stub_z, tp_z);
             if (myTP_pt >=2 && myTP_pt < 3){
-              stub_avgZ_vs_tpZ_L3_tilted_pT_2to3->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L3_tilted_pT_2to3->Fill(stub_z, tp_z);
             }
             else if (myTP_pt >= 3 && myTP_pt < 5){
-              stub_avgZ_vs_tpZ_L3_tilted_pT_3to5->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L3_tilted_pT_3to5->Fill(stub_z, tp_z);
             }
             else if (myTP_pt >= 5 && myTP_pt <= 10){
-              stub_avgZ_vs_tpZ_L3_tilted_pT_5to10->Fill(stub_z_avg, tp_z);
+              stub_Z_vs_tpZ_L3_tilted_pT_5to10->Fill(stub_z, tp_z);
             }
           }
       } else if (layer == 4){
           bend_res_barrel_L4->Fill(bendRes);
           barrel_trackBend_vs_stubBend_L4->Fill(trackBend, trigBend);
           z_res_barrel_L4->Fill(zRes);
-          stub_avgZ_vs_tpZ_L4->Fill(stub_z_avg, tp_z);
+          stub_Z_vs_tpZ_L4->Fill(stub_z, tp_z);
       } else if (layer == 5){
           bend_res_barrel_L5->Fill(bendRes);
           barrel_trackBend_vs_stubBend_L5->Fill(trackBend, trigBend);
           z_res_barrel_L5->Fill(zRes);
-          stub_avgZ_vs_tpZ_L5->Fill(stub_z_avg, tp_z);
+          stub_Z_vs_tpZ_L5->Fill(stub_z, tp_z);
       } else if (layer == 6){
           bend_res_barrel_L6->Fill(bendRes);
           barrel_trackBend_vs_stubBend_L6->Fill(trackBend, trigBend);
           z_res_barrel_L6->Fill(zRes);
-          stub_avgZ_vs_tpZ_L6->Fill(stub_z_avg, tp_z);
+          stub_Z_vs_tpZ_L6->Fill(stub_z, tp_z);
       }
         
     } else if (isBarrel == 0) {
@@ -2299,8 +2315,8 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   modMaxZ_vs_modMinZ->setAxisTitle("track z [cm]", 1);
   modMaxZ_vs_modMinZ->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ";
-  stub_avgZ_vs_tpZ = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ";
+  stub_Z_vs_tpZ = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2309,8 +2325,8 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ->setAxisTitle("stub z avg [cm]", 2);
 
   HistoName = "stub_maxZ_vs_minZ_highPt";
   stub_maxZ_vs_minZ_highPt = iBooker.book2D(
@@ -2325,8 +2341,8 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_maxZ_vs_minZ_highPt->setAxisTitle("track z [cm]", 1);
   stub_maxZ_vs_minZ_highPt->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L1";
-  stub_avgZ_vs_tpZ_L1 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L1";
+  stub_Z_vs_tpZ_L1 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2335,11 +2351,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L1->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L1->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L1->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L1->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L1_tilted";
-  stub_avgZ_vs_tpZ_L1_tilted = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L1_tilted";
+  stub_Z_vs_tpZ_L1_tilted = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2348,11 +2364,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L1_tilted->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L1_tilted->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L1_tilted->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L1_tilted->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L1_tilted_pT_2to3";
-  stub_avgZ_vs_tpZ_L1_tilted_pT_2to3 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L1_tilted_pT_2to3";
+  stub_Z_vs_tpZ_L1_tilted_pT_2to3 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2361,11 +2377,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L1_tilted_pT_2to3->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L1_tilted_pT_2to3->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L1_tilted_pT_2to3->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L1_tilted_pT_2to3->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L1_tilted_pT_3to5";
-  stub_avgZ_vs_tpZ_L1_tilted_pT_3to5 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L1_tilted_pT_3to5";
+  stub_Z_vs_tpZ_L1_tilted_pT_3to5 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2374,11 +2390,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L1_tilted_pT_3to5->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L1_tilted_pT_3to5->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L1_tilted_pT_3to5->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L1_tilted_pT_3to5->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L1_tilted_pT_5to10";
-  stub_avgZ_vs_tpZ_L1_tilted_pT_5to10 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L1_tilted_pT_5to10";
+  stub_Z_vs_tpZ_L1_tilted_pT_5to10 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2387,11 +2403,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L1_tilted_pT_5to10->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L1_tilted_pT_5to10->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L1_tilted_pT_5to10->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L1_tilted_pT_5to10->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L2";
-  stub_avgZ_vs_tpZ_L2 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L2";
+  stub_Z_vs_tpZ_L2 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2400,11 +2416,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L2->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L2->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L2->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L2->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L2_tilted";
-  stub_avgZ_vs_tpZ_L2_tilted = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L2_tilted";
+  stub_Z_vs_tpZ_L2_tilted = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2413,11 +2429,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L2_tilted->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L2_tilted->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L2_tilted->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L2_tilted->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L2_tilted_pT_2to3";
-  stub_avgZ_vs_tpZ_L2_tilted_pT_2to3 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L2_tilted_pT_2to3";
+  stub_Z_vs_tpZ_L2_tilted_pT_2to3 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2426,11 +2442,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L2_tilted_pT_2to3->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L2_tilted_pT_2to3->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L2_tilted_pT_2to3->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L2_tilted_pT_2to3->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L2_tilted_pT_3to5";
-  stub_avgZ_vs_tpZ_L2_tilted_pT_3to5 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L2_tilted_pT_3to5";
+  stub_Z_vs_tpZ_L2_tilted_pT_3to5 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2439,11 +2455,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L2_tilted_pT_3to5->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L2_tilted_pT_3to5->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L2_tilted_pT_3to5->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L2_tilted_pT_3to5->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L2_tilted_pT_5to10";
-  stub_avgZ_vs_tpZ_L2_tilted_pT_5to10 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L2_tilted_pT_5to10";
+  stub_Z_vs_tpZ_L2_tilted_pT_5to10 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2452,11 +2468,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L2_tilted_pT_5to10->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L2_tilted_pT_5to10->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L2_tilted_pT_5to10->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L2_tilted_pT_5to10->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L3";
-  stub_avgZ_vs_tpZ_L3 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L3";
+  stub_Z_vs_tpZ_L3 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2465,11 +2481,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L3->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L3->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L3->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L3->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L3_tilted";
-  stub_avgZ_vs_tpZ_L3_tilted = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L3_tilted";
+  stub_Z_vs_tpZ_L3_tilted = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2478,11 +2494,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L3_tilted->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L3_tilted->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L3_tilted->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L3_tilted->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L3_tilted_pT_2to3";
-  stub_avgZ_vs_tpZ_L3_tilted_pT_2to3 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L3_tilted_pT_2to3";
+  stub_Z_vs_tpZ_L3_tilted_pT_2to3 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2491,11 +2507,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L3_tilted_pT_2to3->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L3_tilted_pT_2to3->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L3_tilted_pT_2to3->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L3_tilted_pT_2to3->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L3_tilted_pT_3to5";
-  stub_avgZ_vs_tpZ_L3_tilted_pT_3to5 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L3_tilted_pT_3to5";
+  stub_Z_vs_tpZ_L3_tilted_pT_3to5 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2504,11 +2520,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L3_tilted_pT_3to5->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L3_tilted_pT_3to5->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L3_tilted_pT_3to5->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L3_tilted_pT_3to5->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L3_tilted_pT_5to10";
-  stub_avgZ_vs_tpZ_L3_tilted_pT_5to10 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L3_tilted_pT_5to10";
+  stub_Z_vs_tpZ_L3_tilted_pT_5to10 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2517,11 +2533,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L3_tilted_pT_5to10->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L3_tilted_pT_5to10->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L3_tilted_pT_5to10->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L3_tilted_pT_5to10->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L4";
-  stub_avgZ_vs_tpZ_L4 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L4";
+  stub_Z_vs_tpZ_L4 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2530,11 +2546,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L4->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L4->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L4->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L4->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L5";
-  stub_avgZ_vs_tpZ_L5 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L5";
+  stub_Z_vs_tpZ_L5 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2543,11 +2559,11 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L5->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L5->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L5->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L5->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_L6";
-  stub_avgZ_vs_tpZ_L6 = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_L6";
+  stub_Z_vs_tpZ_L6 = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2556,8 +2572,8 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_L6->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_L6->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_L6->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_L6->setAxisTitle("stub z avg [cm]", 2);
 
   HistoName = "modMaxZ_vs_modMinZ_highPt";
   modMaxZ_vs_modMinZ_highPt = iBooker.book2D(
@@ -2572,8 +2588,8 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   modMaxZ_vs_modMinZ_highPt->setAxisTitle("track z [cm]", 1);
   modMaxZ_vs_modMinZ_highPt->setAxisTitle("stub z avg [cm]", 2);
 
-  HistoName = "stub_avgZ_vs_tpZ_highPt";
-  stub_avgZ_vs_tpZ_highPt = iBooker.book2D(
+  HistoName = "stub_Z_vs_tpZ_highPt";
+  stub_Z_vs_tpZ_highPt = iBooker.book2D(
       HistoName, 
       HistoName,
       psTpZVsStubZ.getParameter<int32_t>("Nbinsx"),
@@ -2582,8 +2598,8 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
       psTpZVsStubZ.getParameter<int32_t>("Nbinsy"),
       psTpZVsStubZ.getParameter<double>("ymin"),
       psTpZVsStubZ.getParameter<double>("ymax"));
-  stub_avgZ_vs_tpZ_highPt->setAxisTitle("track z [cm]", 1);
-  stub_avgZ_vs_tpZ_highPt->setAxisTitle("stub z avg [cm]", 2);
+  stub_Z_vs_tpZ_highPt->setAxisTitle("track z [cm]", 1);
+  stub_Z_vs_tpZ_highPt->setAxisTitle("stub z avg [cm]", 2);
 
   edm::ParameterSet psTrackVsStub = conf_.getParameter<edm::ParameterSet>("TH2TrackVsStub");
   HistoName = "trackBend_vs_stubBend";

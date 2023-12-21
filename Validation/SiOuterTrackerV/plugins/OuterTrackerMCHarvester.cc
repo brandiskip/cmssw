@@ -45,8 +45,7 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
     MonitorElement *merespt_eta0to0p7_pt8toInf = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta0to0p7_pt8toInf");
     MonitorElement *merespt_eta0p7to1_pt8toInf = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta0p7to1_pt8toInf");
     MonitorElement *merespt_eta1to1p2_pt8toInf = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta1to1p2_pt8toInf");
-    MonitorElement *merespt_eta1p2to1p6_pt8toInf =
-        dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta1p2to1p6_pt8toInf");
+    MonitorElement *merespt_eta1p2to1p6_pt8toInf = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta1p2to1p6_pt8toInf");
     MonitorElement *merespt_eta1p6to2_pt8toInf = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta1p6to2_pt8toInf");
     MonitorElement *merespt_eta2to2p4_pt8toInf = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta2to2p4_pt8toInf");
 

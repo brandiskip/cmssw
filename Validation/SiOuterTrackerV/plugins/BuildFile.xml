@@ -8,3 +8,5 @@
 <use name="SimDataFormats/TrackingAnalysis"/>
 <use name="SimTracker/TrackTriggerAssociation"/>
 <flags EDM_PLUGIN="1"/>
+<flags CXXFLAGS="-g -O0"/>
+

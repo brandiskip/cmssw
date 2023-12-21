@@ -296,19 +296,20 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       GlobalPoint coords = theGeomDet->surface().toGlobal(topol->localPosition(associatedClusters[k]->findAverageLocalCoordinatesCentered()));
 
       bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
-      if (isGenuine) {
-          den.push_back(tmp_tp_pt);
-          std::cout << "den[" << den.size() - 1 << "] = " << den.back() << std::endl;
-      }
-
+      if (isGenuine) 
+        continue;
+          
+      den.push_back(tmp_tp_pt);
+      std::cout << "den[" << den.size() - 1 << "] = " << den.back() << std::endl;
+      
       if (TTStubHandle->find(stackDetid) != TTStubHandle->end()) {
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
             GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
             GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
             if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
-                num.push_back(tmp_tp_pt);
-                std::cout << "num[" << den.size() - 1 << "] = " << num.back() << std::endl;
+              num.push_back(tmp_tp_pt);
+              std::cout << "num[" << den.size() - 1 << "] = " << num.back() << std::endl;
             }
          }
       }

@@ -17,10 +17,14 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
 
   if (dbe) {
     // Find all monitor elements for histograms
+    MonitorElement *meN_clus = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_if_stub");
+    MonitorElement *meD_clus = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters");
     MonitorElement *meN_eta = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_eta");
     MonitorElement *meD_eta = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_eta");
     MonitorElement *meN_pt = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_pt");
     MonitorElement *meD_pt = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_pt");
+    MonitorElement *meN_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_if_stub_zoom");
+    MonitorElement *meD_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_zoom");
     MonitorElement *meN_pt_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_pt_zoom");
     MonitorElement *meD_pt_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_pt_zoom");
     MonitorElement *meN_d0 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_d0");
@@ -76,6 +80,64 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
     MonitorElement *meresd0_eta1p2to1p6 = dbe->get("SiOuterTrackerV/Tracks/Resolution/resd0_eta1p2to1p6");
     MonitorElement *meresd0_eta1p6to2 = dbe->get("SiOuterTrackerV/Tracks/Resolution/resd0_eta1p6to2");
     MonitorElement *meresd0_eta2to2p4 = dbe->get("SiOuterTrackerV/Tracks/Resolution/resd0_eta2to2p4");
+
+    if (meN_clus && meD_clus) {
+      // Get the numerator and denominator histograms
+      TH1F *numerator = meN_clus->getTH1F();
+      TH1F *denominator = meD_clus->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Set the current directory
+      dbe->setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      // Book the new histogram to contain the results
+      MonitorElement *me_effic_clus = ibooker.book1D("StubEfficiency",
+                                                    "Stub Efficiency",
+                                                    numerator->GetNbinsX(),
+                                                    numerator->GetXaxis()->GetXmin(),
+                                                    numerator->GetXaxis()->GetXmax());
+
+      // Calculate the efficiency
+      me_effic_clus->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_effic_clus->setAxisTitle("tracking particle pT [GeV]");
+      me_effic_clus->getTH1F()->GetYaxis()->SetTitle("Efficiency");
+      me_effic_clus->getTH1F()->SetMaximum(1.0);
+      me_effic_clus->getTH1F()->SetMinimum(0.0);
+      me_effic_clus->getTH1F()->SetStats(false);
+    }  // if ME found
+    else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for eta efficiency cannot be found!\n";
+    }
+
+    if (meN_clus_zoom && meD_clus_zoom) {
+      // Get the numerator and denominator histograms
+      TH1F *numerator_zoom = meN_clus_zoom->getTH1F();
+      TH1F *denominator_zoom = meD_clus_zoom->getTH1F();
+      numerator_zoom->Sumw2();
+      denominator_zoom->Sumw2();
+
+      // Set the current directory
+      dbe->setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      // Book the new histogram to contain the results
+      MonitorElement *me_effic_clus_zoom = ibooker.book1D("StubEfficiency_zoom",
+                                                    "Stub Efficiency",
+                                                    numerator_zoom->GetNbinsX(),
+                                                    numerator_zoom->GetXaxis()->GetXmin(),
+                                                    numerator_zoom->GetXaxis()->GetXmax());
+
+      // Calculate the efficiency
+      me_effic_clus_zoom->getTH1F()->Divide(numerator_zoom, denominator_zoom, 1., 1., "B");
+      me_effic_clus_zoom->setAxisTitle("tracking particle pT [GeV]");
+      me_effic_clus_zoom->getTH1F()->GetYaxis()->SetTitle("Efficiency");
+      me_effic_clus_zoom->getTH1F()->SetMaximum(1.0);
+      me_effic_clus_zoom->getTH1F()->SetMinimum(0.0);
+      me_effic_clus_zoom->getTH1F()->SetStats(false);
+    }  // if ME found
+    else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for eta efficiency cannot be found!\n";
+    }
 
     if (meN_eta && meD_eta) {
       // Get the numerator and denominator histograms

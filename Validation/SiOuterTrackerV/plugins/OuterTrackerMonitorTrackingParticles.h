@@ -62,18 +62,22 @@ public:
   MonitorElement *hist_tp_z_endcap = nullptr;
 
   // pT and eta for efficiency plots
-  MonitorElement *tp_pt = nullptr;             // denominator
-  MonitorElement *tp_pt_zoom = nullptr;        // denominator
-  MonitorElement *tp_eta = nullptr;            // denominator
-  MonitorElement *tp_d0 = nullptr;             // denominator
-  MonitorElement *tp_VtxR = nullptr;           // denominator (also known as vxy)
-  MonitorElement *tp_VtxZ = nullptr;           // denominator
-  MonitorElement *match_tp_pt = nullptr;       // numerator
-  MonitorElement *match_tp_pt_zoom = nullptr;  // numerator
-  MonitorElement *match_tp_eta = nullptr;      // numerator
-  MonitorElement *match_tp_d0 = nullptr;       // numerator
-  MonitorElement *match_tp_VtxR = nullptr;     // numerator (also known as vxy)
-  MonitorElement *match_tp_VtxZ = nullptr;     // numerator
+  MonitorElement *gen_clusters = nullptr;               // denominator
+  MonitorElement *gen_clusters_zoom = nullptr;          // denominator
+  MonitorElement *tp_pt = nullptr;                      // denominator
+  MonitorElement *tp_pt_zoom = nullptr;                 // denominator
+  MonitorElement *tp_eta = nullptr;                     // denominator
+  MonitorElement *tp_d0 = nullptr;                      // denominator
+  MonitorElement *tp_VtxR = nullptr;                    // denominator (also known as vxy)
+  MonitorElement *tp_VtxZ = nullptr;                    // denominator
+  MonitorElement *gen_clusters_if_stub = nullptr;       // numerator
+  MonitorElement *gen_clusters_if_stub_zoom = nullptr;  // numerator
+  MonitorElement *match_tp_pt = nullptr;                // numerator
+  MonitorElement *match_tp_pt_zoom = nullptr;           // numerator
+  MonitorElement *match_tp_eta = nullptr;               // numerator
+  MonitorElement *match_tp_d0 = nullptr;                // numerator
+  MonitorElement *match_tp_VtxR = nullptr;              // numerator (also known as vxy)
+  MonitorElement *match_tp_VtxZ = nullptr;              // numerator
 
   // 2D plots
   MonitorElement *trackPhi_vs_stubPhi = nullptr;

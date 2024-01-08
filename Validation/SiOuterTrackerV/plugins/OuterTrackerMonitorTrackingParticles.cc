@@ -282,9 +282,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     // Find clusters related to tracking particle
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
-    std::vector<double> den;
-    std::vector<double> num;
-
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
 
@@ -296,24 +293,33 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       GlobalPoint coords = theGeomDet->surface().toGlobal(topol->localPosition(associatedClusters[k]->findAverageLocalCoordinatesCentered()));
 
       bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
-      if (isGenuine) 
+      if (!isGenuine) 
         continue;
-          
-      den.push_back(tmp_tp_pt);
-      std::cout << "den[" << den.size() - 1 << "] = " << den.back() << std::endl;
+
+      gen_clusters->Fill(tmp_tp_pt);
+      if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
+          gen_clusters_zoom->Fill(tmp_tp_pt);
       
       if (TTStubHandle->find(stackDetid) != TTStubHandle->end()) {
-        edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
-        for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
-            GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
-            GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
-            if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
-              num.push_back(tmp_tp_pt);
-              std::cout << "num[" << den.size() - 1 << "] = " << num.back() << std::endl;
-            }
-         }
+      edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+      for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+          auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
+          if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+              continue; // Skip to the next iteration if the stub is not genuine
+          }
+
+          GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
+          GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
+
+          if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
+              gen_clusters_if_stub->Fill(tmp_tp_pt);
+              if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
+                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+          }
       }
-    }
+  }
+}
+
 
     // ----------------------------------------------------------------------------------------------
     // look for L1 tracks matched to the tracking particle
@@ -874,6 +880,24 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   match_tp_pt->setAxisTitle("p_{T} [GeV]", 1);
   match_tp_pt->setAxisTitle("# matched tracking particles", 2);
 
+  HistoName = "gen_clusters";
+  gen_clusters = iBooker.book1D(HistoName,
+                         HistoName,
+                         psEffic_pt.getParameter<int32_t>("Nbinsx"),
+                         psEffic_pt.getParameter<double>("xmin"),
+                         psEffic_pt.getParameter<double>("xmax"));
+  gen_clusters->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters->setAxisTitle("# tracking particles", 2);
+
+  HistoName = "gen_clusters_if_stub";
+  gen_clusters_if_stub = iBooker.book1D(HistoName,
+                         HistoName,
+                         psEffic_pt.getParameter<int32_t>("Nbinsx"),
+                         psEffic_pt.getParameter<double>("xmin"),
+                         psEffic_pt.getParameter<double>("xmax"));
+  gen_clusters_if_stub->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters_if_stub->setAxisTitle("# tracking particles", 2);
+
   // pT zoom (0-10 GeV)
   edm::ParameterSet psEffic_pt_zoom = conf_.getParameter<edm::ParameterSet>("TH1Effic_pt_zoom");
   HistoName = "tp_pt_zoom";
@@ -894,6 +918,24 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                                     psEffic_pt_zoom.getParameter<double>("xmax"));
   match_tp_pt_zoom->setAxisTitle("p_{T} [GeV]", 1);
   match_tp_pt_zoom->setAxisTitle("# matched tracking particles", 2);
+
+  HistoName = "gen_clusters_zoom";
+  gen_clusters_zoom = iBooker.book1D(HistoName,
+                         HistoName,
+                         psEffic_pt_zoom.getParameter<int32_t>("Nbinsx"),
+                         psEffic_pt_zoom.getParameter<double>("xmin"),
+                         psEffic_pt_zoom.getParameter<double>("xmax"));
+  gen_clusters_zoom->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters_zoom->setAxisTitle("# tracking particles", 2);
+
+  HistoName = "gen_clusters_if_stub_zoom";
+  gen_clusters_if_stub_zoom = iBooker.book1D(HistoName,
+                         HistoName,
+                         psEffic_pt_zoom.getParameter<int32_t>("Nbinsx"),
+                         psEffic_pt_zoom.getParameter<double>("xmin"),
+                         psEffic_pt_zoom.getParameter<double>("xmax"));
+  gen_clusters_if_stub_zoom->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters_if_stub_zoom->setAxisTitle("# tracking particles", 2);
 
   // eta
   edm::ParameterSet psEffic_eta = conf_.getParameter<edm::ParameterSet>("TH1Effic_eta");
@@ -1283,7 +1325,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_z_res_l0->setAxisTitle("events ", 2);
 
   // z-resoution for barrel region
-  HistoName = "z-coordinate resolution barrel";
+  HistoName = "#Delta z barrel";
   z_res_barrel = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1356,13 +1398,13 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_isPS->setAxisTitle("tp_z - stub_z", 1);
   z_res_isPS->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution barrel PS modules";
+  HistoName = "#Delta z barrel PS modules";
   z_res_isPS_barrel = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
                             psZ_Res.getParameter<double>("xmin"),
                             psZ_Res.getParameter<double>("xmax"));
-  z_res_isPS_barrel->setAxisTitle("tp_z - stub_z", 1);
+  z_res_isPS_barrel->setAxisTitle("tp_z - stub_z [cm]", 1);
   z_res_isPS_barrel->setAxisTitle("events ", 2);
 
   // z-resolution for 2S modules
@@ -1372,16 +1414,16 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
                             psZ_Res.getParameter<double>("xmin"),
                             psZ_Res.getParameter<double>("xmax"));
-  z_res_is2S->setAxisTitle("tp_z - stub_z", 1);
+  z_res_is2S->setAxisTitle("tp_z - stub_z [cm]", 1);
   z_res_is2S->setAxisTitle("events ", 2);
 
-   HistoName = "z-coordinate resolution barrel 2S modules";
+   HistoName = "#Delta z barrel 2S modules";
   z_res_is2S_barrel = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
                             psZ_Res.getParameter<double>("xmin"),
                             psZ_Res.getParameter<double>("xmax"));
-  z_res_is2S_barrel->setAxisTitle("tp_z - stub_z", 1);
+  z_res_is2S_barrel->setAxisTitle("tp_z - stub_z [cm]", 1);
   z_res_is2S_barrel->setAxisTitle("events ", 2);
 
   // z-resolution endcaps only
@@ -1416,7 +1458,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
 
   // stub vs tp phi resolution
   edm::ParameterSet psPhi_Res = conf_.getParameter<edm::ParameterSet>("TH1Phi_Res");
-  HistoName = "stub phi resolution";
+  HistoName = "#Delta #phi";
   stub_phi_res = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1519,7 +1561,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
 
   // bend resolution
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
-  HistoName = "bend resolution";
+  HistoName = "#Delta bend";
   bend_res = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),

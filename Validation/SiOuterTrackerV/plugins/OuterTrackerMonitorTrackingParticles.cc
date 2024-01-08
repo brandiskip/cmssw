@@ -282,10 +282,13 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     // Find clusters related to tracking particle
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
+    std::map<DetId, int> clusterToStubCountMap;
+
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
 
       DetId clusdetid = associatedClusters[k]->getDetId();
+      clusterToStubCountMap[clusdetid] = 0;
       DetId stackDetid = tTopo->stack(clusdetid);
       const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit(clusdetid);
       const PixelGeomDetUnit* theGeomDet = dynamic_cast<const PixelGeomDetUnit*>(det0);
@@ -300,9 +303,10 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
           gen_clusters_zoom->Fill(tmp_tp_pt);
       
+      // if there are stubs on the same detid, loop on those stubs
       if (TTStubHandle->find(stackDetid) != TTStubHandle->end()) {
-      edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
-      for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+        edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+        for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
           if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
               continue; // Skip to the next iteration if the stub is not genuine
@@ -312,13 +316,22 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
 
           if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
-              gen_clusters_if_stub->Fill(tmp_tp_pt);
-              if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
-                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+            clusterToStubCountMap[clusdetid]++;
+            gen_clusters_if_stub->Fill(tmp_tp_pt);
+            if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
+              gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+            break;
+            }
           }
+        }
       }
-  }
-}
+
+      // Check for clusters matched with multiple stubs
+      for (const auto& entry : clusterToStubCountMap) {
+        if (entry.second > 1){
+          std::cout << "Cluster ID " << entry.first << " has " << entry.second << " matched stub(s)." << std::endl;
+        }  
+      }
 
 
     // ----------------------------------------------------------------------------------------------

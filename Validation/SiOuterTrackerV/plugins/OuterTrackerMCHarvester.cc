@@ -102,7 +102,7 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
       me_effic_clus->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_effic_clus->setAxisTitle("tracking particle pT [GeV]");
       me_effic_clus->getTH1F()->GetYaxis()->SetTitle("Efficiency");
-      me_effic_clus->getTH1F()->SetMaximum(1.0);
+      me_effic_clus->getTH1F()->SetMaximum(1.1);
       me_effic_clus->getTH1F()->SetMinimum(0.0);
       me_effic_clus->getTH1F()->SetStats(false);
     }  // if ME found
@@ -131,7 +131,7 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
       me_effic_clus_zoom->getTH1F()->Divide(numerator_zoom, denominator_zoom, 1., 1., "B");
       me_effic_clus_zoom->setAxisTitle("tracking particle pT [GeV]");
       me_effic_clus_zoom->getTH1F()->GetYaxis()->SetTitle("Efficiency");
-      me_effic_clus_zoom->getTH1F()->SetMaximum(1.0);
+      me_effic_clus_zoom->getTH1F()->SetMaximum(1.1);
       me_effic_clus_zoom->getTH1F()->SetMinimum(0.0);
       me_effic_clus_zoom->getTH1F()->SetStats(false);
     }  // if ME found

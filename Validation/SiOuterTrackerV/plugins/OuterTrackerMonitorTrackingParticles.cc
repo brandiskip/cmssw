@@ -316,11 +316,19 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
 
           if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
-            clusterToStubCountMap[clusdetid]++;
-            gen_clusters_if_stub->Fill(tmp_tp_pt);
-            if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
-              gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
-            break;
+            edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
+            if (stubTP.isNull()) 
+              continue;
+
+            float stub_tp_pt = stubTP->pt();
+            if (stub_tp_pt == tmp_tp_pt){
+              std::cout << "stub_tp_pt: " << stub_tp_pt << std::endl;
+              std::cout << "tmp_tp_pt: " << tmp_tp_pt << std::endl;
+              clusterToStubCountMap[clusdetid]++;
+              gen_clusters_if_stub->Fill(tmp_tp_pt);
+              if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
+                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+              }
             }
           }
         }

@@ -282,13 +282,11 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     // Find clusters related to tracking particle
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
-    std::map<DetId, int> clusterToStubCountMap;
-
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
 
       DetId clusdetid = associatedClusters[k]->getDetId();
-      clusterToStubCountMap[clusdetid] = 0;
+      if(clusdetid.subdetId()!=StripSubdetector::TOB && clusdetid.subdetId()!=StripSubdetector::TID ) continue;
       DetId stackDetid = tTopo->stack(clusdetid);
       const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit(clusdetid);
       const PixelGeomDetUnit* theGeomDet = dynamic_cast<const PixelGeomDetUnit*>(det0);
@@ -298,6 +296,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
       if (!isGenuine) 
         continue;
+
+      int stubCounter = 0;
+      std::vector<std::pair<GlobalPoint, GlobalPoint>> matchedCoords; // Vector to store matched coordinates
 
       gen_clusters->Fill(tmp_tp_pt);
       if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
@@ -319,12 +320,11 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
             edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
             if (stubTP.isNull()) 
               continue;
-
+            std::cout << "stub_tmp_tp_pt: " << tmp_tp_pt << std::endl;
             float stub_tp_pt = stubTP->pt();
             if (stub_tp_pt == tmp_tp_pt){
-              std::cout << "stub_tp_pt: " << stub_tp_pt << std::endl;
-              std::cout << "tmp_tp_pt: " << tmp_tp_pt << std::endl;
-              clusterToStubCountMap[clusdetid]++;
+              stubCounter++; 
+              matchedCoords.push_back(std::make_pair(coords0, coords1)); // Store the matched coordinates
               gen_clusters_if_stub->Fill(tmp_tp_pt);
               if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
                 gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
@@ -332,13 +332,19 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
             }
           }
         }
-      }
-
-      // Check for clusters matched with multiple stubs
-      for (const auto& entry : clusterToStubCountMap) {
-        if (entry.second > 1){
-          std::cout << "Cluster ID " << entry.first << " has " << entry.second << " matched stub(s)." << std::endl;
-        }  
+        if (stubCounter > 1) {
+                std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
+                for (const auto& coordPair : matchedCoords) {
+                  std::cout << "coords x: " << coords.x() << ", coords y: " << coords.y() << ", coords z: " << coords.z() << ", coords r: " << coords.perp() << ", coords phi: " << coords.phi() << ", coords eta: " << coords.eta() << std::endl;
+                  std::cout << "tmp_tp_pt: " << tmp_tp_pt << std::endl;
+                  std::cout << "Matched coords0 x: " << coordPair.first.x() << ", coords1 x: " << coordPair.second.x() << std::endl;
+                  std::cout << "Matched coords0 y: " << coordPair.first.y() << ", coords1 y: " << coordPair.second.y() << std::endl;
+                  std::cout << "Matched coords0 z: " << coordPair.first.z() << ", coords1 z: " << coordPair.second.z() << std::endl;
+                  std::cout << "Matched coords0 r: " << coordPair.first.perp() << ", coords1 r: " << coordPair.second.perp() << std::endl;
+                  std::cout << "Matched coords0 phi: " << coordPair.first.phi() << ", coords1 phi: " << coordPair.second.phi() << std::endl;
+                  std::cout << "Matched coords0 eta: " << coordPair.first.eta() << ", coords1 eta: " << coordPair.second.eta() << std::endl;
+                }
+            }
       }
 
 

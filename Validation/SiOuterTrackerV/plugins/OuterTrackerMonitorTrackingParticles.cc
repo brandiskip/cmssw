@@ -297,6 +297,15 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (!isGenuine) 
         continue;
 
+      int isBarrel = 0;
+        if (clusdetid.subdetId() == StripSubdetector::TOB) {
+          isBarrel = 1;
+        } else if (clusdetid.subdetId() == StripSubdetector::TID) {
+          isBarrel = 0;
+        } else {
+          edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB or TID stub, shouldn't happen...";
+        }
+
       int stubCounter = 0;
       std::vector<std::pair<GlobalPoint, GlobalPoint>> matchedCoords; // Vector to store matched coordinates
 
@@ -316,11 +325,18 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
 
+          if (isBarrel ==1){
+            if (abs(coords1.perp()- coords0.perp()) > 20){
+               std::cout << "Matched coords0 z: " << coords0.z()    << ", coords1 z: " << coords1.z() << std::endl;
+               std::cout << "Matched coords0 r: " << coords1.perp() << ", coords1 r: " << coords1.perp() << std::endl;
+            }   
+          }
+
           if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
             edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
             if (stubTP.isNull()) 
               continue;
-            std::cout << "stub_tmp_tp_pt: " << tmp_tp_pt << std::endl;
+            //std::cout << "stub_tmp_tp_pt: " << tmp_tp_pt << std::endl;
             float stub_tp_pt = stubTP->pt();
             if (stub_tp_pt == tmp_tp_pt){
               stubCounter++; 
@@ -332,7 +348,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
             }
           }
         }
-        if (stubCounter > 1) {
+        /*
+        if (stubCounter == 1) {
                 std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
                 for (const auto& coordPair : matchedCoords) {
                   std::cout << "coords x: " << coords.x() << ", coords y: " << coords.y() << ", coords z: " << coords.z() << ", coords r: " << coords.perp() << ", coords phi: " << coords.phi() << ", coords eta: " << coords.eta() << std::endl;
@@ -345,6 +362,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
                   std::cout << "Matched coords0 eta: " << coordPair.first.eta() << ", coords1 eta: " << coordPair.second.eta() << std::endl;
                 }
             }
+            */
       }
 
 

@@ -318,19 +318,23 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
-          if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
-              continue; // Skip to the next iteration if the stub is not genuine
-          }
-
           GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
-
           if (isBarrel ==1){
             if (abs(coords1.perp()- coords0.perp()) > 20){
                std::cout << "Matched coords0 z: " << coords0.z()    << ", coords1 z: " << coords1.z() << std::endl;
                std::cout << "Matched coords0 r: " << coords1.perp() << ", coords1 r: " << coords1.perp() << std::endl;
             }   
           }
+
+          if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+              continue; // Skip to the next iteration if the stub is not genuine
+          }
+
+          /*
+          GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
+          GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
+          */
 
           if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
             edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));

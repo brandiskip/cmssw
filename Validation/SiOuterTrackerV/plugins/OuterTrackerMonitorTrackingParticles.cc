@@ -318,25 +318,26 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
+          /*
           GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
           if (isBarrel ==1){
-            if (abs(coords1.perp()- coords0.perp()) > 20){
+            if (fabs(coords1.perp()- coords0.perp()) > 20){
                std::cout << "Matched coords0 z: " << coords0.z()    << ", coords1 z: " << coords1.z() << std::endl;
-               std::cout << "Matched coords0 r: " << coords1.perp() << ", coords1 r: " << coords1.perp() << std::endl;
+               std::cout << "Matched coords0 r: " << coords0.perp() << ", coords1 r: " << coords1.perp() << std::endl;
             }   
           }
+          */
 
           if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
               continue; // Skip to the next iteration if the stub is not genuine
           }
 
-          /*
           GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
-          */
 
           if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
+          // if (coords.x() == coords1.x()) {
             edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
             if (stubTP.isNull()) 
               continue;
@@ -352,21 +353,24 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
             }
           }
         }
-        /*
-        if (stubCounter == 1) {
-                std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
-                for (const auto& coordPair : matchedCoords) {
-                  std::cout << "coords x: " << coords.x() << ", coords y: " << coords.y() << ", coords z: " << coords.z() << ", coords r: " << coords.perp() << ", coords phi: " << coords.phi() << ", coords eta: " << coords.eta() << std::endl;
-                  std::cout << "tmp_tp_pt: " << tmp_tp_pt << std::endl;
-                  std::cout << "Matched coords0 x: " << coordPair.first.x() << ", coords1 x: " << coordPair.second.x() << std::endl;
-                  std::cout << "Matched coords0 y: " << coordPair.first.y() << ", coords1 y: " << coordPair.second.y() << std::endl;
-                  std::cout << "Matched coords0 z: " << coordPair.first.z() << ", coords1 z: " << coordPair.second.z() << std::endl;
-                  std::cout << "Matched coords0 r: " << coordPair.first.perp() << ", coords1 r: " << coordPair.second.perp() << std::endl;
-                  std::cout << "Matched coords0 phi: " << coordPair.first.phi() << ", coords1 phi: " << coordPair.second.phi() << std::endl;
-                  std::cout << "Matched coords0 eta: " << coordPair.first.eta() << ", coords1 eta: " << coordPair.second.eta() << std::endl;
-                }
+        if (stubCounter > 1) {
+          if (isBarrel == 1){
+            std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
+            for (const auto& coordPair : matchedCoords) {
+              if (fabs(coordPair.first.perp() - coordPair.second.perp()) > 20){
+                std::cout << "coords x: " << coords.x() << ", coords y: " << coords.y() << ", coords z: " << coords.z() << ", coords r: " << coords.perp() << ", coords phi: " << coords.phi() << ", coords eta: " << coords.eta() << std::endl;
+                std::cout << "tmp_tp_pt: " << tmp_tp_pt << std::endl;
+                std::cout << "Matched coords0 x: " << coordPair.first.x() << ", coords1 x: " << coordPair.second.x() << std::endl;
+                std::cout << "Matched coords0 y: " << coordPair.first.y() << ", coords1 y: " << coordPair.second.y() << std::endl;
+                std::cout << "Matched coords0 z: " << coordPair.first.z() << ", coords1 z: " << coordPair.second.z() << std::endl;
+                std::cout << "Matched coords0 r: " << coordPair.first.perp() << ", coords1 r: " << coordPair.second.perp() << std::endl;
+                std::cout << "Matched coords0 phi: " << coordPair.first.phi() << ", coords1 phi: " << coordPair.second.phi() << std::endl;
+                std::cout << "Matched coords0 eta: " << coordPair.first.eta() << ", coords1 eta: " << coordPair.second.eta() << std::endl;
+              }
             }
-            */
+          }
+                
+            }
       }
 
 

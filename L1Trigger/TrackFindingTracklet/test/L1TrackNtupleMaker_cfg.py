@@ -12,7 +12,7 @@ process = cms.Process("L1TrackNtuple")
 ############################################################
 
 # D76 used for old CMSSW_11_3 MC datasets. D88 used for CMSSW_12_6 datasets.
-#GEOMETRY = "D76"  
+#GEOMETRY = "D76"
 GEOMETRY = "D88"
 
 # Set L1 tracking algorithm:
@@ -20,7 +20,7 @@ GEOMETRY = "D88"
 # 'HYBRID_NEWKF' (baseline, 4par fit, with bit-accurate KF emulation),
 # 'HYBRID_REDUCED' to use the "Summer Chain" configuration with reduced inputs.
 # (Or legacy algos 'TMTT' or 'TRACKLET').
-L1TRKALGO = 'HYBRID'
+L1TRKALGO = 'HYBRID_DISPLACED'
 
 WRITE_DATA = False
 
@@ -38,8 +38,8 @@ process.MessageLogger.Tracklet = dict(limit = -1)
 process.MessageLogger.TrackTriggerHPH = dict(limit = -1)
 
 if GEOMETRY == "D76" or GEOMETRY == "D88":
-    # Use D88 for both, as both correspond to identical CMS Tracker design, and D76 
-    # unavailable in CMSSW_12_6_0. 
+    # Use D88 for both, as both correspond to identical CMS Tracker design, and D76
+    # unavailable in CMSSW_12_6_0.
     print("using geometry " + GEOMETRY + " (tilted)")
     process.load('Configuration.Geometry.GeometryExtended2026D88Reco_cff')
     process.load('Configuration.Geometry.GeometryExtended2026D88_cff')
@@ -105,7 +105,7 @@ if GEOMETRY == "D76":
 # Use skipEvents to select particular single events for test vectors
 #process.source.skipEvents = cms.untracked.uint32(11)
 
-process.TFileService = cms.Service("TFileService", fileName = cms.string('TTbar_PU200_'+GEOMETRY+'.root'), closeFileFast = cms.untracked.bool(True))
+process.TFileService = cms.Service("TFileService", fileName = cms.string('TTbar_PU200_'+GEOMETRY+'_'+L1TRKALGO+'.root'), closeFileFast = cms.untracked.bool(True))
 process.Timing = cms.Service("Timing", summaryOnly = cms.untracked.bool(True))
 
 

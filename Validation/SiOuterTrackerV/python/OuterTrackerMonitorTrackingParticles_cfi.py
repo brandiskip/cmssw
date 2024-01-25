@@ -222,7 +222,7 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
 
 # tp_z - stub_z resolution
     TH1Z_Res = cms.PSet(
-        Nbinsx = cms.int32(11),
+        Nbinsx = cms.int32(399),
         xmax = cms.double(5.5),
         xmin = cms.double(-5.5)
         ),
@@ -236,9 +236,9 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
 
 # tp_phi - stub_phi resolution
     TH1Phi_Res = cms.PSet(
-        Nbinsx = cms.int32(39),
-        xmax = cms.double(0.2),
-        xmin = cms.double(-0.2)
+        Nbinsx = cms.int32(79),
+        xmax = cms.double(0.1),
+        xmin = cms.double(-0.1)
         ),
 
 # 2D histo tiltAngle vs Z0

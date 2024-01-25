@@ -28,8 +28,7 @@ public:
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   float phiOverBendCorrection(bool, float, float, const TrackerTopology*, uint32_t, const GeomDetUnit*, const GeomDetUnit*);
-  //std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double modMaxZ, double modMinZ, float modMaxR, float modMinR) const;
-  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double modMaxZ, double modMinZ, float stub_r_avg) const;
+  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool, double modMaxZ, double modMinZ, float stub_r) const;
 
 
   // Number of stubs
@@ -63,18 +62,22 @@ public:
   MonitorElement *hist_tp_z_endcap = nullptr;
 
   // pT and eta for efficiency plots
-  MonitorElement *tp_pt = nullptr;             // denominator
-  MonitorElement *tp_pt_zoom = nullptr;        // denominator
-  MonitorElement *tp_eta = nullptr;            // denominator
-  MonitorElement *tp_d0 = nullptr;             // denominator
-  MonitorElement *tp_VtxR = nullptr;           // denominator (also known as vxy)
-  MonitorElement *tp_VtxZ = nullptr;           // denominator
-  MonitorElement *match_tp_pt = nullptr;       // numerator
-  MonitorElement *match_tp_pt_zoom = nullptr;  // numerator
-  MonitorElement *match_tp_eta = nullptr;      // numerator
-  MonitorElement *match_tp_d0 = nullptr;       // numerator
-  MonitorElement *match_tp_VtxR = nullptr;     // numerator (also known as vxy)
-  MonitorElement *match_tp_VtxZ = nullptr;     // numerator
+  MonitorElement *gen_clusters = nullptr;               // denominator
+  MonitorElement *gen_clusters_zoom = nullptr;          // denominator
+  MonitorElement *tp_pt = nullptr;                      // denominator
+  MonitorElement *tp_pt_zoom = nullptr;                 // denominator
+  MonitorElement *tp_eta = nullptr;                     // denominator
+  MonitorElement *tp_d0 = nullptr;                      // denominator
+  MonitorElement *tp_VtxR = nullptr;                    // denominator (also known as vxy)
+  MonitorElement *tp_VtxZ = nullptr;                    // denominator
+  MonitorElement *gen_clusters_if_stub = nullptr;       // numerator
+  MonitorElement *gen_clusters_if_stub_zoom = nullptr;  // numerator
+  MonitorElement *match_tp_pt = nullptr;                // numerator
+  MonitorElement *match_tp_pt_zoom = nullptr;           // numerator
+  MonitorElement *match_tp_eta = nullptr;               // numerator
+  MonitorElement *match_tp_d0 = nullptr;                // numerator
+  MonitorElement *match_tp_VtxR = nullptr;              // numerator (also known as vxy)
+  MonitorElement *match_tp_VtxZ = nullptr;              // numerator
 
   // 2D plots
   MonitorElement *trackPhi_vs_stubPhi = nullptr;
@@ -83,28 +86,28 @@ public:
   MonitorElement *trackBend_vs_stubBend = nullptr;
   MonitorElement *stub_maxZ_vs_minZ = nullptr;
   MonitorElement *modMaxZ_vs_modMinZ = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ = nullptr;
+  MonitorElement *stub_Z_vs_tpZ = nullptr;
   MonitorElement *stub_maxZ_vs_minZ_highPt = nullptr;
   MonitorElement *modMaxZ_vs_modMinZ_highPt = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_highPt = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L1 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted_pT_2to3 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted_pT_3to5 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L1_tilted_pT_5to10 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L2 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted_pT_2to3 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted_pT_3to5 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L2_tilted_pT_5to10 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L3 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted_pT_2to3 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted_pT_3to5 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L3_tilted_pT_5to10 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L4 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L5 = nullptr;
-  MonitorElement *stub_avgZ_vs_tpZ_L6 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_highPt = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L1 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L1_tilted = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L1_tilted_pT_2to3 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L1_tilted_pT_3to5 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L1_tilted_pT_5to10 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L2 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L2_tilted = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L2_tilted_pT_2to3 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L2_tilted_pT_3to5 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L2_tilted_pT_5to10 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L3 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L3_tilted = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L3_tilted_pT_2to3 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L3_tilted_pT_3to5 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L3_tilted_pT_5to10 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L4 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L5 = nullptr;
+  MonitorElement *stub_Z_vs_tpZ_L6 = nullptr;
   MonitorElement *modMaxR_vs_modMinR = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend = nullptr;
   MonitorElement *barrel_trackBend_vs_stubBend_L1 = nullptr;

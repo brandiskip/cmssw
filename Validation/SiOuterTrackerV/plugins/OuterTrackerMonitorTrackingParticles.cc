@@ -306,6 +306,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB or TID stub, shouldn't happen...";
         }
 
+      bool isTiltedBarrel = (isBarrel && tTopo->tobSide(clusdetid) != 3);
+
       /*
       int stubCounter = 0;
       std::vector<std::pair<GlobalPoint, GlobalPoint>> matchedCoords; // Vector to store matched coordinates
@@ -320,49 +322,46 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
-          /*
-          GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
-          GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
-          if (isBarrel ==1){
-            if (fabs(coords1.perp()- coords0.perp()) > 20){
-               std::cout << "Matched coords0 z: " << coords0.z()    << ", coords1 z: " << coords1.z() << std::endl;
-               std::cout << "Matched coords0 r: " << coords0.perp() << ", coords1 r: " << coords1.perp() << std::endl;
-            }   
-          }
-          */
-
+          
           if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
               continue; // Skip to the next iteration if the stub is not genuine
           }
 
+          MeasurementPoint measPoint0 = stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered();
+          MeasurementPoint measPoint1 = stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered();
 
           GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
-
-          //std::cout << "Global Coordinates for Cluster 0: (" << coords0.x() << ", " << coords0.y() << ", " << coords0.z() << ")" << std::endl;
-          //std::cout << "Global Coordinates for Cluster 1: (" << coords1.x() << ", " << coords1.y() << ", " << coords1.z() << ")" << std::endl;
 
           if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
             edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
             if (stubTP.isNull()) 
               continue;
+            // only looking at barrel region
             if (isBarrel ==1){
+              // is the r-coord between the two clusters that make up the stub is greater than 20 cm
               if (fabs(coords1.perp()- coords0.perp()) > 20){
-                std::cout << "coords x: " << coords.x() << std::endl;
-                std::cout << "Processing stubs on stackDetid: " << stackDetid.rawId() << std::endl;
-                DetId clus0DetId = stubIter->clusterRef(0)->getDetId();
-                DetId clus1DetId = stubIter->clusterRef(1)->getDetId();
-                // Find the stackDetid for each cluster's DetId
-                DetId stackDetid0 = tTopo->stack(clus0DetId);
-                DetId stackDetid1 = tTopo->stack(clus1DetId);
+                if (isTiltedBarrel) {
+                  std::cout << "Cluster 0 MeasurementPoint: x = " << measPoint0.x() << ", y = " << measPoint0.y() << std::endl;
+                  std::cout << "Cluster 1 MeasurementPoint: x = " << measPoint1.x() << ", y = " << measPoint1.y() << std::endl;
+                  // print the x-coords of the cluster that is matching
+                  //std::cout << "coords x: " << coords.x() << std::endl;
+                  // print the stackDetid of the cluster that the stub is matched to
+                  //std::cout << "Processing stubs on stackDetid: " << stackDetid.rawId() << std::endl;
+                  //DetId clus0DetId = stubIter->clusterRef(0)->getDetId();
+                  //DetId clus1DetId = stubIter->clusterRef(1)->getDetId();
+                  // Find the stackDetid for each cluster's DetId
+                  //DetId stackDetid0 = tTopo->stack(clus0DetId);
+                  //DetId stackDetid1 = tTopo->stack(clus1DetId);
 
-                // Print the stackDetid for each cluster
-                std::cout << "Cluster 0 stackDetid: " << stackDetid0.rawId() << std::endl;
-                std::cout << "Cluster 1 stackDetid: " << stackDetid1.rawId() << std::endl;
+                  // Print the stackDetid for each cluster
+                  //std::cout << "Cluster 0 stackDetid: " << stackDetid0.rawId() << std::endl;
+                  //std::cout << "Cluster 1 stackDetid: " << stackDetid1.rawId() << std::endl;
 
-                // Print the x, y, z, and r coordinates for each cluster
-                std::cout << "Cluster 0 Coordinates: x = " << coords0.x() << ", y = " << coords0.y() << ", z = " << coords0.z() << ", r = " << coords0.perp() << std::endl;
-                std::cout << "Cluster 1 Coordinates: x = " << coords1.x() << ", y = " << coords1.y() << ", z = " << coords1.z() << ", r = " << coords1.perp() << std::endl;
+                  // Print the x, y, z, and r coordinates for each cluster
+                  //std::cout << "Cluster 0 Coordinates: x = " << coords0.x() << ", y = " << coords0.y() << ", z = " << coords0.z() << ", r = " << coords0.perp() << std::endl;
+                  //std::cout << "Cluster 1 Coordinates: x = " << coords1.x() << ", y = " << coords1.y() << ", z = " << coords1.z() << ", r = " << coords1.perp() << std::endl;
+                }
               }
             }
 

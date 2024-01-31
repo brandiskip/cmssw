@@ -330,6 +330,10 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           MeasurementPoint measPoint0 = stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered();
           MeasurementPoint measPoint1 = stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered();
 
+          // Convert MeasurementPoint to LocalPoint
+          LocalPoint localCoords0 = topol->localPosition(measPoint0);
+          LocalPoint localCoords1 = topol->localPosition(measPoint1);
+
           GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
           GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
 
@@ -342,8 +346,12 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
               // is the r-coord between the two clusters that make up the stub is greater than 20 cm
               if (fabs(coords1.perp()- coords0.perp()) > 20){
                 if (isTiltedBarrel) {
-                  std::cout << "Cluster 0 MeasurementPoint: x = " << measPoint0.x() << ", y = " << measPoint0.y() << std::endl;
-                  std::cout << "Cluster 1 MeasurementPoint: x = " << measPoint1.x() << ", y = " << measPoint1.y() << std::endl;
+                  //std::cout << "Cluster 0 MeasurementPoint: x = " << measPoint0.x() << ", y = " << measPoint0.y() << std::endl;
+                  //std::cout << "Cluster 1 MeasurementPoint: x = " << measPoint1.x() << ", y = " << measPoint1.y() << std::endl;
+
+                  std::cout << "Cluster 0 Local Coordinates: x = " << localCoords0.x() << ", y = " << localCoords0.y() << std::endl;
+                  std::cout << "Cluster 1 Local Coordinates: x = " << localCoords1.x() << ", y = " << localCoords1.y() << std::endl;
+
                   // print the x-coords of the cluster that is matching
                   //std::cout << "coords x: " << coords.x() << std::endl;
                   // print the stackDetid of the cluster that the stub is matched to

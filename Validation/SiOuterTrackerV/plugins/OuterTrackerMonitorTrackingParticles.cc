@@ -285,15 +285,16 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
 
-      DetId clusdetid = associatedClusters[k]->getDetId();
+      auto clusA = associatedClusters[k];
+      DetId clusdetid = clusA->getDetId();
       if(clusdetid.subdetId()!=StripSubdetector::TOB && clusdetid.subdetId()!=StripSubdetector::TID ) continue;
-      DetId stackDetid = tTopo->stack(clusdetid);
-      const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit(clusdetid);
-      const PixelGeomDetUnit* theGeomDet = dynamic_cast<const PixelGeomDetUnit*>(det0);
-      const PixelTopology* topol = dynamic_cast<const PixelTopology*>(&(theGeomDet->specificTopology())); 
-      GlobalPoint coords = theGeomDet->surface().toGlobal(topol->localPosition(associatedClusters[k]->findAverageLocalCoordinatesCentered()));
+      DetId detidA = tTopo->stack(clusdetid);
+      const GeomDetUnit* detA = theTrackerGeom->idToDetUnit(clusdetid);
+      const PixelGeomDetUnit* theGeomDetA = dynamic_cast<const PixelGeomDetUnit*>(detA);
+      const PixelTopology* topoA = dynamic_cast<const PixelTopology*>(&(theGeomDetA->specificTopology())); 
+      GlobalPoint coordsA = theGeomDetA->surface().toGlobal(topoA->localPosition(clusA->findAverageLocalCoordinatesCentered()));
 
-      bool isGenuine = MCTruthTTClusterHandle->isGenuine(associatedClusters[k]);
+      bool isGenuine = MCTruthTTClusterHandle->isGenuine(clusA);
       if (!isGenuine) 
         continue;
 
@@ -318,8 +319,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           gen_clusters_zoom->Fill(tmp_tp_pt);
       
       // if there are stubs on the same detid, loop on those stubs
-      if (TTStubHandle->find(stackDetid) != TTStubHandle->end()) {
-        edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[stackDetid];
+      if (TTStubHandle->find(detidA) != TTStubHandle->end()) {
+        edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[detidA];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
           
@@ -327,30 +328,59 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
               continue; // Skip to the next iteration if the stub is not genuine
           }
 
-          MeasurementPoint measPoint0 = stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered();
-          MeasurementPoint measPoint1 = stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered();
+          const GeomDetUnit* detB = theTrackerGeom->idToDetUnit(detidA);
+          const GeomDetUnit* detC = theTrackerGeom->idToDetUnit(tTopo->partnerDetId(detidA));
+          const PixelGeomDetUnit* theGeomDetB = dynamic_cast<const PixelGeomDetUnit*>(detB);
+          const PixelGeomDetUnit* theGeomDetC = dynamic_cast<const PixelGeomDetUnit*>(detC);
+          const PixelTopology* topoB = dynamic_cast<const PixelTopology*>(&(theGeomDetB->specificTopology())); 
+          const PixelTopology* topoC = dynamic_cast<const PixelTopology*>(&(theGeomDetC->specificTopology())); 
+
+          //MeasurementPoint measPoint0 = stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered();
+          //MeasurementPoint measPoint1 = stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered();
+
+          //std::cout << "Cluster 0 MeasurementPoint all outerTracker: x = " << measPoint0.x() << ", y = " << measPoint0.y() << std::endl;
+          //std::cout << "Cluster 1 MeasurementPoint all outerTracker: x = " << measPoint1.x() << ", y = " << measPoint1.y() << std::endl;
 
           // Convert MeasurementPoint to LocalPoint
-          LocalPoint localCoords0 = topol->localPosition(measPoint0);
-          LocalPoint localCoords1 = topol->localPosition(measPoint1);
+          //LocalPoint localCoords0 = topol->localPosition(measPoint0);
+          //LocalPoint localCoords1 = topol->localPosition(measPoint1);
 
-          GlobalPoint coords0 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
-          GlobalPoint coords1 = theGeomDet->surface().toGlobal(topol->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
+          //std::cout << "Cluster 0 Local Coordinates all outerTracker: x = " << localCoords0.x() << ", y = " << localCoords0.y() << std::endl;
+          //std::cout << "Cluster 1 Local Coordinates all outerTracker: x = " << localCoords1.x() << ", y = " << localCoords1.y() << std::endl;
 
-          if (coords.x() == coords0.x() || coords.x() == coords1.x()) {
+          GlobalPoint coordsB = theGeomDetB->surface().toGlobal(topoB->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
+          GlobalPoint coordsC = theGeomDetC->surface().toGlobal(topoC->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
+
+          if (coordsA.x() == coordsB.x() || coordsA.x() == coordsC.x()) {
             edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
             if (stubTP.isNull()) 
               continue;
+            //std::cout << "Cluster 0 MeasurementPoint if stub coords match cluster: x = " << measPoint0.x() << ", y = " << measPoint0.y() << std::endl;
+            //std::cout << "Cluster 1 MeasurementPoint if stub coords match cluster: x = " << measPoint1.x() << ", y = " << measPoint1.y() << std::endl;
+            //std::cout << "Cluster 0 Local Coordinates if stub coords match cluster: x = " << localCoords0.x() << ", y = " << localCoords0.y() << std::endl;
+            //std::cout << "Cluster 1 Local Coordinates if stub coords match cluster: x = " << localCoords1.x() << ", y = " << localCoords1.y() << std::endl;
             // only looking at barrel region
             if (isBarrel ==1){
+              //std::cout << "Cluster 0 Local Coordinates if stub coords match cluster in barrel: x = " << localCoords0.x() << ", y = " << localCoords0.y() << std::endl;
+              //std::cout << "Cluster 1 Local Coordinates if stub coords match cluster in barrel: x = " << localCoords1.x() << ", y = " << localCoords1.y() << std::endl;
+              //const float epsilon = 0.001; // Small value for floating-point comparison
               // is the r-coord between the two clusters that make up the stub is greater than 20 cm
-              if (fabs(coords1.perp()- coords0.perp()) > 20){
+              if (fabs(coordsC.perp()- coordsB.perp()) > 20){
                 if (isTiltedBarrel) {
-                  //std::cout << "Cluster 0 MeasurementPoint: x = " << measPoint0.x() << ", y = " << measPoint0.y() << std::endl;
-                  //std::cout << "Cluster 1 MeasurementPoint: x = " << measPoint1.x() << ", y = " << measPoint1.y() << std::endl;
 
-                  std::cout << "Cluster 0 Local Coordinates: x = " << localCoords0.x() << ", y = " << localCoords0.y() << std::endl;
-                  std::cout << "Cluster 1 Local Coordinates: x = " << localCoords1.x() << ", y = " << localCoords1.y() << std::endl;
+                  //std::cout << "Cluster 0 MeasurementPoint tiltedBarrel r<20: x = " << measPoint0.x() << ", y = " << measPoint0.y() << std::endl;
+                  //std::cout << "Cluster 1 MeasurementPoint tiltedBarrel r<20: x = " << measPoint1.x() << ", y = " << measPoint1.y() << std::endl;
+
+                  //std::cout << "Cluster 0 Local Coordinates tiltedBarrel r<20: x = " << localCoords0.x() << ", y = " << localCoords0.y() << std::endl;
+                  //std::cout << "Cluster 1 Local Coordinates tiltedBarrel r<20: x = " << localCoords1.x() << ", y = " << localCoords1.y() << std::endl;
+
+                  // Check if y-coordinate of Cluster 1 is approximately 1.1777 or -1.1777
+                  //bool isYCoordExcluded = fabs(localCoords1.y() - 1.1777) < epsilon || fabs(localCoords1.y() + 1.1777) < epsilon;
+
+                  //if (!isYCoordExcluded) {
+                    //std::cout << "Cluster 0 Local Coordinates tiltedBarrel r>20: x = " << localCoords0.x() << ", y = " << localCoords0.y() << std::endl;
+                    //std::cout << "Cluster 1 Local Coordinates tiltedBarrel r>20: x = " << localCoords1.x() << ", y = " << localCoords1.y() << std::endl;
+                  //}
 
                   // print the x-coords of the cluster that is matching
                   //std::cout << "coords x: " << coords.x() << std::endl;
@@ -367,8 +397,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
                   //std::cout << "Cluster 1 stackDetid: " << stackDetid1.rawId() << std::endl;
 
                   // Print the x, y, z, and r coordinates for each cluster
-                  //std::cout << "Cluster 0 Coordinates: x = " << coords0.x() << ", y = " << coords0.y() << ", z = " << coords0.z() << ", r = " << coords0.perp() << std::endl;
-                  //std::cout << "Cluster 1 Coordinates: x = " << coords1.x() << ", y = " << coords1.y() << ", z = " << coords1.z() << ", r = " << coords1.perp() << std::endl;
+                  std::cout << "Cluster B Coordinates: x = " << coordsB.x() << ", y = " << coordsB.y() << ", z = " << coordsB.z() << ", r = " << coordsB.perp() << std::endl;
+                  std::cout << "Cluster C Coordinates: x = " << coordsC.x() << ", y = " << coordsC.y() << ", z = " << coordsC.z() << ", r = " << coordsC.perp() << std::endl;
                 }
               }
             }
@@ -382,8 +412,8 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
                 gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
               }
             }
-          }
         }
+       }
         /*
         if (stubCounter == 1) {
           if (isBarrel == 1){

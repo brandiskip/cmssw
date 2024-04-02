@@ -7,7 +7,8 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
     trackingParticleToken = cms.InputTag("mix","MergedTrackTruth"), #tracking particles
     MCTruthStubInputTag = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"), #truth stub associator
     MCTruthTrackInputTag = cms.InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks"), #truth track associator
-    MCTruthClusterInputTag = cms.InputTag("TTClusterAssociatorFromPixelDigis", "ClusterAccepted"), #truth cluster associator
+    MCTruthClusterInputTag = cms.InputTag("TTClusterAssociatorFromPixelDigis", "ClusterInclusive"), #truth cluster associator
+    #MCTruthClusterInputTag = cms.InputTag("TTClusterAssociatorFromPixelDigis", "ClusterAccepted"), #truth cluster associator
     L1StubInputTag = cms.InputTag("TTStubsFromPhase2TrackerDigis","StubAccepted"),
     L1Tk_minNStub = cms.int32(4),       # L1 tracks with >= 4 stubs
     L1Tk_maxChi2dof = cms.double(25.0),# L1 tracks with Chi2 <= X
@@ -16,6 +17,13 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
     TP_minPt = cms.double(2.0),      # only save TPs with pt > X GeV
     TP_maxEta = cms.double(2.4),     # only save TPs with |eta| < X
     TP_maxVtxZ = cms.double(15.0),     # only save TPs with |z0| < X cm
+
+# fake rate
+    TH1FakeRate = cms.PSet(
+        Nbinsx = cms.int32(49),
+        xmin = cms.double(0.0),
+        xmax = cms.double(1.1)
+        ),
 
 # deltaZ vs count
     TH1delta_Z = cms.PSet(
@@ -241,75 +249,85 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(-0.1)
         ),
 
+# 2D histo x coordsB vs x coordsC
+    TH2coordsBvscoordsC = cms.PSet(
+        Nbinsx = cms.int32(99),
+        xmin = cms.double(-80.0),
+        xmax = cms.double(80.0),
+        Nbinsy = cms.int32(99),
+        ymin = cms.double(-80.0),
+        ymax = cms.double(80.0)
+        ),
+
 # 2D histo tiltAngle vs Z0
     TH2tiltAngleVsZ0 = cms.PSet(
-        Nbinsx = cms.int32(49), 
+        Nbinsx = cms.int32(49),
         xmin = cms.double(-120.0),
         xmax = cms.double(120.0),
-        Nbinsy = cms.int32(27), 
+        Nbinsy = cms.int32(27),
         ymin = cms.double(-1.8),
         ymax = cms.double(1.8)
-        ),    
+        ),
 
 # 2D histo deltaR vs deltaZ
     TH2DeltaRVsDeltaZ = cms.PSet(
-        Nbinsx = cms.int32(99), 
+        Nbinsx = cms.int32(99),
         xmin = cms.double(-130.0),
         xmax = cms.double(130.0),
-        Nbinsy = cms.int32(64), 
+        Nbinsy = cms.int32(64),
         ymin = cms.double(0.0),
         ymax = cms.double(65.0)
-        ),    
+        ),
 
 # 2D histo Z0 vs deltaZ
     TH2Z0VsDeltaZ = cms.PSet(
-        Nbinsx = cms.int32(99), 
+        Nbinsx = cms.int32(99),
         xmin = cms.double(-0.5),
         xmax = cms.double(0.5),
-        Nbinsy = cms.int32(59), 
+        Nbinsy = cms.int32(59),
         ymin = cms.double(-120.0),
         ymax = cms.double(120.0)
-        ),    
+        ),
 
 # 2D histo R0 vs deltaR
     TH2R0VsDeltaR = cms.PSet(
-        Nbinsx = cms.int32(49), 
+        Nbinsx = cms.int32(49),
         xmin = cms.double(0.0),
         xmax = cms.double(0.5),
-        Nbinsy = cms.int32(29), 
+        Nbinsy = cms.int32(29),
         ymin = cms.double(0.0),
         ymax = cms.double(60.0)
-        ),    
+        ),
 
 # 2D histo track_phi vs stub_phi
     TH2TpPhiVsStubPhi = cms.PSet(
-        Nbinsx = cms.int32(99), 
+        Nbinsx = cms.int32(99),
         xmin = cms.double(-3.5),
         xmax = cms.double(3.5),
-        Nbinsy = cms.int32(99), 
+        Nbinsy = cms.int32(99),
         ymin = cms.double(-3.5),
         ymax = cms.double(3.5)
-        ),    
+        ),
 
-# 2D histo track_z vs stub_z    
+# 2D histo track_z vs stub_z
     TH2TpZVsStubZ = cms.PSet(
-        Nbinsx = cms.int32(59), 
+        Nbinsx = cms.int32(59),
         xmin = cms.double(-120.0),
         xmax = cms.double(120.0),
-        Nbinsy = cms.int32(59), 
+        Nbinsy = cms.int32(59),
         ymin = cms.double(-120.0),
         ymax = cms.double(120.0)
-        ),    
+        ),
 
-# 2D histo modMaxR vs modMinR    
+# 2D histo modMaxR vs modMinR
     TH2MaxRvsMinR = cms.PSet(
-        Nbinsx = cms.int32(59), 
+        Nbinsx = cms.int32(59),
         xmin = cms.double(0.0),
         xmax = cms.double(120.0),
-        Nbinsy = cms.int32(59), 
+        Nbinsy = cms.int32(59),
         ymin = cms.double(0.0),
         ymax = cms.double(120.0)
-        ),    
+        ),
 
 # 2D histo track bend vs stub bend
     TH2TrackVsStub = cms.PSet(
@@ -327,7 +345,7 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmax = cms.double(7.0),
         xmin = cms.double(1.0)
         ),
-    
+
 # genuine stubs in endcap layers
     TH1Endcap_Layers = cms.PSet(
         Nbinsx = cms.int32(6),

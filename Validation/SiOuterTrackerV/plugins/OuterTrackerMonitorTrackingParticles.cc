@@ -40,7 +40,8 @@
 #include "OuterTrackerMonitorTrackingParticles.h"
 
 OuterTrackerMonitorTrackingParticles::OuterTrackerMonitorTrackingParticles(const edm::ParameterSet &iConfig)
-    : m_topoToken(esConsumes()), conf_(iConfig) {
+    : m_topoToken(esConsumes()), conf_(iConfig), 
+      clustersWithSingleStub(0), clustersWithMultipleStubs(0) {
   topFolderName_ = conf_.getParameter<std::string>("TopFolderName");
   trackingParticleToken_ =
       consumes<std::vector<TrackingParticle>>(conf_.getParameter<edm::InputTag>("trackingParticleToken"));
@@ -282,6 +283,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     // Find all clusters that can be associated to a tracking particle with at least one hit
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
+    int totalStubs = 0;
+    int fakeStubs = 0;
+
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
 
@@ -295,25 +299,16 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       GlobalPoint coordsA = theGeomDetA->surface().toGlobal(topoA->localPosition(clusA->findAverageLocalCoordinatesCentered()));
 
       bool isGenuine = MCTruthTTClusterHandle->isGenuine(clusA);
-      if (isGenuine) 
+      if (!isGenuine) 
         continue;
 
-      int isBarrel = 0;
-        if (clusdetid.subdetId() == StripSubdetector::TOB) {
-          isBarrel = 1;
-        } else if (clusdetid.subdetId() == StripSubdetector::TID) {
-          isBarrel = 0;
-        } else {
-          edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB or TID stub, shouldn't happen...";
-        }
+      //unsigned int widClusA = associatedClusters.at(k)->findWidth();
+      unsigned int widClusB = 0;
+      unsigned int widClusC = 0;
 
-      bool isTiltedBarrel = (isBarrel && tTopo->tobSide(clusdetid) != 3);
-
-      
       int stubCounter = 0;
-      //std::vector<std::pair<GlobalPoint, GlobalPoint>> matchedCoords; // Vector to store matched coordinates
+      std::vector<MatchedClusterInfo> matchedClustersInfo;
     
-
       gen_clusters->Fill(tmp_tp_pt);
       if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
           gen_clusters_zoom->Fill(tmp_tp_pt);
@@ -322,11 +317,21 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (TTStubHandle->find(detidA) != TTStubHandle->end()) {
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[detidA];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+          totalStubs++; 
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
           
           if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
-              continue; // Skip to the next iteration if the stub is not genuine
+            fakeStubs++;
+            continue; // Skip to the next iteration if the stub is not genuine
           }
+
+          // Retrieve clusters of stubs
+          auto clusterRefB = stubIter->clusterRef(0);
+          auto clusterRefC = stubIter->clusterRef(1);
+          
+          // Retrieve width of clusters
+          widClusB = clusterRefB->findWidth();
+          widClusC = clusterRefC->findWidth();
 
           // Retrieve sensor DetIds from the stub's clusters
           DetId detIdB = stubIter->clusterRef(0)->getDetId();
@@ -351,48 +356,46 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
             float stub_tp_pt = stubTP->pt();
             if (stub_tp_pt == tmp_tp_pt){
               stubCounter++; 
-              //matchedCoords.push_back(std::make_pair(coords0, coords1)); // Store the matched coordinates
+              matchedClustersInfo.push_back({coordsB, coordsC, widClusB, widClusC});
               gen_clusters_if_stub->Fill(tmp_tp_pt);
               if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
                 gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
               }
-            
-            /*
-            if (isBarrel == 1){
-              if (fabs(coordsC.perp() - coordsB.perp()) > 20){
-                if (isTiltedBarrel) {
-                  // Print the x, y, z, and r coordinates for each cluster
-                  std::cout << "Cluster B Coordinates: x = " << coordsB.x() << ", y = " << coordsB.y() << ", z = " << coordsB.z() << ", r = " << coordsB.perp() << std::endl;
-                  std::cout << "Cluster C Coordinates: x = " << coordsC.x() << ", y = " << coordsC.y() << ", z = " << coordsC.z() << ", r = " << coordsC.perp() << std::endl;
-                }
-              }
-            }
-            */
-
           }
         }
        }
         
         if (stubCounter > 1) {
-          if (isBarrel == 1){
-            std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
-            /*
-            for (const auto& coordPair : matchedCoords) {
-              if (fabs(coordPair.first.perp() - coordPair.second.perp()) > 20){
-                std::cout << "coords x: " << coords.x() << ", coords y: " << coords.y() << ", coords z: " << coords.z() << ", coords r: " << coords.perp() << ", coords phi: " << coords.phi() << ", coords eta: " << coords.eta() << std::endl;
-                std::cout << "tmp_tp_pt: " << tmp_tp_pt << std::endl;
-                std::cout << "Matched coords0 x: " << coordPair.first.x() << ", coords1 x: " << coordPair.second.x() << std::endl;
-                std::cout << "Matched coords0 y: " << coordPair.first.y() << ", coords1 y: " << coordPair.second.y() << std::endl;
-                std::cout << "Matched coords0 z: " << coordPair.first.z() << ", coords1 z: " << coordPair.second.z() << std::endl;
-                std::cout << "Matched coords0 r: " << coordPair.first.perp() << ", coords1 r: " << coordPair.second.perp() << std::endl;
-                std::cout << "Matched coords0 phi: " << coordPair.first.phi() << ", coords1 phi: " << coordPair.second.phi() << std::endl;
-                std::cout << "Matched coords0 eta: " << coordPair.first.eta() << ", coords1 eta: " << coordPair.second.eta() << std::endl;
-              }
-            }*/
-          }       
-         }
+          clustersWithMultipleStubs++;
+          std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
+          //std::cout << "coordsA x: " << coordsA.x() << std::endl;
+          //std::cout << "Width of clusA: " << widClusA << std::endl;
+          for (const auto& info : matchedClustersInfo) {
+            //float diffCoordsBC = fabs(info.coordsB.x() - info.coordsC.x());
+            //std::cout << "diffCoordsBC: " << diffCoordsBC << std::endl;
+            coordsBC->Fill(info.coordsB.x(), info.coordsC.x());
+            //std::cout << "After filling:" << std::endl;
+            //std::cout << "Number of Entries: " << coordsBC->getTH2F()->GetEntries() << std::endl;
+            //std::cout << "Matched coordsB x: " << info.coordsB.x() << ", coordsC x: " << info.coordsC.x() << std::endl;
+            //std::cout << "Width of clusB: " << info.widthB << ", Width of clusC: " << info.widthC << std::endl;
+           }
+           for (std::size_t i = 0; i + 1 < matchedClustersInfo.size(); ++i) {
+              // Calculate the difference in x coordinates between coordsB of the current and next stubs
+              float diffCoordsBB = fabs(matchedClustersInfo[i].coordsB.x() - matchedClustersInfo[i + 1].coordsB.x());
+              float diffCoordsCC = fabs(matchedClustersInfo[i].coordsC.x() - matchedClustersInfo[i + 1].coordsC.x());
+              std::cout << "diffCoordsBB: " << diffCoordsBB << std::endl;
+              std::cout << "diffCoordsCC: " << diffCoordsCC << std::endl;
+            }
+      } else if (stubCounter == 1) {
+          clustersWithSingleStub++; 
+        }
       }
-
+      double fakeRate = 0.0;
+      if (totalStubs > 0) {
+          fakeRate = static_cast<double>(fakeStubs) / totalStubs;
+          histo_fakeRate->Fill(fakeRate);
+      }
+      
 
     // ----------------------------------------------------------------------------------------------
     // look for L1 tracks matched to the tracking particle
@@ -562,6 +565,9 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       }
     }  //if MC TTTrack handle is valid 
   }    //end loop over tracking particles
+  //std::cout << "Running total - Clusters with exactly one stub: " << clustersWithSingleStub << std::endl;
+  //std::cout << "Running total - Clusters with more than one stub: " << clustersWithMultipleStubs << std::endl;
+
 
   // ----------------------------------------------------------------------------------------------
   // float myTP_phi = -999;
@@ -1528,6 +1534,17 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             psZ_Res_Endcap.getParameter<double>("xmax"));
   z_res_endcap->setAxisTitle("tp_z - stub_z", 1);
   z_res_endcap->setAxisTitle("events ", 2);
+
+  // fake rate for stubs
+  edm::ParameterSet psFakeRate = conf_.getParameter<edm::ParameterSet>("TH1FakeRate");
+  HistoName = "stub fake rate";
+  histo_fakeRate = iBooker.book1D(HistoName,
+                            HistoName,
+                            psFakeRate.getParameter<int32_t>("Nbinsx"),
+                            psFakeRate.getParameter<double>("xmin"),
+                            psFakeRate.getParameter<double>("xmax"));
+  histo_fakeRate->setAxisTitle("fake rate", 1);
+  histo_fakeRate->setAxisTitle("events ", 2);
 
   // stub vs tp phi resolution
   edm::ParameterSet psPhi_Res = conf_.getParameter<edm::ParameterSet>("TH1Phi_Res");
@@ -2879,6 +2896,19 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   modMaxR_vs_modMinR->setAxisTitle("track z [cm]", 1);
   modMaxR_vs_modMinR->setAxisTitle("stub z avg [cm]", 2);
 
+  edm::ParameterSet pscoordsBvscoordsC = conf_.getParameter<edm::ParameterSet>("TH2coordsBvscoordsC");
+  HistoName = "coordsBvScoordsC";
+  coordsBC = iBooker.book2D(
+      HistoName, 
+      HistoName,
+      pscoordsBvscoordsC.getParameter<int32_t>("Nbinsx"),
+      pscoordsBvscoordsC.getParameter<double>("xmin"),
+      pscoordsBvscoordsC.getParameter<double>("xmax"),
+      pscoordsBvscoordsC.getParameter<int32_t>("Nbinsy"),
+      pscoordsBvscoordsC.getParameter<double>("ymin"),
+      pscoordsBvscoordsC.getParameter<double>("ymax"));
+  coordsBC->setAxisTitle("x-coordsB [cm]", 1);
+  coordsBC->setAxisTitle("x-coordsC [cm]", 2);
 
 
 }  // end of method

@@ -46,6 +46,9 @@ public:
   MonitorElement *hist_cosTiltAngle = nullptr;
   MonitorElement *hist_sinTiltAngle = nullptr;
 
+  // fake rate
+  MonitorElement *histo_fakeRate = nullptr;
+
   // 2D correction factor
   MonitorElement *hist_tiltAngle_vs_Z0 = nullptr;
   MonitorElement *hist_deltaR_vs_deltaZ =nullptr;
@@ -84,6 +87,7 @@ public:
   MonitorElement *trackPhi_vs_stubPhi_barrel = nullptr;
   MonitorElement *trackPhi_vs_stubPhi_endcap = nullptr;
   MonitorElement *trackBend_vs_stubBend = nullptr;
+  MonitorElement *coordsBC = nullptr;
   MonitorElement *stub_maxZ_vs_minZ = nullptr;
   MonitorElement *modMaxZ_vs_modMinZ = nullptr;
   MonitorElement *stub_Z_vs_tpZ = nullptr;
@@ -255,6 +259,14 @@ private:
   const edm::ESInputTag magneticFieldInputTag_;
   edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> magneticFieldToken_;
   //trklet::Settings settings_;
+  struct MatchedClusterInfo {
+    GlobalPoint coordsB;
+    GlobalPoint coordsC;
+    unsigned int widthB;
+    unsigned int widthC;
+  };
+  int clustersWithSingleStub = 0;
+  int clustersWithMultipleStubs = 0;
 
 
   int L1Tk_minNStub;

@@ -283,9 +283,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
     // Find all clusters that can be associated to a tracking particle with at least one hit
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_> >, TTCluster<Ref_Phase2TrackerDigi_> >> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
-    int totalStubs = 0;
-    int fakeStubs = 0;
-
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
 
@@ -317,11 +314,11 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (TTStubHandle->find(detidA) != TTStubHandle->end()) {
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[detidA];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
-          totalStubs++; 
+          TotalStubs->Fill(tmp_tp_pt);
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
           
           if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
-            fakeStubs++;
+            FakeStubs->Fill(tmp_tp_pt);
             continue; // Skip to the next iteration if the stub is not genuine
           }
 
@@ -367,7 +364,7 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         
         if (stubCounter > 1) {
           clustersWithMultipleStubs++;
-          std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
+          //std::cout << "Cluster with more than one stub match. Cluster index: " << k << std::endl;
           //std::cout << "coordsA x: " << coordsA.x() << std::endl;
           //std::cout << "Width of clusA: " << widClusA << std::endl;
           for (const auto& info : matchedClustersInfo) {
@@ -381,19 +378,14 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
            }
            for (std::size_t i = 0; i + 1 < matchedClustersInfo.size(); ++i) {
               // Calculate the difference in x coordinates between coordsB of the current and next stubs
-              float diffCoordsBB = fabs(matchedClustersInfo[i].coordsB.x() - matchedClustersInfo[i + 1].coordsB.x());
-              float diffCoordsCC = fabs(matchedClustersInfo[i].coordsC.x() - matchedClustersInfo[i + 1].coordsC.x());
-              std::cout << "diffCoordsBB: " << diffCoordsBB << std::endl;
-              std::cout << "diffCoordsCC: " << diffCoordsCC << std::endl;
+              //float diffCoordsBB = fabs(matchedClustersInfo[i].coordsB.x() - matchedClustersInfo[i + 1].coordsB.x());
+              //float diffCoordsCC = fabs(matchedClustersInfo[i].coordsC.x() - matchedClustersInfo[i + 1].coordsC.x());
+              //std::cout << "diffCoordsBB: " << diffCoordsBB << std::endl;
+              //std::cout << "diffCoordsCC: " << diffCoordsCC << std::endl;
             }
       } else if (stubCounter == 1) {
           clustersWithSingleStub++; 
         }
-      }
-      double fakeRate = 0.0;
-      if (totalStubs > 0) {
-          fakeRate = static_cast<double>(fakeStubs) / totalStubs;
-          histo_fakeRate->Fill(fakeRate);
       }
       
 
@@ -977,6 +969,27 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   gen_clusters_if_stub->setAxisTitle("p_{T} [GeV]", 1);
   gen_clusters_if_stub->setAxisTitle("# tracking particles", 2);
 
+  // fake rate for stubs
+  edm::ParameterSet psFakeRate = conf_.getParameter<edm::ParameterSet>("TH1Stubs");
+  HistoName = "TotalStubs";
+  TotalStubs = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  TotalStubs->setAxisTitle("total stubs", 1);
+  TotalStubs->setAxisTitle("counts", 2);
+
+  HistoName = "FakeStubs";
+  FakeStubs = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  FakeStubs->setAxisTitle("fake stubs", 1);
+  FakeStubs->setAxisTitle("counts", 2);
+
+
   // pT zoom (0-10 GeV)
   edm::ParameterSet psEffic_pt_zoom = conf_.getParameter<edm::ParameterSet>("TH1Effic_pt_zoom");
   HistoName = "tp_pt_zoom";
@@ -1534,17 +1547,6 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                             psZ_Res_Endcap.getParameter<double>("xmax"));
   z_res_endcap->setAxisTitle("tp_z - stub_z", 1);
   z_res_endcap->setAxisTitle("events ", 2);
-
-  // fake rate for stubs
-  edm::ParameterSet psFakeRate = conf_.getParameter<edm::ParameterSet>("TH1FakeRate");
-  HistoName = "stub fake rate";
-  histo_fakeRate = iBooker.book1D(HistoName,
-                            HistoName,
-                            psFakeRate.getParameter<int32_t>("Nbinsx"),
-                            psFakeRate.getParameter<double>("xmin"),
-                            psFakeRate.getParameter<double>("xmax"));
-  histo_fakeRate->setAxisTitle("fake rate", 1);
-  histo_fakeRate->setAxisTitle("events ", 2);
 
   // stub vs tp phi resolution
   edm::ParameterSet psPhi_Res = conf_.getParameter<edm::ParameterSet>("TH1Phi_Res");

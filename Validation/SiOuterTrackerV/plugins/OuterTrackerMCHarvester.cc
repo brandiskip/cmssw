@@ -19,12 +19,14 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
     // Find all monitor elements for histograms
     MonitorElement *meN_clus = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_if_stub");
     MonitorElement *meD_clus = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters");
+    MonitorElement *meN_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_if_stub_zoom");
+    MonitorElement *meD_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_zoom");
+    MonitorElement *meN_fake_stubs = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs");
+    MonitorElement *meD_total_stubs = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs");
     MonitorElement *meN_eta = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_eta");
     MonitorElement *meD_eta = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_eta");
     MonitorElement *meN_pt = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_pt");
     MonitorElement *meD_pt = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_pt");
-    MonitorElement *meN_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_if_stub_zoom");
-    MonitorElement *meD_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_zoom");
     MonitorElement *meN_pt_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_pt_zoom");
     MonitorElement *meD_pt_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_pt_zoom");
     MonitorElement *meN_d0 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_d0");
@@ -137,6 +139,32 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
     }  // if ME found
     else {
       edm::LogWarning("DataNotFound") << "Monitor elements for eta efficiency cannot be found!\n";
+    }
+
+    if (meN_fake_stubs && meD_total_stubs) {
+      TH1F* numerator = meN_fake_stubs->getTH1F();
+      TH1F* denominator = meD_total_stubs->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Setting the current directory
+      ibooker.setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      MonitorElement* me_fake_rate = ibooker.book1D("StubFakeRate",
+                                                     "Stub Fake Rate",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
+
+      // Calculate the fake rate: fake stubs / total stubs
+      me_fake_rate->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_fake_rate->setAxisTitle("stub p_{T} [GeV]", 1);
+      me_fake_rate->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
+      me_fake_rate->getTH1F()->SetMaximum(1.1); 
+      me_fake_rate->getTH1F()->SetMinimum(0.0); 
+      me_fake_rate->getTH1F()->SetStats(false); 
+    } else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
     }
 
     if (meN_eta && meD_eta) {

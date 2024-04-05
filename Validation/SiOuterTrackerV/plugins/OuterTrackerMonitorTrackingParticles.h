@@ -47,7 +47,8 @@ public:
   MonitorElement *hist_sinTiltAngle = nullptr;
 
   // fake rate
-  MonitorElement *histo_fakeRate = nullptr;
+  MonitorElement *TotalStubs = nullptr;
+  MonitorElement *FakeStubs = nullptr;
 
   // 2D correction factor
   MonitorElement *hist_tiltAngle_vs_Z0 = nullptr;

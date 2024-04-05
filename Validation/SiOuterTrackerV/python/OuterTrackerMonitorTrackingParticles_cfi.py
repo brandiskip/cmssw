@@ -18,13 +18,6 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
     TP_maxEta = cms.double(2.4),     # only save TPs with |eta| < X
     TP_maxVtxZ = cms.double(15.0),     # only save TPs with |z0| < X cm
 
-# fake rate
-    TH1FakeRate = cms.PSet(
-        Nbinsx = cms.int32(49),
-        xmin = cms.double(0.0),
-        xmax = cms.double(1.1)
-        ),
-
 # deltaZ vs count
     TH1delta_Z = cms.PSet(
         Nbinsx = cms.int32(49),
@@ -67,7 +60,14 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmax = cms.double(1.6)
         ),
 
-#TTStub Barrel Layers
+# stub count for fake rate
+    TH1Stubs = cms.PSet(
+        Nbinsx = cms.int32(59),
+        xmin = cms.double(0.0),
+        xmax = cms.double(60.0)
+        ),
+
+# TTStub Barrel Layers
     TH1TTStub_Layers = cms.PSet(
         Nbinsx = cms.int32(7),
         xmin = cms.double(0.5),

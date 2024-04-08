@@ -314,11 +314,19 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (TTStubHandle->find(detidA) != TTStubHandle->end()) {
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[detidA];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
-          TotalStubs->Fill(tmp_tp_pt);
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
+          // returns only a single tp if the stub is genuine or NULL otherwise
+          edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
+          if (stubTP.isNull()) 
+            continue;
+
+          float stub_tp_pt = stubTP->pt();
+          std::cout << "Total_stub_tp_pt: " << stub_tp_pt << std::endl;
+          TotalStubs->Fill(stub_tp_pt);
           
           if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
-            FakeStubs->Fill(tmp_tp_pt);
+            std::cout << "Fake_stub_tp_pt: " << stub_tp_pt << std::endl;
+            FakeStubs->Fill(stub_tp_pt);
             continue; // Skip to the next iteration if the stub is not genuine
           }
 
@@ -345,12 +353,6 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           GlobalPoint coordsC = theGeomDetC->surface().toGlobal(topoC->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
 
           if (coordsA.x() == coordsB.x() || coordsA.x() == coordsC.x()) {
-            // returns only a single tp if the stub is genuine or NULL otherwise
-            edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
-            if (stubTP.isNull()) 
-              continue;
-
-            float stub_tp_pt = stubTP->pt();
             if (stub_tp_pt == tmp_tp_pt){
               stubCounter++; 
               matchedClustersInfo.push_back({coordsB, coordsC, widClusB, widClusC});

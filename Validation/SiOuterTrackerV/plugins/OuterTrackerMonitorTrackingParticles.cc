@@ -85,7 +85,6 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
         hist_deltaZ->Fill(deltaZ);
         hist_deltaR->Fill(deltaR);
         tiltAngle = atan(deltaR / std::abs(deltaZ));
-        hist_tiltAngle->Fill(tiltAngle);
         hist_tiltAngle_vs_Z0->Fill(Z0, tiltAngle);
         hist_deltaR_vs_deltaZ->Fill(Z0, R0);
         hist_Z0_vs_deltaZ->Fill(deltaZ, Z0);
@@ -95,8 +94,6 @@ float OuterTrackerMonitorTrackingParticles::phiOverBendCorrection(bool isBarrel,
     float correction;
     if (isBarrel && tTopo->tobSide(detid) != 3) {  // Assuming this condition represents tiltedBarrel
         correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
-        hist_cosTiltAngle->Fill(cos(tiltAngle));
-        hist_sinTiltAngle->Fill(sin(tiltAngle));
     } else if (isBarrel) {
         correction = 1;
     } else {
@@ -299,6 +296,21 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
       if (!isGenuine) 
         continue;
 
+      int isBarrel = 0;
+        int layer = -999999;
+        if (clusdetid.subdetId() == StripSubdetector::TOB) {
+          isBarrel = 1;
+          layer = static_cast<int>(tTopo->layer(clusdetid));
+        } else if (clusdetid.subdetId() == StripSubdetector::TID) {
+          isBarrel = 0;
+          layer = static_cast<int>(tTopo->layer(clusdetid));
+        } else {
+          edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB or TID stub, shouldn't happen...";
+          layer = -1;
+        }
+
+      // bool isTiltedBarrel = (isBarrel && tTopo->tobSide(clusdetid) != 3);
+
       //unsigned int widClusA = associatedClusters.at(k)->findWidth();
       unsigned int widClusB = 0;
       unsigned int widClusC = 0;
@@ -315,18 +327,51 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
         edmNew::DetSet< TTStub<Ref_Phase2TrackerDigi_> > stubs = (*TTStubHandle)[detidA];
         for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
           auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
-          // returns only a single tp if the stub is genuine or NULL otherwise
-          edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
-          if (stubTP.isNull()) 
-            continue;
 
-          float stub_tp_pt = stubTP->pt();
-          std::cout << "Total_stub_tp_pt: " << stub_tp_pt << std::endl;
-          TotalStubs->Fill(stub_tp_pt);
+          float stub_bend = stubIter->bendFE(); // TTstub trigger bend
+          TotalStubs->Fill(stub_bend);
+
+          if (isBarrel ==1) {
+            if (layer == 1) {
+              TotalStubs_L1->Fill(stub_bend);
+              if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                FakeStubs_L1->Fill(stub_bend);
+              }
+            }
+            else if (layer == 2) {
+              TotalStubs_L2->Fill(stub_bend);
+              if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                FakeStubs_L2->Fill(stub_bend);
+              }
+            }
+            else if (layer == 3) {
+              TotalStubs_L3->Fill(stub_bend);
+              if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                FakeStubs_L3->Fill(stub_bend);
+              }
+            }
+            else if (layer == 4) {
+              TotalStubs_L4->Fill(stub_bend);
+              if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                FakeStubs_L4->Fill(stub_bend);
+              }
+            }
+            else if (layer == 5) {
+              TotalStubs_L5->Fill(stub_bend);
+              if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                FakeStubs_L5->Fill(stub_bend);
+              }
+            }
+            else if (layer == 6) {
+              TotalStubs_L6->Fill(stub_bend);
+              if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                FakeStubs_L6->Fill(stub_bend);
+              }
+            }
+          }
           
           if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
-            std::cout << "Fake_stub_tp_pt: " << stub_tp_pt << std::endl;
-            FakeStubs->Fill(stub_tp_pt);
+            FakeStubs->Fill(stub_bend);
             continue; // Skip to the next iteration if the stub is not genuine
           }
 
@@ -353,6 +398,11 @@ void OuterTrackerMonitorTrackingParticles::analyze(const edm::Event &iEvent, con
           GlobalPoint coordsC = theGeomDetC->surface().toGlobal(topoC->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
 
           if (coordsA.x() == coordsB.x() || coordsA.x() == coordsC.x()) {
+            // returns only a single tp if the stub is genuine or NULL otherwise
+            edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
+            if (stubTP.isNull()) 
+              continue;
+            float stub_tp_pt = stubTP->pt();
             if (stub_tp_pt == tmp_tp_pt){
               stubCounter++; 
               matchedClustersInfo.push_back({coordsB, coordsC, widClusB, widClusC});
@@ -982,6 +1032,60 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   TotalStubs->setAxisTitle("total stubs", 1);
   TotalStubs->setAxisTitle("counts", 2);
 
+  HistoName = "TotalStubs_L1";
+  TotalStubs_L1 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  TotalStubs_L1->setAxisTitle("total stubs", 1);
+  TotalStubs_L1->setAxisTitle("counts", 2);
+
+  HistoName = "TotalStubs_L2";
+  TotalStubs_L2 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  TotalStubs_L2->setAxisTitle("total stubs", 1);
+  TotalStubs_L2->setAxisTitle("counts", 2);
+
+  HistoName = "TotalStubs_L3";
+  TotalStubs_L3 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  TotalStubs_L3->setAxisTitle("total stubs", 1);
+  TotalStubs_L3->setAxisTitle("counts", 2);
+
+  HistoName = "TotalStubs_L4";
+  TotalStubs_L4 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  TotalStubs_L4->setAxisTitle("total stubs", 1);
+  TotalStubs_L4->setAxisTitle("counts", 2);
+
+  HistoName = "TotalStubs_L5";
+  TotalStubs_L5 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  TotalStubs_L5->setAxisTitle("total stubs", 1);
+  TotalStubs_L5->setAxisTitle("counts", 2);
+
+  HistoName = "TotalStubs_L6";
+  TotalStubs_L6 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  TotalStubs_L6->setAxisTitle("total stubs", 1);
+  TotalStubs_L6->setAxisTitle("counts", 2);
+
   HistoName = "FakeStubs";
   FakeStubs = iBooker.book1D(HistoName,
                                   HistoName,
@@ -991,6 +1095,59 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   FakeStubs->setAxisTitle("fake stubs", 1);
   FakeStubs->setAxisTitle("counts", 2);
 
+  HistoName = "FakeStubs_L1";
+  FakeStubs_L1 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  FakeStubs_L1->setAxisTitle("fake stubs", 1);
+  FakeStubs_L1->setAxisTitle("counts", 2);
+
+  HistoName = "FakeStubs_L2";
+  FakeStubs_L2 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  FakeStubs_L2->setAxisTitle("fake stubs", 1);
+  FakeStubs_L2->setAxisTitle("counts", 2);
+
+  HistoName = "FakeStubs_L3";
+  FakeStubs_L3 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  FakeStubs_L3->setAxisTitle("fake stubs", 1);
+  FakeStubs_L3->setAxisTitle("counts", 2);
+
+  HistoName = "FakeStubs_L4";
+  FakeStubs_L4 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  FakeStubs_L4->setAxisTitle("fake stubs", 1);
+  FakeStubs_L4->setAxisTitle("counts", 2);
+
+  HistoName = "FakeStubs_L5";
+  FakeStubs_L5 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  FakeStubs_L5->setAxisTitle("fake stubs", 1);
+  FakeStubs_L5->setAxisTitle("counts", 2);
+
+  HistoName = "FakeStubs_L6";
+  FakeStubs_L6 = iBooker.book1D(HistoName,
+                                  HistoName,
+                                  psFakeRate.getParameter<int32_t>("Nbinsx"),
+                                  psFakeRate.getParameter<double>("xmin"),
+                                  psFakeRate.getParameter<double>("xmax"));
+  FakeStubs_L6->setAxisTitle("fake stubs", 1);
+  FakeStubs_L6->setAxisTitle("counts", 2);
 
   // pT zoom (0-10 GeV)
   edm::ParameterSet psEffic_pt_zoom = conf_.getParameter<edm::ParameterSet>("TH1Effic_pt_zoom");
@@ -1138,16 +1295,6 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
                           psDelta_R.getParameter<double>("xmax"));
   hist_deltaR->setAxisTitle("delta_R [cm]", 1);
   hist_deltaR->setAxisTitle("count", 2);
-
-  edm::ParameterSet pstiltAngle = conf_.getParameter<edm::ParameterSet>("TH1tilt_Angle");
-  HistoName = "tiltAngle";
-  hist_tiltAngle = iBooker.book1D(HistoName,
-                          HistoName,
-                          pstiltAngle.getParameter<int32_t>("Nbinsx"),
-                          pstiltAngle.getParameter<double>("xmin"),
-                          pstiltAngle.getParameter<double>("xmax"));
-  hist_tiltAngle->setAxisTitle("tiltAngle [radians]", 1);
-  hist_tiltAngle->setAxisTitle("count", 2);
 
   edm::ParameterSet pstp_phi = conf_.getParameter<edm::ParameterSet>("TH1tp_phi");
   HistoName = "tp_phi";
@@ -1389,9 +1536,9 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   numOfStubs->setAxisTitle("det layer", 1);
   numOfStubs->setAxisTitle("# of stubs ", 2);
 
-  // stub vs tp z-coord resolution
+  // stub vs tp z-coord diff
   edm::ParameterSet psZ_Res = conf_.getParameter<edm::ParameterSet>("TH1Z_Res");
-  HistoName = "z-coordinate resolution";
+  HistoName = "#Delta z";
   stub_z_res = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1428,7 +1575,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_barrel->setAxisTitle("tp_z - stub_z", 1);
   z_res_barrel->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution barrel L1";
+  HistoName = "#Delta z barrel L1";
   z_res_barrel_L1 = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1437,7 +1584,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_barrel_L1->setAxisTitle("tp_z - stub_z", 1);
   z_res_barrel_L1->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution barrel L2";
+  HistoName = "#Delta z barrel L2";
   z_res_barrel_L2 = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1446,7 +1593,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_barrel_L2->setAxisTitle("tp_z - stub_z", 1);
   z_res_barrel_L2->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution barrel L3";
+  HistoName = "#Delta z barrel L3";
   z_res_barrel_L3 = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1455,7 +1602,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_barrel_L3->setAxisTitle("tp_z - stub_z", 1);
   z_res_barrel_L3->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution barrel L4";
+  HistoName = "#Delta z barrel L4";
   z_res_barrel_L4 = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1464,7 +1611,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_barrel_L4->setAxisTitle("tp_z - stub_z", 1);
   z_res_barrel_L4->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution barrel L5";
+  HistoName = "#Delta z barrel L5";
   z_res_barrel_L5 = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1473,7 +1620,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_barrel_L5->setAxisTitle("tp_z - stub_z", 1);
   z_res_barrel_L5->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution barrel L6";
+  HistoName = "#Delta z barrel L6";
   z_res_barrel_L6 = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1483,7 +1630,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_barrel_L6->setAxisTitle("events ", 2);
 
   // z-resolution for PS modules
-  HistoName = "z-coordinate resolution PS modules";
+  HistoName = "#Delta z PS modules";
   z_res_isPS = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1502,7 +1649,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_isPS_barrel->setAxisTitle("events ", 2);
 
   // z-resolution for 2S modules
-  HistoName = "z-coordinate resolution 2S modules";
+  HistoName = "#Delta z 2S modules";
   z_res_is2S = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
@@ -1522,7 +1669,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
 
   // z-resolution endcaps only
   edm::ParameterSet psZ_Res_Endcap = conf_.getParameter<edm::ParameterSet>("TH1Z_Res_Endcap");
-  HistoName = "z-coordinate resolution endcaps PS modules";
+  HistoName = "#Delta z endcaps PS modules";
   z_res_isPS_endcap = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res_Endcap.getParameter<int32_t>("Nbinsx"),
@@ -1531,7 +1678,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_isPS_endcap->setAxisTitle("tp_z - stub_z", 1);
   z_res_isPS_endcap->setAxisTitle("events ", 2);
 
-  HistoName = "z-coordinate resolution endcaps 2S modules";
+  HistoName = "#Delta z endcaps 2S modules";
   z_res_is2S_endcap = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res_Endcap.getParameter<int32_t>("Nbinsx"),
@@ -1541,7 +1688,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   z_res_is2S_endcap->setAxisTitle("events ", 2);
 
   // z_resolution for endcaps
-  HistoName = "z-coordinate resolution endcaps";
+  HistoName = "#Delta z endcaps";
   z_res_endcap = iBooker.book1D(HistoName,
                             HistoName,
                             psZ_Res_Endcap.getParameter<int32_t>("Nbinsx"),
@@ -1561,7 +1708,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution in barrel";
+  HistoName = "#Delta #phi barrel";
   stub_phi_res_barrel = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1570,7 +1717,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_barrel->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_barrel->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution in endcap";
+  HistoName = "#Delta #phi endcap";
   stub_phi_res_endcap = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1579,7 +1726,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_endcap->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_endcap->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution PS modules";
+  HistoName = "#Delta #phi PS modules";
   stub_phi_res_isPS = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1588,7 +1735,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_isPS->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_isPS->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution barrel PS module";
+  HistoName = "#Delta #phi barrel PS module";
   stub_phi_res_isPS_barrel = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1597,7 +1744,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_isPS_barrel->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_isPS_barrel->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution endcap PS module";
+  HistoName = "#Delta #phi endcap PS module";
   stub_phi_res_isPS_endcap = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1606,7 +1753,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_isPS_endcap->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_isPS_endcap->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution 2S modules";
+  HistoName = "#Delta #phi 2S modules";
   stub_phi_res_is2S = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1615,7 +1762,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_is2S->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_is2S->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution barrel 2S module";
+  HistoName = "#Delta #phi barrel 2S module";
   stub_phi_res_is2S_barrel = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1624,7 +1771,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_is2S_barrel->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_is2S_barrel->setAxisTitle("# counts", 2);
 
-  HistoName = "stub phi resolution endcap 2S module";
+  HistoName = "#Delta #phi endcap 2S module";
   stub_phi_res_is2S_endcap = iBooker.book1D(HistoName,
                                     HistoName,
                                     psPhi_Res.getParameter<int32_t>("Nbinsx"),
@@ -1633,27 +1780,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   stub_phi_res_is2S_endcap->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
   stub_phi_res_is2S_endcap->setAxisTitle("# counts", 2);
 
-  edm::ParameterSet pscos_tiltAngle = conf_.getParameter<edm::ParameterSet>("TH1cosTiltAngle");
-  HistoName = "cos(tiltAngle)";
-  hist_cosTiltAngle = iBooker.book1D(HistoName,
-                            HistoName,
-                            pscos_tiltAngle.getParameter<int32_t>("Nbinsx"),
-                            pscos_tiltAngle.getParameter<double>("xmin"),
-                            pscos_tiltAngle.getParameter<double>("xmax"));
-  hist_cosTiltAngle->setAxisTitle("cos(tiltAngle)", 1);
-  hist_cosTiltAngle->setAxisTitle("events ", 2);
-
-  edm::ParameterSet pssin_tiltAngle = conf_.getParameter<edm::ParameterSet>("TH1sinTiltAngle");
-  HistoName = "sin(tiltAngle)";
-  hist_sinTiltAngle = iBooker.book1D(HistoName,
-                            HistoName,
-                            pssin_tiltAngle.getParameter<int32_t>("Nbinsx"),
-                            pssin_tiltAngle.getParameter<double>("xmin"),
-                            pssin_tiltAngle.getParameter<double>("xmax"));
-  hist_sinTiltAngle->setAxisTitle("sin(tiltAngle)", 1);
-  hist_sinTiltAngle->setAxisTitle("events ", 2);
-
-  // bend resolution
+  // bend diff
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
   HistoName = "#Delta bend";
   bend_res = iBooker.book1D(HistoName,
@@ -1664,7 +1791,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res->setAxisTitle("stub bend - tp bend", 1);
   bend_res->setAxisTitle("events ", 2);
 
-  HistoName = "bend resolution barrel";
+  HistoName = "#Delta bend barrel";
   bend_res_barrel = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1673,7 +1800,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_barrel->setAxisTitle("stub bend - tp bend", 1);
   bend_res_barrel->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution L1";
+  HistoName = "#Delta bend L1";
   bend_res_barrel_L1 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1682,7 +1809,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_barrel_L1->setAxisTitle("stub bend - tp bend", 1);
   bend_res_barrel_L1->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution L2";
+  HistoName = "#Delta bend L2";
   bend_res_barrel_L2 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1691,7 +1818,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_barrel_L2->setAxisTitle("stub bend - tp bend", 1);
   bend_res_barrel_L2->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution L3";
+  HistoName = "#Delta bend L3";
   bend_res_barrel_L3 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1700,7 +1827,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_barrel_L3->setAxisTitle("stub bend - tp bend", 1);
   bend_res_barrel_L3->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution L4";
+  HistoName = "#Delta bend L4";
   bend_res_barrel_L4 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1709,7 +1836,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_barrel_L4->setAxisTitle("stub bend - tp bend", 1);
   bend_res_barrel_L4->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution L5";
+  HistoName = "#Delta bend L5";
   bend_res_barrel_L5 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1718,7 +1845,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_barrel_L5->setAxisTitle("stub bend - tp bend", 1);
   bend_res_barrel_L5->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution L6";
+  HistoName = "#Delta bend L6";
   bend_res_barrel_L6 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1727,7 +1854,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_barrel_L6->setAxisTitle("stub bend - tp bend", 1);
   bend_res_barrel_L6->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution endcaps";
+  HistoName = "#Delta bend endcaps";
   bend_res_endcap = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1736,7 +1863,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_endcap->setAxisTitle("stub bend - tp bend", 1);
   bend_res_endcap->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution endcaps fw";
+  HistoName = "#Delta bend endcaps fw";
   bend_res_fw_endcap = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1745,7 +1872,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_fw_endcap->setAxisTitle("stub bend - tp bend", 1);
   bend_res_fw_endcap->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution +D1";
+  HistoName = "#Delta bend +D1";
   bend_res_fw_endcap_D1 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1754,7 +1881,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_fw_endcap_D1->setAxisTitle("stub bend - tp bend", 1);
   bend_res_fw_endcap_D1->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution +D2";
+  HistoName = "#Delta bend +D2";
   bend_res_fw_endcap_D2 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1763,7 +1890,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_fw_endcap_D2->setAxisTitle("stub bend - tp bend", 1);
   bend_res_fw_endcap_D1->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution +D3";
+  HistoName = "#Delta bend +D3";
   bend_res_fw_endcap_D3 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1772,7 +1899,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_fw_endcap_D3->setAxisTitle("stub bend - tp bend", 1);
   bend_res_fw_endcap_D3->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution +D4";
+  HistoName = "#Delta bend +D4";
   bend_res_fw_endcap_D4 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1781,7 +1908,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_fw_endcap_D4->setAxisTitle("stub bend - tp bend", 1);
   bend_res_fw_endcap_D4->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution +D5";
+  HistoName = "#Delta bend +D5";
   bend_res_fw_endcap_D5 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1790,7 +1917,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_fw_endcap_D5->setAxisTitle("stub bend - tp bend", 1);
   bend_res_fw_endcap_D5->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution endcaps bw";
+  HistoName = "#Delta bend endcaps bw";
   bend_res_bw_endcap = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1799,7 +1926,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_bw_endcap->setAxisTitle("stub bend - tp bend", 1);
   bend_res_bw_endcap->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution -D1";
+  HistoName = "#Delta bend -D1";
   bend_res_bw_endcap_D1 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1808,7 +1935,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_bw_endcap_D1->setAxisTitle("stub bend - tp bend", 1);
   bend_res_bw_endcap_D1->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution -D2";
+  HistoName = "#Delta bend -D2";
   bend_res_bw_endcap_D2 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1817,7 +1944,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_bw_endcap_D2->setAxisTitle("stub bend - tp bend", 1);
   bend_res_bw_endcap_D1->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution -D3";
+  HistoName = "#Delta bend -D3";
   bend_res_bw_endcap_D3 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1826,7 +1953,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_bw_endcap_D3->setAxisTitle("stub bend - tp bend", 1);
   bend_res_bw_endcap_D3->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution -D4";
+  HistoName = "#Delta bend -D4";
   bend_res_bw_endcap_D4 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),
@@ -1835,7 +1962,7 @@ void OuterTrackerMonitorTrackingParticles::bookHistograms(DQMStore::IBooker &iBo
   bend_res_bw_endcap_D4->setAxisTitle("stub bend - tp bend", 1);
   bend_res_bw_endcap_D4->setAxisTitle("counts", 2);
 
-  HistoName = "bend resolution -D5";
+  HistoName = "#Delta bend -D5";
   bend_res_bw_endcap_D5 = iBooker.book1D(HistoName,
                             HistoName,
                             psBend_Res.getParameter<int32_t>("Nbinsx"),

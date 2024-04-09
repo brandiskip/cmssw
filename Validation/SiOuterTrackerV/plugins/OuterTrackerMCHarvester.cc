@@ -21,8 +21,6 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
     MonitorElement *meD_clus = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters");
     MonitorElement *meN_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_if_stub_zoom");
     MonitorElement *meD_clus_zoom = dbe->get("SiOuterTrackerV/Tracks/Efficiency/gen_clusters_zoom");
-    MonitorElement *meN_fake_stubs = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs");
-    MonitorElement *meD_total_stubs = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs");
     MonitorElement *meN_eta = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_eta");
     MonitorElement *meD_eta = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_eta");
     MonitorElement *meN_pt = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_pt");
@@ -35,6 +33,21 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
     MonitorElement *meD_VtxR = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_VtxR");
     MonitorElement *meN_VtxZ = dbe->get("SiOuterTrackerV/Tracks/Efficiency/match_tp_VtxZ");
     MonitorElement *meD_VtxZ = dbe->get("SiOuterTrackerV/Tracks/Efficiency/tp_VtxZ");
+
+    MonitorElement *meN_fake_stubs = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs");
+    MonitorElement *meD_total_stubs = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs");
+    MonitorElement *meN_fake_stubs_L1 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs_L1");
+    MonitorElement *meD_total_stubs_L1 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs_L1");
+    MonitorElement *meN_fake_stubs_L2 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs_L2");
+    MonitorElement *meD_total_stubs_L2 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs_L2");
+    MonitorElement *meN_fake_stubs_L3 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs_L3");
+    MonitorElement *meD_total_stubs_L3 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs_L3");
+    MonitorElement *meN_fake_stubs_L4 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs_L4");
+    MonitorElement *meD_total_stubs_L4 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs_L4");
+    MonitorElement *meN_fake_stubs_L5 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs_L5");
+    MonitorElement *meD_total_stubs_L5 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs_L5");
+    MonitorElement *meN_fake_stubs_L6 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/FakeStubs_L6");
+    MonitorElement *meD_total_stubs_L6 = dbe->get("SiOuterTrackerV/Tracks/Efficiency/TotalStubs_L6");
 
     MonitorElement *merespt_eta0to0p7_pt2to3 = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta0to0p7_pt2to3");
     MonitorElement *merespt_eta0p7to1_pt2to3 = dbe->get("SiOuterTrackerV/Tracks/Resolution/respt_eta0p7to1_pt2to3");
@@ -158,11 +171,167 @@ void OuterTrackerMCHarvester::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IG
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
-      me_fake_rate->setAxisTitle("stub p_{T} [GeV]", 1);
+      me_fake_rate->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
       me_fake_rate->getTH1F()->SetMaximum(1.1); 
       me_fake_rate->getTH1F()->SetMinimum(0.0); 
       me_fake_rate->getTH1F()->SetStats(false); 
+    } else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
+    }
+
+    if (meN_fake_stubs_L1 && meD_total_stubs_L1) {
+      TH1F* numerator = meN_fake_stubs_L1->getTH1F();
+      TH1F* denominator = meD_total_stubs_L1->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Setting the current directory
+      ibooker.setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      MonitorElement* me_fake_rate_L1 = ibooker.book1D("StubFakeRateL1",
+                                                     "Stub Fake Rate L1",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
+
+      // Calculate the fake rate: fake stubs / total stubs
+      me_fake_rate_L1->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_fake_rate_L1->setAxisTitle("stub bend [full strip units]", 1);
+      me_fake_rate_L1->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
+      me_fake_rate_L1->getTH1F()->SetMaximum(1.1); 
+      me_fake_rate_L1->getTH1F()->SetMinimum(0.0); 
+      me_fake_rate_L1->getTH1F()->SetStats(false); 
+    } else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
+    }
+
+    if (meN_fake_stubs_L2 && meD_total_stubs_L2) {
+      TH1F* numerator = meN_fake_stubs_L2->getTH1F();
+      TH1F* denominator = meD_total_stubs_L2->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Setting the current directory
+      ibooker.setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      MonitorElement* me_fake_rate_L2 = ibooker.book1D("StubFakeRateL2",
+                                                     "Stub Fake Rate L2",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
+
+      // Calculate the fake rate: fake stubs / total stubs
+      me_fake_rate_L2->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_fake_rate_L2->setAxisTitle("stub bend [full strip units]", 1);
+      me_fake_rate_L2->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
+      me_fake_rate_L2->getTH1F()->SetMaximum(1.1); 
+      me_fake_rate_L2->getTH1F()->SetMinimum(0.0); 
+      me_fake_rate_L2->getTH1F()->SetStats(false); 
+    } else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
+    }
+
+    if (meN_fake_stubs_L3 && meD_total_stubs_L3) {
+      TH1F* numerator = meN_fake_stubs_L3->getTH1F();
+      TH1F* denominator = meD_total_stubs_L3->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Setting the current directory
+      ibooker.setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      MonitorElement* me_fake_rate_L3 = ibooker.book1D("StubFakeRateL3",
+                                                     "Stub Fake Rate L3",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
+
+      // Calculate the fake rate: fake stubs / total stubs
+      me_fake_rate_L3->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_fake_rate_L3->setAxisTitle("stub bend [full strip units]", 1);
+      me_fake_rate_L3->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
+      me_fake_rate_L3->getTH1F()->SetMaximum(1.1); 
+      me_fake_rate_L3->getTH1F()->SetMinimum(0.0); 
+      me_fake_rate_L3->getTH1F()->SetStats(false); 
+    } else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
+    }
+
+    if (meN_fake_stubs_L4 && meD_total_stubs_L4) {
+      TH1F* numerator = meN_fake_stubs_L4->getTH1F();
+      TH1F* denominator = meD_total_stubs_L4->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Setting the current directory
+      ibooker.setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      MonitorElement* me_fake_rate_L4 = ibooker.book1D("StubFakeRateL4",
+                                                     "Stub Fake Rate L4",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
+
+      // Calculate the fake rate: fake stubs / total stubs
+      me_fake_rate_L4->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_fake_rate_L4->setAxisTitle("stub bend [full strip units]", 1);
+      me_fake_rate_L4->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
+      me_fake_rate_L4->getTH1F()->SetMaximum(1.1); 
+      me_fake_rate_L4->getTH1F()->SetMinimum(0.0); 
+      me_fake_rate_L4->getTH1F()->SetStats(false); 
+    } else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
+    }
+
+    if (meN_fake_stubs_L5 && meD_total_stubs_L5) {
+      TH1F* numerator = meN_fake_stubs_L5->getTH1F();
+      TH1F* denominator = meD_total_stubs_L5->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Setting the current directory
+      ibooker.setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      MonitorElement* me_fake_rate_L5 = ibooker.book1D("StubFakeRateL5",
+                                                     "Stub Fake Rate L5",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
+
+      // Calculate the fake rate: fake stubs / total stubs
+      me_fake_rate_L5->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_fake_rate_L5->setAxisTitle("stub bend [full strip units]", 1);
+      me_fake_rate_L5->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
+      me_fake_rate_L5->getTH1F()->SetMaximum(1.1); 
+      me_fake_rate_L5->getTH1F()->SetMinimum(0.0); 
+      me_fake_rate_L5->getTH1F()->SetStats(false); 
+    } else {
+      edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
+    }
+
+    if (meN_fake_stubs_L6 && meD_total_stubs_L6) {
+      TH1F* numerator = meN_fake_stubs_L6->getTH1F();
+      TH1F* denominator = meD_total_stubs_L6->getTH1F();
+      numerator->Sumw2();
+      denominator->Sumw2();
+
+      // Setting the current directory
+      ibooker.setCurrentFolder("SiOuterTrackerV/Tracks/FinalEfficiency");
+
+      MonitorElement* me_fake_rate_L6 = ibooker.book1D("StubFakeRateL6",
+                                                     "Stub Fake Rate L6",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
+
+      // Calculate the fake rate: fake stubs / total stubs
+      me_fake_rate_L6->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
+      me_fake_rate_L6->setAxisTitle("stub bend [full strip units]", 1);
+      me_fake_rate_L6->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
+      me_fake_rate_L6->getTH1F()->SetMaximum(1.1); 
+      me_fake_rate_L6->getTH1F()->SetMinimum(0.0); 
+      me_fake_rate_L6->getTH1F()->SetStats(false); 
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
     }

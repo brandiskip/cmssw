@@ -40,15 +40,24 @@ public:
   // 1D correction factor
   MonitorElement *hist_deltaZ = nullptr;
   MonitorElement *hist_deltaR = nullptr;
-  MonitorElement *hist_tiltAngle = nullptr;
   MonitorElement *hist_tp_phi = nullptr;
   MonitorElement *hist_stub_phi = nullptr;
-  MonitorElement *hist_cosTiltAngle = nullptr;
-  MonitorElement *hist_sinTiltAngle = nullptr;
 
   // fake rate
   MonitorElement *TotalStubs = nullptr;
   MonitorElement *FakeStubs = nullptr;
+  MonitorElement *TotalStubs_L1 = nullptr;
+  MonitorElement *FakeStubs_L1 = nullptr;
+  MonitorElement *TotalStubs_L2 = nullptr;
+  MonitorElement *FakeStubs_L2 = nullptr;
+  MonitorElement *TotalStubs_L3 = nullptr;
+  MonitorElement *FakeStubs_L3 = nullptr;
+  MonitorElement *TotalStubs_L4 = nullptr;
+  MonitorElement *FakeStubs_L4 = nullptr;
+  MonitorElement *TotalStubs_L5 = nullptr;
+  MonitorElement *FakeStubs_L5 = nullptr;
+  MonitorElement *TotalStubs_L6 = nullptr;
+  MonitorElement *FakeStubs_L6 = nullptr;
 
   // 2D correction factor
   MonitorElement *hist_tiltAngle_vs_Z0 = nullptr;

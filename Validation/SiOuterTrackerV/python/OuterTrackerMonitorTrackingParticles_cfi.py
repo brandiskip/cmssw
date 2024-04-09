@@ -32,13 +32,6 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmax = cms.double(0.5)
         ),
 
-# tiltAngle vs count
-    TH1tilt_Angle = cms.PSet(
-        Nbinsx = cms.int32(100),
-        xmin = cms.double(-1.6),
-        xmax = cms.double(1.6)
-        ),
-
 # tp_phi vs count
     TH1tp_phi = cms.PSet(
         Nbinsx = cms.int32(100),
@@ -46,25 +39,11 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmax = cms.double(4)
         ),
 
-# cosTiltAngle vs count
-    TH1cosTiltAngle = cms.PSet(
-        Nbinsx = cms.int32(100),
-        xmin = cms.double(-1.6),
-        xmax = cms.double(1.6)
-        ),
-
-# sinTiltAngle vs count
-    TH1sinTiltAngle = cms.PSet(
-        Nbinsx = cms.int32(100),
-        xmin = cms.double(-1.6),
-        xmax = cms.double(1.6)
-        ),
-
 # stub count for fake rate
     TH1Stubs = cms.PSet(
-        Nbinsx = cms.int32(59),
-        xmin = cms.double(0.0),
-        xmax = cms.double(60.0)
+        Nbinsx = cms.int32(19),
+        xmin = cms.double(-10.0),
+        xmax = cms.double(10.0)
         ),
 
 # TTStub Barrel Layers
@@ -221,28 +200,28 @@ OuterTrackerMonitorTrackingParticles = DQMEDAnalyzer('OuterTrackerMonitorTrackin
         xmin = cms.double(0.0)
         ),
 
-# stub bend resolution
+# delta bend
     TH1Bend_Res = cms.PSet(
-        Nbinsx = cms.int32(59),
+        Nbinsx = cms.int32(399),
         xmax = cms.double(5.0),
         xmin = cms.double(-5.0)
         ),
 
-# tp_z - stub_z resolution
+# delta z
     TH1Z_Res = cms.PSet(
         Nbinsx = cms.int32(399),
         xmax = cms.double(5.5),
         xmin = cms.double(-5.5)
         ),
 
-# tp_z - stub_z resolution endcap only
+# delta z endcap only
     TH1Z_Res_Endcap = cms.PSet(
         Nbinsx = cms.int32(121),
         xmax = cms.double(1.0),
         xmin = cms.double(-1.0)
         ),
 
-# tp_phi - stub_phi resolution
+# delta phi
     TH1Phi_Res = cms.PSet(
         Nbinsx = cms.int32(79),
         xmax = cms.double(0.1),

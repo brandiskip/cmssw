@@ -14,8 +14,12 @@
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <iostream> // Include for printing debug statements
 
 // user include files
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
+#include "SimTracker/TrackTriggerAssociation/interface/TTStubAssociationMap.h"
+
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -38,6 +42,8 @@
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 #include "Geometry/TrackerGeometryBuilder/interface/StripGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonTopologies/interface/PixelTopology.h"
 
 #include "DQMServices/Core/interface/DQMEDAnalyzer.h"
 #include "DQMServices/Core/interface/DQMStore.h"
@@ -50,29 +56,89 @@ public:
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   void dqmBeginRun(const edm::Run &iRun, const edm::EventSetup &iSetup) override;
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
+  float phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1);
+  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const;
+
   // TTStub stacks
   // Global position of the stubs
   MonitorElement *Stub_RZ = nullptr;  // TTStub #rho vs. z
 
+  // delta_z hists
+  MonitorElement* z_res_isPS_barrel;
+  MonitorElement* z_res_is2S_barrel;
+  
+  // delta_phi hists
+  MonitorElement* phi_res_barrel;
+  MonitorElement* phi_res_barrel_L1;
+  MonitorElement* phi_res_barrel_L2;
+  MonitorElement* phi_res_barrel_L3;
+  MonitorElement* phi_res_barrel_L4;
+  MonitorElement* phi_res_barrel_L5;
+  MonitorElement* phi_res_barrel_L6;
+  MonitorElement* phi_res_endcap;
+  MonitorElement* phi_res_fw_endcap;
+  MonitorElement* phi_res_fw_endcap_D1;
+  MonitorElement* phi_res_fw_endcap_D2;
+  MonitorElement* phi_res_fw_endcap_D3;
+  MonitorElement* phi_res_fw_endcap_D4;
+  MonitorElement* phi_res_fw_endcap_D5;
+  MonitorElement* phi_res_bw_endcap;
+  MonitorElement* phi_res_bw_endcap_D1;
+  MonitorElement* phi_res_bw_endcap_D2;
+  MonitorElement* phi_res_bw_endcap_D3;
+  MonitorElement* phi_res_bw_endcap_D4;
+  MonitorElement* phi_res_bw_endcap_D5;
+  MonitorElement* phi_res_isPS_barrel;
+  MonitorElement* phi_res_is2S_barrel;
+
+  // delta_bend hists
+  MonitorElement* bend_res_barrel;
+  MonitorElement* bend_res_barrel_L1;
+  MonitorElement* bend_res_barrel_L2;
+  MonitorElement* bend_res_barrel_L3;
+  MonitorElement* bend_res_barrel_L4;
+  MonitorElement* bend_res_barrel_L5;
+  MonitorElement* bend_res_barrel_L6;
+  MonitorElement* bend_res_endcap;
+  MonitorElement* bend_res_fw_endcap;
+  MonitorElement* bend_res_fw_endcap_D1;
+  MonitorElement* bend_res_fw_endcap_D2;
+  MonitorElement* bend_res_fw_endcap_D3;
+  MonitorElement* bend_res_fw_endcap_D4;
+  MonitorElement* bend_res_fw_endcap_D5;
+  MonitorElement* bend_res_bw_endcap;
+  MonitorElement* bend_res_bw_endcap_D1;
+  MonitorElement* bend_res_bw_endcap_D2;
+  MonitorElement* bend_res_bw_endcap_D3;
+  MonitorElement* bend_res_bw_endcap_D4;
+  MonitorElement* bend_res_bw_endcap_D5;
+
 private:
   edm::ParameterSet conf_;
   edm::EDGetTokenT<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>> tagTTStubsToken_;
+  edm::EDGetTokenT<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> ttStubMCTruthToken_;  // MC truth association map for stubs
+  edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> geomToken_;
+  edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> tTopoToken_;
   std::string topFolderName_;
-  const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> geomToken_;
-  const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> topoToken_;
-  const TrackerGeometry *tkGeom_ = nullptr;
+  const TrackerGeometry *theTrackerGeom_ = nullptr;
   const TrackerTopology *tTopo_ = nullptr;
+  double TP_minPt;
+  double TP_maxEta;
 };
 
 // constructors and destructor
 Phase2OTValidateTTStub::Phase2OTValidateTTStub(const edm::ParameterSet &iConfig)
     : conf_(iConfig),
       geomToken_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord, edm::Transition::BeginRun>()),
-      topoToken_(esConsumes<TrackerTopology, TrackerTopologyRcd, edm::Transition::BeginRun>()) {
-  // now do what ever initialization is needed
+      tTopoToken_(esConsumes<TrackerTopology, TrackerTopologyRcd, edm::Transition::BeginRun>()) {
+  // now do whatever initialization is needed
+  ttStubMCTruthToken_ =
+      consumes<TTStubAssociationMap<Ref_Phase2TrackerDigi_>>(conf_.getParameter<edm::InputTag>("MCTruthStubInputTag"));
   topFolderName_ = conf_.getParameter<std::string>("TopFolderName");
   tagTTStubsToken_ =
       consumes<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>>(conf_.getParameter<edm::InputTag>("TTStubs"));
+  TP_minPt = conf_.getParameter<double>("TP_minPt");      // min pT to consider matching
+  TP_maxEta = conf_.getParameter<double>("TP_maxEta");    // max eta to consider matching
 }
 
 Phase2OTValidateTTStub::~Phase2OTValidateTTStub() {
@@ -81,48 +147,471 @@ Phase2OTValidateTTStub::~Phase2OTValidateTTStub() {
 }
 
 void Phase2OTValidateTTStub::dqmBeginRun(const edm::Run &iRun, const edm::EventSetup &iSetup) {
-  tkGeom_ = &(iSetup.getData(geomToken_));
-  tTopo_ = &(iSetup.getData(topoToken_));
+  theTrackerGeom_ = &(iSetup.getData(geomToken_));
+  tTopo_ = &(iSetup.getData(tTopoToken_));
 }
+
 // member functions
+
+float Phase2OTValidateTTStub::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
+    // Get R0, R1, Z0, Z1 values
+    // split resolution values between positive and negative z
+    float R0 = det0->position().perp();
+    float R1 = det1->position().perp();
+    float Z0 = det0->position().z();
+    float Z1 = det1->position().z();
+
+    bool isTiltedBarrel = (isBarrel && tTopo->tobSide(detid) != 3);
+    
+    float tiltAngle = 0; // Initialize to 0 (meaning no tilt, in the endcaps)
+    if (isTiltedBarrel) {
+        float deltaR = std::abs(R1 - R0);
+        float deltaZ = (R1 - R0 > 0) ? (Z1 - Z0) : -(Z1 - Z0); // if module parallel, tilt angle should be π/2 and deltaZ would approach zero
+        // fill histograms here
+        tiltAngle = atan(deltaR / std::abs(deltaZ));
+    }
+
+    float correction;
+    if (isBarrel && tTopo->tobSide(detid) != 3) {  // Assuming this condition represents tiltedBarrel
+        correction = cos(tiltAngle) * std::abs(stub_z) / stub_r + sin(tiltAngle);
+    } else if (isBarrel) {
+        correction = 1;
+    } else {
+        correction = std::abs(stub_z) / stub_r; // if tiltAngle = 0, stub (not module) is parallel to the beam line, if tiltAngle = 90, stub is perpendicular to beamline
+    }
+
+    return correction;
+}
+
+std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const {
+  double tp_phi = -99;
+  double tp_r = -99;
+  double tp_z = -99;
+  double bfield_ = 3.8;  //B-field in T
+  double c_ = 2.99792458E10;  //speed of light cm/s
+
+  // Get values from the tracking particle my_tp
+  double myTP_pt = my_tp->pt();
+  double myTP_charge = my_tp->charge();
+  float myTP_z0 = my_tp->vertex().z();
+  double myTP_t = my_tp->tanl();
+  double myTP_rinv = (myTP_charge * bfield_) / (myTP_pt);
+
+  if (isBarrel) { 
+      tp_r = stub_r;
+      tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
+      tp_phi = reco::reduceRange(tp_phi);  
+      tp_z = myTP_z0 + (2.0E13 / c_) * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
+  } else {
+      tp_z = (modMaxZ + modMinZ) / 2;
+      tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t; 
+      tp_phi = reco::reduceRange(tp_phi);
+      tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t);
+  }
+
+  std::vector<double> tpDerived_coords{tp_r, tp_z, tp_phi};
+  return tpDerived_coords;
+}
 
 // ------------ method called for each event  ------------
 void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventSetup &iSetup) {
-  /// Track Trigger Stubs
+  // Handle to Track Trigger Stubs
   edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>> Phase2TrackerDigiTTStubHandle;
   iEvent.getByToken(tagTTStubsToken_, Phase2TrackerDigiTTStubHandle);
+  edm::Handle<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTStubHandle;
+  iEvent.getByToken(ttStubMCTruthToken_, MCTruthTTStubHandle);
 
-  /// Loop over input Stubs
-  typename edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>::const_iterator inputIter;
-  typename edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_>>::const_iterator contentIter;
-  // Adding protection
-  if (!Phase2TrackerDigiTTStubHandle.isValid())
+  double bfield_{3.8};  // B-field in T
+  double c_{2.99792458E10};  // Speed of light cm/s
+
+  // Ensure valid handles
+  if (!Phase2TrackerDigiTTStubHandle.isValid() || !MCTruthTTStubHandle.isValid()) {
+    edm::LogError("Phase2OTValidateTTStub") << "Invalid handle(s) detected.";
     return;
+  }
 
-  for (inputIter = Phase2TrackerDigiTTStubHandle->begin(); inputIter != Phase2TrackerDigiTTStubHandle->end();
-       ++inputIter) {
-    for (contentIter = inputIter->begin(); contentIter != inputIter->end(); ++contentIter) {
-      /// Make reference stub
-      edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>, TTStub<Ref_Phase2TrackerDigi_>> tempStubRef =
-          edmNew::makeRefTo(Phase2TrackerDigiTTStubHandle, contentIter);
+  // Loop over geometric detectors
+  for (auto gd = theTrackerGeom_->dets().begin(); gd != theTrackerGeom_->dets().end(); gd++) {
+    DetId detid = (*gd)->geographicalId();
 
-      /// Get det ID (place of the stub)
-      //  tempStubRef->getDetId() gives the stackDetId, not rawId
-      DetId detIdStub = tkGeom_->idToDet((tempStubRef->clusterRef(0))->getDetId())->geographicalId();
+    // Check if detid belongs to TOB or TID subdetectors
+    if (detid.subdetId() != StripSubdetector::TOB && detid.subdetId() != StripSubdetector::TID)
+      continue;
 
-      /// Get trigger displacement/offset
-      //double rawBend = tempStubRef->rawBend();
-      //double bendOffset = tempStubRef->bendOffset();
+    // Process only the lower part of the stack
+    if (!tTopo_->isLower(detid))
+      continue;
 
-      /// Define position stub by position inner cluster
-      MeasurementPoint mp = (tempStubRef->clusterRef(0))->findAverageLocalCoordinates();
-      const GeomDet *theGeomDet = tkGeom_->idToDet(detIdStub);
-      Global3DPoint posStub = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(mp));
+    // Get the stack DetId
+    DetId stackDetid = tTopo_->stack(detid);
 
-      Stub_RZ->Fill(posStub.z(), posStub.perp());
+    // Check if the stackDetid exists in TTStubHandle
+    if (Phase2TrackerDigiTTStubHandle->find(stackDetid) == Phase2TrackerDigiTTStubHandle->end())
+      continue;
+
+    // Get the DetSets of the Clusters
+    edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_>> stubs = (*Phase2TrackerDigiTTStubHandle)[stackDetid];
+
+    // Calculate detector module positions
+    const GeomDetUnit* det0 = theTrackerGeom_->idToDetUnit(detid);
+    const GeomDetUnit* det1 = theTrackerGeom_->idToDetUnit(tTopo_->partnerDetId(detid));
+    if (!det0 || !det1) {
+      edm::LogError("Phase2OTValidateTTStub") << "Error: det0 or det1 is null";
+      continue;
+    }
+    float modMinR = std::min(det0->position().perp(), det1->position().perp());
+    float modMaxR = std::max(det0->position().perp(), det1->position().perp());
+    float modMinZ = std::min(det0->position().z(), det1->position().z());
+    float modMaxZ = std::max(det0->position().z(), det1->position().z());
+    float sensorSpacing = sqrt((modMaxR - modMinR) * (modMaxR - modMinR) + (modMaxZ - modMinZ) * (modMaxZ - modMinZ));
+
+    // Calculate strip pitch
+    const PixelGeomDetUnit* theGeomDetUnit = dynamic_cast<const PixelGeomDetUnit*>(det0);
+    if (!theGeomDetUnit) {
+      edm::LogError("Phase2OTValidateTTStub") << "Error: theGeomDetUnit is null";
+      continue;
+    }
+    const PixelTopology& topo = theGeomDetUnit->specificTopology();
+    float stripPitch = topo.pitch().first;
+
+    // Loop over input stubs
+    for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+      // Create reference to the stub
+      edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>, TTStub<Ref_Phase2TrackerDigi_>> tempStubPtr = edmNew::makeRefTo(Phase2TrackerDigiTTStubHandle, stubIter);
+
+      // Check if the stub is genuine
+      if (!MCTruthTTStubHandle->isGenuine(tempStubPtr))
+        continue;
+
+      // Get det ID from the stub
+      DetId detIdStub = theTrackerGeom_->idToDet((tempStubPtr->clusterRef(0))->getDetId())->geographicalId();
+
+      // Retrieve geometrical detector
+      const GeomDet* theGeomDet = theTrackerGeom_->idToDet(detIdStub);
+      if (!theGeomDet) {
+        edm::LogError("Phase2OTValidateTTStub") << "Error: theGeomDet is null";
+        continue;
+      }
+
+      // Process tracking particle information
+      edm::Ptr<TrackingParticle> my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
+      if (my_tp.isNull())
+        continue;
+
+      // Determine layer and subdetector information
+      int isBarrel = 0;
+      int layer = -999999;
+      if (detid.subdetId() == StripSubdetector::TOB) {
+        isBarrel = 1;
+        layer = static_cast<int>(tTopo_->layer(detid));
+      } else if (detid.subdetId() == StripSubdetector::TID) {
+        isBarrel = 0;
+        layer = static_cast<int>(tTopo_->layer(detid));
+      } else {
+        edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB nor TID stub, shouldn't happen...";
+        layer = -1;
+      }
+
+      int isPSmodule = (topo.nrows() == 960) ? 1 : 0;
+
+      // Calculate local coordinates of clusters
+      MeasurementPoint innerClusterCoords = tempStubPtr->clusterRef(0)->findAverageLocalCoordinatesCentered();
+      MeasurementPoint outerClusterCoords = tempStubPtr->clusterRef(1)->findAverageLocalCoordinatesCentered();
+
+      // Convert local coordinates to global positions
+      Global3DPoint innerClusterGlobalPos = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(innerClusterCoords));
+      Global3DPoint outerClusterGlobalPos = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(outerClusterCoords));
+
+      // Determine maximum Z positions of the stubs
+      float stub_maxZ = std::max(innerClusterGlobalPos.z(), outerClusterGlobalPos.z());
+
+      // Stub parameters
+      float stub_phi = innerClusterGlobalPos.phi();
+      float stub_r = innerClusterGlobalPos.perp();
+      float stub_z = innerClusterGlobalPos.z();
+
+      // Tracking particle parameters
+      int myTP_charge = my_tp->charge();
+      float myTP_pt = my_tp->p4().pt();
+      float myTP_eta = my_tp->p4().eta();
+
+      if (myTP_charge == 0) continue;
+      if (myTP_pt < TP_minPt) continue;
+      if (std::abs(myTP_eta) > TP_maxEta) continue;
+
+      // Derived coordinates
+      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r);
+      float tp_z = tpDerivedCoords[1];
+      float tp_phi = tpDerivedCoords[2];
+
+      // Trigger information
+      float trigBend = tempStubPtr->bendFE();
+      if (!isBarrel && stub_maxZ < 0.0) {
+        trigBend = -trigBend;
+      }
+
+      float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo_, detid, det0, det1);
+      float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
+                        (stripPitch * 2.0E13 * myTP_pt * correctionValue);
+
+      float bendRes = trackBend - trigBend;
+      float zRes = tp_z - stub_z;
+      float phiRes = tp_phi - stub_phi;
+
+      // Fill histograms
+      if (Stub_RZ) {
+        Stub_RZ->Fill(stub_z, stub_r);
+      } else {
+        edm::LogError("Phase2OTValidateTTStub") << "Error: Stub_RZ histogram is null";
+      }
+      // histograms for z_res
+      if (isBarrel) {
+          if (isPSmodule) {
+              if (z_res_isPS_barrel) {
+                  std::cout << "Filling z_res_isPS_barrel with value: " << zRes << std::endl;
+                  z_res_isPS_barrel->Fill(zRes);
+              }
+              if (phi_res_isPS_barrel) {
+                  std::cout << "Filling phi_res_isPS_barrel with value: " << phiRes << std::endl;
+                  phi_res_isPS_barrel->Fill(phiRes);
+              }
+          } else {
+              if (z_res_is2S_barrel) {
+                  std::cout << "Filling z_res_is2S_barrel with value: " << zRes << std::endl;
+                  z_res_is2S_barrel->Fill(zRes);
+              }
+              if (phi_res_is2S_barrel) {
+                  std::cout << "Filling phi_res_is2S_barrel with value: " << phiRes << std::endl;
+                  phi_res_is2S_barrel->Fill(phiRes);
+              }
+          }
+      }
+
+      // Fill histograms for bend_res and phiRes for the entire barrel and endcap
+      if (isBarrel == 1) {
+          // Fill histograms for the entire barrel
+          if (bend_res_barrel) {
+              std::cout << "Filling bend_res_barrel with value: " << bendRes << std::endl;
+              bend_res_barrel->Fill(bendRes);
+          }
+          if (phi_res_barrel) {
+              std::cout << "Filling phi_res_barrel with value: " << phiRes << std::endl;
+              phi_res_barrel->Fill(phiRes);
+          }
+
+          // Fill histograms for specific layers in the barrel
+          switch (layer) {
+              case 1:
+                  if (bend_res_barrel_L1) {
+                      std::cout << "Filling bend_res_barrel_L1 with value: " << bendRes << std::endl;
+                      bend_res_barrel_L1->Fill(bendRes);
+                  }
+                  if (phi_res_barrel_L1) {
+                      std::cout << "Filling phi_res_barrel_L1 with value: " << phiRes << std::endl;
+                      phi_res_barrel_L1->Fill(phiRes);
+                  }
+                  break;
+              case 2:
+                  if (bend_res_barrel_L2) {
+                      std::cout << "Filling bend_res_barrel_L2 with value: " << bendRes << std::endl;
+                      bend_res_barrel_L2->Fill(bendRes);
+                  }
+                  if (phi_res_barrel_L2) {
+                      std::cout << "Filling phi_res_barrel_L2 with value: " << phiRes << std::endl;
+                      phi_res_barrel_L2->Fill(phiRes);
+                  }
+                  break;
+              case 3:
+                  if (bend_res_barrel_L3) {
+                      std::cout << "Filling bend_res_barrel_L3 with value: " << bendRes << std::endl;
+                      bend_res_barrel_L3->Fill(bendRes);
+                  }
+                  if (phi_res_barrel_L3) {
+                      std::cout << "Filling phi_res_barrel_L3 with value: " << phiRes << std::endl;
+                      phi_res_barrel_L3->Fill(phiRes);
+                  }
+                  break;
+              case 4:
+                  if (bend_res_barrel_L4) {
+                      std::cout << "Filling bend_res_barrel_L4 with value: " << bendRes << std::endl;
+                      bend_res_barrel_L4->Fill(bendRes);
+                  }
+                  if (phi_res_barrel_L4) {
+                      std::cout << "Filling phi_res_barrel_L4 with value: " << phiRes << std::endl;
+                      phi_res_barrel_L4->Fill(phiRes);
+                  }
+                  break;
+              case 5:
+                  if (bend_res_barrel_L5) {
+                      std::cout << "Filling bend_res_barrel_L5 with value: " << bendRes << std::endl;
+                      bend_res_barrel_L5->Fill(bendRes);
+                  }
+                  if (phi_res_barrel_L5) {
+                      std::cout << "Filling phi_res_barrel_L5 with value: " << phiRes << std::endl;
+                      phi_res_barrel_L5->Fill(phiRes);
+                  }
+                  break;
+              case 6:
+                  if (bend_res_barrel_L6) {
+                      std::cout << "Filling bend_res_barrel_L6 with value: " << bendRes << std::endl;
+                      bend_res_barrel_L6->Fill(bendRes);
+                  }
+                  if (phi_res_barrel_L6) {
+                      std::cout << "Filling phi_res_barrel_L6 with value: " << phiRes << std::endl;
+                      phi_res_barrel_L6->Fill(phiRes);
+                  }
+                  break;
+              default:
+                  break;
+          }
+      } else if (isBarrel == 0) {
+          // Fill histograms for the entire endcap
+          if (bend_res_endcap) {
+              std::cout << "Filling bend_res_endcap with value: " << bendRes << std::endl;
+              bend_res_endcap->Fill(bendRes);
+          }
+          if (phi_res_endcap) {
+              std::cout << "Filling phi_res_endcap with value: " << phiRes << std::endl;
+              phi_res_endcap->Fill(phiRes);
+          }
+
+          if (stub_maxZ > 0) {
+              // Fill histograms for the forward endcap
+              if (bend_res_fw_endcap) {
+                  std::cout << "Filling bend_res_fw_endcap with value: " << bendRes << std::endl;
+                  bend_res_fw_endcap->Fill(bendRes);
+              }
+              if (phi_res_fw_endcap) {
+                  std::cout << "Filling phi_res_fw_endcap with value: " << phiRes << std::endl;
+                  phi_res_fw_endcap->Fill(phiRes);
+              }
+
+              // Fill histograms for specific discs in the forward endcap
+              switch (layer) {
+                  case 1:
+                      if (bend_res_fw_endcap_D1) {
+                          std::cout << "Filling bend_res_fw_endcap_D1 with value: " << bendRes << std::endl;
+                          bend_res_fw_endcap_D1->Fill(bendRes);
+                      }
+                      if (phi_res_fw_endcap_D1) {
+                          std::cout << "Filling phi_res_fw_endcap_D1 with value: " << phiRes << std::endl;
+                          phi_res_fw_endcap_D1->Fill(phiRes);
+                      }
+                      break;
+                  case 2:
+                      if (bend_res_fw_endcap_D2) {
+                          std::cout << "Filling bend_res_fw_endcap_D2 with value: " << bendRes << std::endl;
+                          bend_res_fw_endcap_D2->Fill(bendRes);
+                      }
+                      if (phi_res_fw_endcap_D2) {
+                          std::cout << "Filling phi_res_fw_endcap_D2 with value: " << phiRes << std::endl;
+                          phi_res_fw_endcap_D2->Fill(phiRes);
+                      }
+                      break;
+                  case 3:
+                      if (bend_res_fw_endcap_D3) {
+                          std::cout << "Filling bend_res_fw_endcap_D3 with value: " << bendRes << std::endl;
+                          bend_res_fw_endcap_D3->Fill(bendRes);
+                      }
+                      if (phi_res_fw_endcap_D3) {
+                          std::cout << "Filling phi_res_fw_endcap_D3 with value: " << phiRes << std::endl;
+                          phi_res_fw_endcap_D3->Fill(phiRes);
+                      }
+                      break;
+                  case 4:
+                      if (bend_res_fw_endcap_D4) {
+                          std::cout << "Filling bend_res_fw_endcap_D4 with value: " << bendRes << std::endl;
+                          bend_res_fw_endcap_D4->Fill(bendRes);
+                      }
+                      if (phi_res_fw_endcap_D4) {
+                          std::cout << "Filling phi_res_fw_endcap_D4 with value: " << phiRes << std::endl;
+                          phi_res_fw_endcap_D4->Fill(phiRes);
+                      }
+                      break;
+                  case 5:
+                      if (bend_res_fw_endcap_D5) {
+                          std::cout << "Filling bend_res_fw_endcap_D5 with value: " << bendRes << std::endl;
+                          bend_res_fw_endcap_D5->Fill(bendRes);
+                      }
+                      if (phi_res_fw_endcap_D5) {
+                          std::cout << "Filling phi_res_fw_endcap_D5 with value: " << phiRes << std::endl;
+                          phi_res_fw_endcap_D5->Fill(phiRes);
+                      }
+                      break;
+                  default:
+                      break;
+              }
+          } else {
+              // Fill histograms for the backward endcap
+              if (bend_res_bw_endcap) {
+                  std::cout << "Filling bend_res_bw_endcap with value: " << bendRes << std::endl;
+                  bend_res_bw_endcap->Fill(bendRes);
+              }
+              if (phi_res_bw_endcap) {
+                  std::cout << "Filling phi_res_bw_endcap with value: " << phiRes << std::endl;
+                  phi_res_bw_endcap->Fill(phiRes);
+              }
+
+              // Fill histograms for specific discs in the backward endcap
+              switch (layer) {
+                  case 1:
+                      if (bend_res_bw_endcap_D1) {
+                          std::cout << "Filling bend_res_bw_endcap_D1 with value: " << bendRes << std::endl;
+                          bend_res_bw_endcap_D1->Fill(bendRes);
+                      }
+                      if (phi_res_bw_endcap_D1) {
+                          std::cout << "Filling phi_res_bw_endcap_D1 with value: " << phiRes << std::endl;
+                          phi_res_bw_endcap_D1->Fill(phiRes);
+                      }
+                      break;
+                  case 2:
+                      if (bend_res_bw_endcap_D2) {
+                          std::cout << "Filling bend_res_bw_endcap_D2 with value: " << bendRes << std::endl;
+                          bend_res_bw_endcap_D2->Fill(bendRes);
+                      }
+                      if (phi_res_bw_endcap_D2) {
+                          std::cout << "Filling phi_res_bw_endcap_D2 with value: " << phiRes << std::endl;
+                          phi_res_bw_endcap_D2->Fill(phiRes);
+                      }
+                      break;
+                  case 3:
+                      if (bend_res_bw_endcap_D3) {
+                          std::cout << "Filling bend_res_bw_endcap_D3 with value: " << bendRes << std::endl;
+                          bend_res_bw_endcap_D3->Fill(bendRes);
+                      }
+                      if (phi_res_bw_endcap_D3) {
+                          std::cout << "Filling phi_res_bw_endcap_D3 with value: " << phiRes << std::endl;
+                          phi_res_bw_endcap_D3->Fill(phiRes);
+                      }
+                      break;
+                  case 4:
+                      if (bend_res_bw_endcap_D4) {
+                          std::cout << "Filling bend_res_bw_endcap_D4 with value: " << bendRes << std::endl;
+                          bend_res_bw_endcap_D4->Fill(bendRes);
+                      }
+                      if (phi_res_bw_endcap_D4) {
+                          std::cout << "Filling phi_res_bw_endcap_D4 with value: " << phiRes << std::endl;
+                          phi_res_bw_endcap_D4->Fill(phiRes);
+                      }
+                      break;
+                  case 5:
+                      if (bend_res_bw_endcap_D5) {
+                          std::cout << "Filling bend_res_bw_endcap_D5 with value: " << bendRes << std::endl;
+                          bend_res_bw_endcap_D5->Fill(bendRes);
+                      }
+                      if (phi_res_bw_endcap_D5) {
+                          std::cout << "Filling phi_res_bw_endcap_D5 with value: " << phiRes << std::endl;
+                          phi_res_bw_endcap_D5->Fill(phiRes);
+                      }
+                      break;
+                  default:
+                      break;
+              }
+          }
+      } 
     }
   }
-}  // end of method
+} // end of method
 
 // ------------ method called when starting to processes a run  ------------
 void Phase2OTValidateTTStub::bookHistograms(DQMStore::IBooker &iBooker,
@@ -140,6 +629,213 @@ void Phase2OTValidateTTStub::bookHistograms(DQMStore::IBooker &iBooker,
                            psTTStub_RZ.getParameter<int32_t>("Nbinsy"),
                            psTTStub_RZ.getParameter<double>("ymin"),
                            psTTStub_RZ.getParameter<double>("ymax"));
+
+  iBooker.setCurrentFolder(topFolderName_ + "/Residual");
+  // stub vs tp z-coord diff
+  edm::ParameterSet psZ_Res = conf_.getParameter<edm::ParameterSet>("TH1Z_Res");
+
+  // z-resolution for PS modules
+  HistoName = "#Delta z Barrel PS modules";
+  z_res_isPS_barrel = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  z_res_isPS_barrel->setAxisTitle("tp_z - stub_z", 1);
+  z_res_isPS_barrel->setAxisTitle("events ", 2);
+
+  // z-resolution for 2S modules
+  HistoName = "#Delta z Barrel 2S modules";
+  z_res_is2S_barrel = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  z_res_is2S_barrel->setAxisTitle("tp_z - stub_z [cm]", 1);
+  z_res_is2S_barrel->setAxisTitle("events ", 2);
+
+  // bend diff
+  edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
+  HistoName = "#Delta bend barrel";
+  bend_res_barrel = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend L1";
+  bend_res_barrel_L1 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L1->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L1->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend L2";
+  bend_res_barrel_L2 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L2->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L2->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend L3";
+  bend_res_barrel_L3 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L3->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L3->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend L4";
+  bend_res_barrel_L4 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L4->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L4->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend L5";
+  bend_res_barrel_L5 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L5->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L5->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend L6";
+  bend_res_barrel_L6 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_barrel_L6->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_barrel_L6->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend endcaps";
+  bend_res_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_endcap->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_endcap->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend endcaps fw";
+  bend_res_fw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend +D1";
+  bend_res_fw_endcap_D1 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D1->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend +D2";
+  bend_res_fw_endcap_D2 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D2->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend +D3";
+  bend_res_fw_endcap_D3 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D3->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D3->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend +D4";
+  bend_res_fw_endcap_D4 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D4->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D4->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend +D5";
+  bend_res_fw_endcap_D5 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_fw_endcap_D5->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_fw_endcap_D5->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend endcaps bw";
+  bend_res_bw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend -D1";
+  bend_res_bw_endcap_D1 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D1->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend -D2";
+  bend_res_bw_endcap_D2 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D2->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D1->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend -D3";
+  bend_res_bw_endcap_D3 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D3->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D3->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend -D4";
+  bend_res_bw_endcap_D4 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D4->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D4->setAxisTitle("counts", 2);
+
+  HistoName = "#Delta bend -D5";
+  bend_res_bw_endcap_D5 = iBooker.book1D(HistoName,
+                            HistoName,
+                            psBend_Res.getParameter<int32_t>("Nbinsx"),
+                            psBend_Res.getParameter<double>("xmin"),
+                            psBend_Res.getParameter<double>("xmax"));
+  bend_res_bw_endcap_D5->setAxisTitle("stub bend - tp bend", 1);
+  bend_res_bw_endcap_D5->setAxisTitle("counts", 2);
+
 }
 
 void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
@@ -155,8 +851,41 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions &de
     psd0.add<double>("ymin", 0);
     desc.add<edm::ParameterSetDescription>("TH2TTStub_RZ", psd0);
   }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 99);
+    psd0.add<double>("xmax", 5.5);
+    psd0.add<double>("xmin", -5.5);
+    desc.add<edm::ParameterSetDescription>("TH1Z_Res", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 599);
+    psd0.add<double>("xmax", 0.1);
+    psd0.add<double>("xmin", -0.1);
+    desc.add<edm::ParameterSetDescription>("TH1Phi_Res", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 399);
+    psd0.add<double>("xmax", 5.0);
+    psd0.add<double>("xmin", -5.5);
+    desc.add<edm::ParameterSetDescription>("TH1Bend_Res", psd0);
+  }
+
   desc.add<std::string>("TopFolderName", "TrackerPhase2OTStubV");
   desc.add<edm::InputTag>("TTStubs", edm::InputTag("TTStubsFromPhase2TrackerDigis", "StubAccepted"));
+  desc.add<edm::InputTag>("trackingParticleToken", edm::InputTag("mix", "MergedTrackTruth"));
+  desc.add<edm::InputTag>("MCTruthStubInputTag", edm::InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"));
+  desc.add<edm::InputTag>("MCTruthTrackInputTag", edm::InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks"));
+  desc.add<edm::InputTag>("MCTruthClusterInputTag", edm::InputTag("TTClusterAssociatorFromPixelDigis", "ClusterInclusive"));
+  desc.add<int>("L1Tk_minNStub", 4);
+  desc.add<double>("L1Tk_maxChi2dof", 25.0);
+  desc.add<int>("TP_minNStub", 4);
+  desc.add<int>("TP_minNLayersStub", 4);
+  desc.add<double>("TP_minPt", 2.0);
+  desc.add<double>("TP_maxEta", 2.4);
+  desc.add<double>("TP_maxVtxZ", 15.0);
   descriptions.add("Phase2OTValidateTTStub", desc);
   // or use the following to generate the label from the module's C++ type
   //descriptions.addWithDefaultLabel(desc);

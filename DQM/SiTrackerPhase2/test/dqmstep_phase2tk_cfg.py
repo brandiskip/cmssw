@@ -1,16 +1,9 @@
-##Takes as input GEN-SIM-RECO
-# Auto generated configuration file
-# using: 
-# Revision: 1.19 
-# Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: step3 --conditions auto:phase2_realistic_T21 -s RAW2DIGI,L1Reco,RECO,RECOSIM,VALIDATION:@phase2Validation,DQM:@phase2 --datatier DQMIO -n 10 --geometry Extended2026D76 --era Phase2C11M9 --eventcontent DQM --no_exec
 import FWCore.ParameterSet.Config as cms
-
 from Configuration.Eras.Era_Phase2C11M9_cff import Phase2C11M9
 
-process = cms.Process('RERECO',Phase2C11M9)
+process = cms.Process('RERECO', Phase2C11M9)
 
-# import of standard configurations
+# Import standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
@@ -28,42 +21,28 @@ process.load('DQMOffline.Configuration.DQMOffline_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10),
-    output = cms.optional.untracked.allowed(cms.int32,cms.PSet)
+    input = cms.untracked.int32(10)
 )
 
 # Input source
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root'),
+    fileNames = cms.untracked.vstring(
+        #"/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root",
+        "/store/relval/CMSSW_14_1_0_pre4/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/140X_mcRun4_realistic_v4_STD_2026D110_noPU-v1/2590000/2556e4d4-97da-4708-9cf2-4e2eecbed0ab.root",
+        ),
     secondaryFileNames = cms.untracked.vstring()
 )
 
 process.options = cms.untracked.PSet(
-    IgnoreCompletely = cms.untracked.vstring(),
-    Rethrow = cms.untracked.vstring(),
-    TryToContinue = cms.untracked.vstring(),
-    allowUnscheduled = cms.obsolete.untracked.bool,
-    canDeleteEarly = cms.untracked.vstring(),
-    deleteNonConsumedUnscheduledModules = cms.untracked.bool(True),
-    emptyRunLumiMode = cms.obsolete.untracked.string,
-    eventSetup = cms.untracked.PSet(
-        forceNumberOfConcurrentIOVs = cms.untracked.PSet(
-            allowAnyLabel_=cms.required.untracked.uint32
-        ),
-        numberOfConcurrentIOVs = cms.untracked.uint32(1)
-    ),
-    fileMode = cms.untracked.string('FULLMERGE'),
-    forceEventSetupCacheClearOnNewRun = cms.untracked.bool(False),
-    makeTriggerResults = cms.obsolete.untracked.bool,
-    numberOfConcurrentLuminosityBlocks = cms.untracked.uint32(1),
-    numberOfConcurrentRuns = cms.untracked.uint32(1),
-    numberOfStreams = cms.untracked.uint32(0),
-    numberOfThreads = cms.untracked.uint32(4),
-    printDependencies = cms.untracked.bool(False),
-    sizeOfStackForThreadsInKB = cms.optional.untracked.uint32,
-    throwIfIllegalParameter = cms.untracked.bool(True),
-    wantSummary = cms.untracked.bool(False)
+    numberOfThreads = cms.untracked.uint32(1),  # Single thread for debugging
+    numberOfStreams = cms.untracked.uint32(1),  # Single stream for debugging
+    wantSummary = cms.untracked.bool(True)
 )
+
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.threshold = 'DEBUG'
+process.MessageLogger.cerr.default.limit = 10
+process.MessageLogger.debugModules = cms.untracked.vstring('*')
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
@@ -73,7 +52,6 @@ process.configurationMetadata = cms.untracked.PSet(
 )
 
 # Output definition
-
 process.DQMoutput = cms.OutputModule("DQMRootOutputModule",
     dataset = cms.untracked.PSet(
         dataTier = cms.untracked.string('DQMIO'),
@@ -83,8 +61,6 @@ process.DQMoutput = cms.OutputModule("DQMRootOutputModule",
     outputCommands = process.DQMEventContent.outputCommands,
     splitLevel = cms.untracked.int32(0)
 )
-
-# Additional output definition
 
 # Other statements
 process.mix.playback = True
@@ -101,49 +77,29 @@ process.reconstruction_step = cms.Path(process.reconstruction)
 process.recosim_step = cms.Path(process.recosim)
 process.DQMoutput_step = cms.EndPath(process.DQMoutput)
 
-##phase2 OT rechit step
+# Phase2 OT rechit step
 process.load('RecoLocalTracker.Phase2TrackerRecHits.Phase2TrackerRecHits_cfi')
 process.load('RecoLocalTracker.SiPixelRecHits.SiPixelRecHits_cfi')
 process.rechits_step = cms.Path(process.siPhase2RecHits * process.siPixelRecHits)
-#DQM modules
+
+# DQM modules
 process.load('DQM.SiTrackerPhase2.Phase2TrackerDQMFirstStep_cff')
 process.load('DQM.SiTrackerPhase2.Phase2OTMonitorRecHit_cfi')
-
-process.otdqm_seq = cms.Sequence(process.trackerphase2DQMSource.copy()*process.Phase2OTMonitorRecHit)
+process.otdqm_seq = cms.Sequence(process.trackerphase2DQMSource * process.Phase2OTMonitorRecHit)
 
 process.load('Validation.SiTrackerPhase2V.Phase2TrackerValidationFirstStep_cff')
 process.load('Validation.SiTrackerPhase2V.Phase2OTValidateRecHit_cfi')
+process.otvalid_seq = cms.Sequence(process.trackerphase2ValidationSource * process.Phase2OTValidateRecHit)
 
-process.otvalid_seq = cms.Sequence(process.trackerphase2ValidationSource.copy()*process.Phase2OTValidateRecHit)
-
-process.dqm_step=cms.Path(process.otdqm_seq)
-process.validation_step=cms.Path(process.otvalid_seq)
-
+process.dqm_step = cms.Path(process.otdqm_seq * process.stubValidOT)
+process.validation_step = cms.Path(process.otvalid_seq)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.rechits_step,
                                 process.dqm_step,
                                 process.validation_step,
-                                process.DQMoutput_step
-)
-# customisation of the process.
+                                process.DQMoutput_step)
 
-# Automatic addition of the customisation function from SimGeneral.MixingModule.fullMixCustomize_cff
-from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn 
-
-#call to customisation function setCrossingFrameOn imported from SimGeneral.MixingModule.fullMixCustomize_cff
+# Customisation of the process
+from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn
 process = setCrossingFrameOn(process)
-
-# End of customisation functions
-
-
-# Customisation from command line
-
-#Have logErrorHarvester wait for the same EDProducers to finish as those providing data for the OutputModule
-from FWCore.Modules.logErrorHarvester_cff import customiseLogErrorHarvesterUsingOutputCommands
-process = customiseLogErrorHarvesterUsingOutputCommands(process)
-
-# Add early deletion of temporary data products to reduce peak memory need
-from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
-process = customiseEarlyDelete(process)
-# End adding early deletion

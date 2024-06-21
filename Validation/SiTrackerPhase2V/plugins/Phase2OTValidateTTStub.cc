@@ -473,10 +473,12 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
           if (phi_res_endcap) {
               std::cout << "Filling phi_res_endcap with value: " << phiRes << std::endl;
               phi_res_endcap->Fill(phiRes);
+              std::cout << "After filling phi_res_endcap with value: " << phiRes << std::endl;
           }
-
+          std::cout << "before if stub_maxZ with value: " << stub_maxZ << std::endl;
           if (stub_maxZ > 0) {
               // Fill histograms for the forward endcap
+              std::cout << "after if stub_maxZ with value: " << stub_maxZ << std::endl;
               if (bend_res_fw_endcap) {
                   std::cout << "Filling bend_res_fw_endcap with value: " << bendRes << std::endl;
                   bend_res_fw_endcap->Fill(bendRes);

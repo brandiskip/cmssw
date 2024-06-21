@@ -656,6 +656,206 @@ void Phase2OTValidateTTStub::bookHistograms(DQMStore::IBooker &iBooker,
   z_res_is2S_barrel->setAxisTitle("tp_z - stub_z [cm]", 1);
   z_res_is2S_barrel->setAxisTitle("events ", 2);
 
+  // phi diff
+  edm::ParameterSet psPhi_Res = conf_.getParameter<edm::ParameterSet>("TH1Phi_Res");
+  HistoName = "#Delta #phi barrel";
+  phi_res_barrel = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_barrel->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_barrel->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi barrel L1";
+  phi_res_barrel_L1 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_barrel_L1->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_barrel_L1->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi barrel L2";
+  phi_res_barrel_L2 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_barrel_L2->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_barrel_L2->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi barrel L3";
+  phi_res_barrel_L3 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_barrel_L3->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_barrel_L3->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi barrel L4";
+  phi_res_barrel_L4 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_barrel_L4->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_barrel_L4->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi barrel L5";
+  phi_res_barrel_L5 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_barrel_L5->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_barrel_L5->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi barrel L6";
+  phi_res_barrel_L6 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_barrel_L6->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_barrel_L6->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap";
+  phi_res_endcap = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_endcap->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_endcap->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap fw";
+  phi_res_fw_endcap = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_fw_endcap->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_fw_endcap->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap fw D1";
+  phi_res_fw_endcap_D1 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_fw_endcap_D1->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_fw_endcap_D1->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap fw D2";
+  phi_res_fw_endcap_D2 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_fw_endcap_D2->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_fw_endcap_D2->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap fw D3";
+  phi_res_fw_endcap_D3 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_fw_endcap_D3->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_fw_endcap_D3->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap fw D4";
+  phi_res_fw_endcap_D4 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_fw_endcap_D4->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_fw_endcap_D4->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap fw D5";
+  phi_res_fw_endcap_D5 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_fw_endcap_D5->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_fw_endcap_D5->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap bw";
+  phi_res_bw_endcap = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_bw_endcap->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_bw_endcap->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap bw D1";
+  phi_res_bw_endcap_D1 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_bw_endcap_D1->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_bw_endcap_D1->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap bw D2";
+  phi_res_bw_endcap_D2 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_bw_endcap_D2->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_bw_endcap_D2->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap bw D3";
+  phi_res_bw_endcap_D3 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_bw_endcap_D3->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_bw_endcap_D3->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap bw D4";
+  phi_res_bw_endcap_D4 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_bw_endcap_D4->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_bw_endcap_D4->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi endcap bw D5";
+  phi_res_bw_endcap_D5 = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_bw_endcap_D5->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_bw_endcap_D5->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi PS modules";
+  phi_res_isPS_barrel = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_isPS_barrel->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_isPS_barrel->setAxisTitle("# counts", 2);
+
+  HistoName = "#Delta #phi 2S modules";
+  phi_res_is2S_barrel = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psPhi_Res.getParameter<int32_t>("Nbinsx"),
+                                    psPhi_Res.getParameter<double>("xmin"),
+                                    psPhi_Res.getParameter<double>("xmax"));
+  phi_res_is2S_barrel->setAxisTitle("#phi_{tp} - #phi_{stub}", 1);
+  phi_res_is2S_barrel->setAxisTitle("# counts", 2);
+
   // bend diff
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
   HistoName = "#Delta bend barrel";

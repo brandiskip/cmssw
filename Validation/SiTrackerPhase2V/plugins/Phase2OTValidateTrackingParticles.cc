@@ -317,208 +317,178 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
     tp_d0->Fill(tmp_tp_d0);
     tp_VtxZ->Fill(tmp_tp_VtxZ);
 
-    if (nStubTP < TP_minNStub || nStubLayerTP < TP_minNLayersStub)
-      continue;  //nStub cut not included in denominator of efficiency plots
+    if (nStubTP < TP_minNStub || nStubLayerTP < TP_minNLayersStub) {
+      continue;  // nStub cut not included in denominator of efficiency plots
+    }
 
     // Find all clusters that can be associated to a tracking particle with at least one hit
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_>>, TTCluster<Ref_Phase2TrackerDigi_>>> associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
     // Loop through each cluster and check if it's genuine
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
-        auto clusA = associatedClusters[k];
-        DetId clusdetid = clusA->getDetId();
-        if (clusdetid.subdetId() != StripSubdetector::TOB && clusdetid.subdetId() != StripSubdetector::TID) continue;
-        
-        DetId detidA = tTopo->stack(clusdetid);
-        const GeomDetUnit* detA = theTrackerGeom->idToDetUnit(clusdetid);
-        const PixelGeomDetUnit* theGeomDetA = dynamic_cast<const PixelGeomDetUnit*>(detA);
-        const PixelTopology* topoA = dynamic_cast<const PixelTopology*>(&(theGeomDetA->specificTopology())); 
-        GlobalPoint coordsA = theGeomDetA->surface().toGlobal(topoA->localPosition(clusA->findAverageLocalCoordinatesCentered()));
+      auto clusA = associatedClusters[k];
+      DetId clusdetid = clusA->getDetId();
+      if (clusdetid.subdetId() != StripSubdetector::TOB && clusdetid.subdetId() != StripSubdetector::TID) continue;
 
-        bool isGenuine = MCTruthTTClusterHandle->isGenuine(clusA);
-        if (!isGenuine) continue;
+      DetId detidA = tTopo->stack(clusdetid);
+      const GeomDetUnit* detA = theTrackerGeom->idToDetUnit(clusdetid);
+      const PixelGeomDetUnit* theGeomDetA = dynamic_cast<const PixelGeomDetUnit*>(detA);
+      const PixelTopology* topoA = dynamic_cast<const PixelTopology*>(&(theGeomDetA->specificTopology())); 
+      GlobalPoint coordsA = theGeomDetA->surface().toGlobal(topoA->localPosition(clusA->findAverageLocalCoordinatesCentered()));
 
-        int isBarrel = 0;
-        int layer = -999999;
-        if (clusdetid.subdetId() == StripSubdetector::TOB) {
-            isBarrel = 1;
-            layer = static_cast<int>(tTopo->layer(clusdetid));
-        } else if (clusdetid.subdetId() == StripSubdetector::TID) {
-            isBarrel = 0;
-            layer = static_cast<int>(tTopo->layer(clusdetid));
-        } else {
-            edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB or TID stub, shouldn't happen...";
-            layer = -1;
-        }
+      // Check if the particle is a muon
+      //if (abs(iterTP.pdgId()) != 13) {
+      //  std::cout << "particle is not a muon" << std::endl;
+      //}
 
-        if (isBarrel == 1) {
-            switch (layer) {
-                case 1:
-                    // Conditions for layer 1
-                    gen_clusters->Fill(tmp_tp_pt);
-                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                        gen_clusters_zoom->Fill(tmp_tp_pt);
-                    }
-                    break;
-                case 2:
-                    // Conditions for layer 2
-                    gen_clusters->Fill(tmp_tp_pt);
-                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                        gen_clusters_zoom->Fill(tmp_tp_pt);
-                    }
-                    break;
-                case 3:
-                    // Conditions for layer 3
-                    gen_clusters->Fill(tmp_tp_pt);
-                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                        gen_clusters_zoom->Fill(tmp_tp_pt);
-                    }
-                    break;
-                case 4:
-                    // Conditions for layer 4
-                    gen_clusters->Fill(tmp_tp_pt);
-                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                        gen_clusters_zoom->Fill(tmp_tp_pt);
-                    }
-                    break;
-                case 5:
-                    // Conditions for layer 5
-                    gen_clusters->Fill(tmp_tp_pt);
-                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                        gen_clusters_zoom->Fill(tmp_tp_pt);
-                    }
-                    break;
-                case 6:
-                    // Conditions for layer 6
-                    gen_clusters->Fill(tmp_tp_pt);
-                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                        gen_clusters_zoom->Fill(tmp_tp_pt);
-                    }
-                    break;
-            }
-        }
+      bool isGenuine = MCTruthTTClusterHandle->isGenuine(clusA);
+      if (!isGenuine) continue;
 
-        // If there are stubs on the same detid, loop on those stubs
-        if (TTStubHandle->find(detidA) != TTStubHandle->end()) {
-            edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_>> stubs = (*TTStubHandle)[detidA];
-            for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
-                auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
+      int isBarrel = 0;
+      int layer = -999999;
+      if (clusdetid.subdetId() == StripSubdetector::TOB) {
+          isBarrel = 1;
+          layer = static_cast<int>(tTopo->layer(clusdetid));
+      } else if (clusdetid.subdetId() == StripSubdetector::TID) {
+          isBarrel = 0;
+          layer = static_cast<int>(tTopo->layer(clusdetid));
+      } else {
+          edm::LogVerbatim("Tracklet") << "WARNING -- neither TOB or TID stub, shouldn't happen...";
+          layer = -1;
+      }
 
-                float stub_bend = stubIter->bendFE(); // TTstub trigger bend
-                TotalStubs->Fill(stub_bend);
+      if (isBarrel == 1) {
+    switch (layer) {
+        case 1:
+            gen_clusters->Fill(tmp_tp_pt);
+            gen_clusters_zoom->Fill(tmp_tp_pt);
+            break;
+        case 2:
+            gen_clusters->Fill(tmp_tp_pt);
+            gen_clusters_zoom->Fill(tmp_tp_pt);
+            break;
+        case 3:
+            gen_clusters->Fill(tmp_tp_pt);
+            gen_clusters_zoom->Fill(tmp_tp_pt);
+            break;
+        case 4:
+            gen_clusters->Fill(tmp_tp_pt);
+            gen_clusters_zoom->Fill(tmp_tp_pt);
+            break;
+        case 5:
+            gen_clusters->Fill(tmp_tp_pt);
+            gen_clusters_zoom->Fill(tmp_tp_pt);
+            break;
+        case 6:
+            gen_clusters->Fill(tmp_tp_pt);
+            gen_clusters_zoom->Fill(tmp_tp_pt);
+            break;
+    }
+}
 
-                if (isBarrel == 1) {
-                    TotalStubs_vs_Layer->Fill(layer);
-                    if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
-                        FakeStubs_vs_Layer->Fill(layer);
-                    }
-                }
+      // If there are stubs on the same detid, loop on those stubs
+      if (TTStubHandle->find(detidA) != TTStubHandle->end()) {
+          edmNew::DetSet<TTStub<Ref_Phase2TrackerDigi_>> stubs = (*TTStubHandle)[detidA];
+          for (auto stubIter = stubs.begin(); stubIter != stubs.end(); ++stubIter) {
+              auto stubRef = edmNew::makeRefTo(TTStubHandle, stubIter);
 
-                if (isBarrel == 1) {
-                    switch (layer) {
-                        case 1:
-                            TotalStubs_L1->Fill(stub_bend);
-                            if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L1->Fill(stub_bend);
-                            break;
-                        case 2:
-                            TotalStubs_L2->Fill(stub_bend);
-                            if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L2->Fill(stub_bend);
-                            break;
-                        case 3:
-                            TotalStubs_L3->Fill(stub_bend);
-                            if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L3->Fill(stub_bend);
-                            break;
-                        case 4:
-                            TotalStubs_L4->Fill(stub_bend);
-                            if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L4->Fill(stub_bend);
-                            break;
-                        case 5:
-                            TotalStubs_L5->Fill(stub_bend);
-                            if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L5->Fill(stub_bend);
-                            break;
-                        case 6:
-                            TotalStubs_L6->Fill(stub_bend);
-                            if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L6->Fill(stub_bend);
-                            break;
-                    }
-                }
+              float stub_bend = stubIter->bendFE(); // TTstub trigger bend
+              TotalStubs->Fill(stub_bend);
 
-                if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
-                    FakeStubs->Fill(stub_bend);
-                    continue; // Skip to the next iteration if the stub is not genuine
-                }
+              if (isBarrel == 1) {
+                  TotalStubs_vs_Layer->Fill(layer);
+                  if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                      FakeStubs_vs_Layer->Fill(layer);
+                  }
+              }
 
-                // Retrieve clusters of stubs
-                auto clusterRefB = stubIter->clusterRef(0);
-                auto clusterRefC = stubIter->clusterRef(1);
+              if (isBarrel == 1) {
+                  switch (layer) {
+                      case 1:
+                          TotalStubs_L1->Fill(stub_bend);
+                          if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L1->Fill(stub_bend);
+                          break;
+                      case 2:
+                          TotalStubs_L2->Fill(stub_bend);
+                          if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L2->Fill(stub_bend);
+                          break;
+                      case 3:
+                          TotalStubs_L3->Fill(stub_bend);
+                          if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L3->Fill(stub_bend);
+                          break;
+                      case 4:
+                          TotalStubs_L4->Fill(stub_bend);
+                          if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L4->Fill(stub_bend);
+                          break;
+                      case 5:
+                          TotalStubs_L5->Fill(stub_bend);
+                          if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L5->Fill(stub_bend);
+                          break;
+                      case 6:
+                          TotalStubs_L6->Fill(stub_bend);
+                          if (!MCTruthTTStubHandle->isGenuine(stubRef)) FakeStubs_L6->Fill(stub_bend);
+                          break;
+                  }
+              }
 
-                // Retrieve sensor DetIds from the stub's clusters
-                DetId detIdB = stubIter->clusterRef(0)->getDetId();
-                DetId detIdC = stubIter->clusterRef(1)->getDetId();
+              if (!MCTruthTTStubHandle->isGenuine(stubRef)) {
+                  FakeStubs->Fill(stub_bend);
+                  continue; // Skip to the next iteration if the stub is not genuine
+              }
 
-                const GeomDetUnit* detB = theTrackerGeom->idToDetUnit(detIdB);
-                const GeomDetUnit* detC = theTrackerGeom->idToDetUnit(detIdC);
-                const PixelGeomDetUnit* theGeomDetB = dynamic_cast<const PixelGeomDetUnit*>(detB);
-                const PixelGeomDetUnit* theGeomDetC = dynamic_cast<const PixelGeomDetUnit*>(detC);
-                const PixelTopology* topoB = dynamic_cast<const PixelTopology*>(&(theGeomDetB->specificTopology())); 
-                const PixelTopology* topoC = dynamic_cast<const PixelTopology*>(&(theGeomDetC->specificTopology())); 
+              // Retrieve clusters of stubs
+              auto clusterRefB = stubIter->clusterRef(0);
+              auto clusterRefC = stubIter->clusterRef(1);
 
-                GlobalPoint coordsB = theGeomDetB->surface().toGlobal(topoB->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
-                GlobalPoint coordsC = theGeomDetC->surface().toGlobal(topoC->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
+              // Retrieve sensor DetIds from the stub's clusters
+              DetId detIdB = stubIter->clusterRef(0)->getDetId();
+              DetId detIdC = stubIter->clusterRef(1)->getDetId();
 
-                if (coordsA.x() == coordsB.x() || coordsA.x() == coordsC.x()) {
-                    edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
-                    if (stubTP.isNull()) continue;
-                    float stub_tp_pt = stubTP->pt();
-                    if (stub_tp_pt == tmp_tp_pt) {
-                        if (isBarrel == 1) {
-                            switch (layer) {
-                                case 1:
-                                    // Conditions for layer 1
-                                    gen_clusters_if_stub->Fill(tmp_tp_pt);
-                                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                                        gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
-                                    }
-                                    break;
-                                case 2:
-                                    // Conditions for layer 2
-                                    gen_clusters_if_stub->Fill(tmp_tp_pt);
-                                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                                        gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
-                                    }
-                                    break;
-                                case 3:
-                                    // Conditions for layer 3
-                                    gen_clusters_if_stub->Fill(tmp_tp_pt);
-                                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                                        gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
-                                    }
-                                    break;
-                                case 4:
-                                    // Conditions for layer 4
-                                    gen_clusters_if_stub->Fill(tmp_tp_pt);
-                                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                                        gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
-                                    }
-                                    break;
-                                case 5:
-                                    // Conditions for layer 5
-                                    gen_clusters_if_stub->Fill(tmp_tp_pt);
-                                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                                        gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
-                                    }
-                                    break;
-                                case 6:
-                                    // Conditions for layer 6
-                                    gen_clusters_if_stub->Fill(tmp_tp_pt);
-                                    if (tmp_tp_pt > 0 && tmp_tp_pt <= 10) {
-                                        gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
-                                    }
-                                    break;
-                            }
-                        }
-                    }
-                }
+              const GeomDetUnit* detB = theTrackerGeom->idToDetUnit(detIdB);
+              const GeomDetUnit* detC = theTrackerGeom->idToDetUnit(detIdC);
+              const PixelGeomDetUnit* theGeomDetB = dynamic_cast<const PixelGeomDetUnit*>(detB);
+              const PixelGeomDetUnit* theGeomDetC = dynamic_cast<const PixelGeomDetUnit*>(detC);
+              const PixelTopology* topoB = dynamic_cast<const PixelTopology*>(&(theGeomDetB->specificTopology())); 
+              const PixelTopology* topoC = dynamic_cast<const PixelTopology*>(&(theGeomDetC->specificTopology())); 
+
+              GlobalPoint coordsB = theGeomDetB->surface().toGlobal(topoB->localPosition(stubIter->clusterRef(0)->findAverageLocalCoordinatesCentered()));
+              GlobalPoint coordsC = theGeomDetC->surface().toGlobal(topoC->localPosition(stubIter->clusterRef(1)->findAverageLocalCoordinatesCentered()));
+
+              if (coordsA.x() == coordsB.x() || coordsA.x() == coordsC.x()) {
+                  edm::Ptr<TrackingParticle> stubTP = MCTruthTTStubHandle->findTrackingParticlePtr(edmNew::makeRefTo(TTStubHandle, stubIter));
+                  if (stubTP.isNull()) continue;
+                  float stub_tp_pt = stubTP->pt();
+                  if (stub_tp_pt == tmp_tp_pt) {
+                      if (isBarrel == 1) {
+                        switch (layer) {
+                            case 1:
+                                gen_clusters_if_stub->Fill(tmp_tp_pt);
+                                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+                                break;
+                            case 2:
+                                gen_clusters_if_stub->Fill(tmp_tp_pt);
+                                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+                                break;
+                            case 3:
+                                gen_clusters_if_stub->Fill(tmp_tp_pt);
+                                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+                                break;
+                            case 4:
+                                gen_clusters_if_stub->Fill(tmp_tp_pt);
+                                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+                                break;
+                            case 5:
+                                gen_clusters_if_stub->Fill(tmp_tp_pt);
+                                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+                                break;
+                            case 6:
+                                gen_clusters_if_stub->Fill(tmp_tp_pt);
+                                gen_clusters_if_stub_zoom->Fill(tmp_tp_pt);
+                                break;
+                          }
+                      }
+                  }
+               }
             }
         }
     }

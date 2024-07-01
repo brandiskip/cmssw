@@ -206,10 +206,10 @@ std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<Tracking
       tp_z = (modMaxZ + modMinZ) / 2;
       tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t; 
       tp_phi = reco::reduceRange(tp_phi);
-      tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t);
+      //tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t);
   }
 
-  std::vector<double> tpDerived_coords{tp_r, tp_z, tp_phi};
+  std::vector<double> tpDerived_coords{tp_z, tp_phi};
   return tpDerived_coords;
 }
 
@@ -341,8 +341,8 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
 
       // Derived coordinates
       std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r);
-      float tp_z = tpDerivedCoords[1];
-      float tp_phi = tpDerivedCoords[2];
+      float tp_z = tpDerivedCoords[0];
+      float tp_phi = tpDerivedCoords[1];
 
       // Trigger information
       float trigBend = tempStubPtr->bendFE();
@@ -365,246 +365,112 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
         edm::LogError("Phase2OTValidateTTStub") << "Error: Stub_RZ histogram is null";
       }
       // histograms for z_res
-      if (isBarrel) {
+      if (isBarrel == 1) {
           if (isPSmodule) {
-              if (z_res_isPS_barrel) {
-                  std::cout << "Filling z_res_isPS_barrel with value: " << zRes << std::endl;
-                  z_res_isPS_barrel->Fill(zRes);
-              }
-              if (phi_res_isPS_barrel) {
-                  std::cout << "Filling phi_res_isPS_barrel with value: " << phiRes << std::endl;
-                  phi_res_isPS_barrel->Fill(phiRes);
-              }
+              z_res_isPS_barrel->Fill(zRes);
+              phi_res_isPS_barrel->Fill(phiRes);
           } else {
-              if (z_res_is2S_barrel) {
-                  std::cout << "Filling z_res_is2S_barrel with value: " << zRes << std::endl;
-                  z_res_is2S_barrel->Fill(zRes);
-              }
-              if (phi_res_is2S_barrel) {
-                  std::cout << "Filling phi_res_is2S_barrel with value: " << phiRes << std::endl;
-                  phi_res_is2S_barrel->Fill(phiRes);
-              }
+              z_res_is2S_barrel->Fill(zRes);
+              phi_res_is2S_barrel->Fill(phiRes);
           }
       }
 
       // Fill histograms for bend_res and phiRes for the entire barrel and endcap
       if (isBarrel == 1) {
           // Fill histograms for the entire barrel
-          if (bend_res_barrel) {
-              std::cout << "Filling bend_res_barrel with value: " << bendRes << std::endl;
-              bend_res_barrel->Fill(bendRes);
-          }
-          if (phi_res_barrel) {
-              std::cout << "Filling phi_res_barrel with value: " << phiRes << std::endl;
-              phi_res_barrel->Fill(phiRes);
-          }
+          bend_res_barrel->Fill(bendRes);
+          phi_res_barrel->Fill(phiRes);
 
           // Fill histograms for specific layers in the barrel
           switch (layer) {
               case 1:
-                  if (bend_res_barrel_L1) {
-                      std::cout << "Filling bend_res_barrel_L1 with value: " << bendRes << std::endl;
-                      bend_res_barrel_L1->Fill(bendRes);
-                  }
-                  if (phi_res_barrel_L1) {
-                      std::cout << "Filling phi_res_barrel_L1 with value: " << phiRes << std::endl;
-                      phi_res_barrel_L1->Fill(phiRes);
-                  }
+                  bend_res_barrel_L1->Fill(bendRes);
+                  phi_res_barrel_L1->Fill(phiRes);
                   break;
               case 2:
-                  if (bend_res_barrel_L2) {
-                      std::cout << "Filling bend_res_barrel_L2 with value: " << bendRes << std::endl;
-                      bend_res_barrel_L2->Fill(bendRes);
-                  }
-                  if (phi_res_barrel_L2) {
-                      std::cout << "Filling phi_res_barrel_L2 with value: " << phiRes << std::endl;
-                      phi_res_barrel_L2->Fill(phiRes);
-                  }
+                  bend_res_barrel_L2->Fill(bendRes);
+                  phi_res_barrel_L2->Fill(phiRes);
                   break;
               case 3:
-                  if (bend_res_barrel_L3) {
-                      std::cout << "Filling bend_res_barrel_L3 with value: " << bendRes << std::endl;
-                      bend_res_barrel_L3->Fill(bendRes);
-                  }
-                  if (phi_res_barrel_L3) {
-                      std::cout << "Filling phi_res_barrel_L3 with value: " << phiRes << std::endl;
-                      phi_res_barrel_L3->Fill(phiRes);
-                  }
+                  bend_res_barrel_L3->Fill(bendRes);
+                  phi_res_barrel_L3->Fill(phiRes);
                   break;
               case 4:
-                  if (bend_res_barrel_L4) {
-                      std::cout << "Filling bend_res_barrel_L4 with value: " << bendRes << std::endl;
-                      bend_res_barrel_L4->Fill(bendRes);
-                  }
-                  if (phi_res_barrel_L4) {
-                      std::cout << "Filling phi_res_barrel_L4 with value: " << phiRes << std::endl;
-                      phi_res_barrel_L4->Fill(phiRes);
-                  }
+                  bend_res_barrel_L4->Fill(bendRes);
+                  phi_res_barrel_L4->Fill(phiRes);
                   break;
               case 5:
-                  if (bend_res_barrel_L5) {
-                      std::cout << "Filling bend_res_barrel_L5 with value: " << bendRes << std::endl;
-                      bend_res_barrel_L5->Fill(bendRes);
-                  }
-                  if (phi_res_barrel_L5) {
-                      std::cout << "Filling phi_res_barrel_L5 with value: " << phiRes << std::endl;
-                      phi_res_barrel_L5->Fill(phiRes);
-                  }
+                  bend_res_barrel_L5->Fill(bendRes);
+                  phi_res_barrel_L5->Fill(phiRes);
                   break;
               case 6:
-                  if (bend_res_barrel_L6) {
-                      std::cout << "Filling bend_res_barrel_L6 with value: " << bendRes << std::endl;
-                      bend_res_barrel_L6->Fill(bendRes);
-                  }
-                  if (phi_res_barrel_L6) {
-                      std::cout << "Filling phi_res_barrel_L6 with value: " << phiRes << std::endl;
-                      phi_res_barrel_L6->Fill(phiRes);
-                  }
+                  bend_res_barrel_L6->Fill(bendRes);
+                  phi_res_barrel_L6->Fill(phiRes);
                   break;
               default:
                   break;
           }
       } else if (isBarrel == 0) {
           // Fill histograms for the entire endcap
-          if (bend_res_endcap) {
-              std::cout << "Filling bend_res_endcap with value: " << bendRes << std::endl;
-              bend_res_endcap->Fill(bendRes);
-          }
-          if (phi_res_endcap) {
-              std::cout << "Filling phi_res_endcap with value: " << phiRes << std::endl;
-              phi_res_endcap->Fill(phiRes);
-              std::cout << "After filling phi_res_endcap with value: " << phiRes << std::endl;
-          }
-          std::cout << "before if stub_maxZ with value: " << stub_maxZ << std::endl;
+          bend_res_endcap->Fill(bendRes);
+          phi_res_endcap->Fill(phiRes);
+             
           if (stub_maxZ > 0) {
               // Fill histograms for the forward endcap
-              std::cout << "after if stub_maxZ with value: " << stub_maxZ << std::endl;
-              if (bend_res_fw_endcap) {
-                  std::cout << "Filling bend_res_fw_endcap with value: " << bendRes << std::endl;
-                  bend_res_fw_endcap->Fill(bendRes);
-              }
-              if (phi_res_fw_endcap) {
-                  std::cout << "Filling phi_res_fw_endcap with value: " << phiRes << std::endl;
-                  phi_res_fw_endcap->Fill(phiRes);
-              }
+              bend_res_fw_endcap->Fill(bendRes);
+              phi_res_fw_endcap->Fill(phiRes);
 
               // Fill histograms for specific discs in the forward endcap
               switch (layer) {
                   case 1:
-                      if (bend_res_fw_endcap_D1) {
-                          std::cout << "Filling bend_res_fw_endcap_D1 with value: " << bendRes << std::endl;
-                          bend_res_fw_endcap_D1->Fill(bendRes);
-                      }
-                      if (phi_res_fw_endcap_D1) {
-                          std::cout << "Filling phi_res_fw_endcap_D1 with value: " << phiRes << std::endl;
-                          phi_res_fw_endcap_D1->Fill(phiRes);
-                      }
+                      bend_res_fw_endcap_D1->Fill(bendRes);
+                      phi_res_fw_endcap_D1->Fill(phiRes);
                       break;
                   case 2:
-                      if (bend_res_fw_endcap_D2) {
-                          std::cout << "Filling bend_res_fw_endcap_D2 with value: " << bendRes << std::endl;
-                          bend_res_fw_endcap_D2->Fill(bendRes);
-                      }
-                      if (phi_res_fw_endcap_D2) {
-                          std::cout << "Filling phi_res_fw_endcap_D2 with value: " << phiRes << std::endl;
-                          phi_res_fw_endcap_D2->Fill(phiRes);
-                      }
+                      bend_res_fw_endcap_D2->Fill(bendRes);
+                      phi_res_fw_endcap_D2->Fill(phiRes);
                       break;
                   case 3:
-                      if (bend_res_fw_endcap_D3) {
-                          std::cout << "Filling bend_res_fw_endcap_D3 with value: " << bendRes << std::endl;
-                          bend_res_fw_endcap_D3->Fill(bendRes);
-                      }
-                      if (phi_res_fw_endcap_D3) {
-                          std::cout << "Filling phi_res_fw_endcap_D3 with value: " << phiRes << std::endl;
-                          phi_res_fw_endcap_D3->Fill(phiRes);
-                      }
+                      bend_res_fw_endcap_D3->Fill(bendRes);
+                      phi_res_fw_endcap_D3->Fill(phiRes);
                       break;
                   case 4:
-                      if (bend_res_fw_endcap_D4) {
-                          std::cout << "Filling bend_res_fw_endcap_D4 with value: " << bendRes << std::endl;
-                          bend_res_fw_endcap_D4->Fill(bendRes);
-                      }
-                      if (phi_res_fw_endcap_D4) {
-                          std::cout << "Filling phi_res_fw_endcap_D4 with value: " << phiRes << std::endl;
-                          phi_res_fw_endcap_D4->Fill(phiRes);
-                      }
+                      bend_res_fw_endcap_D4->Fill(bendRes);
+                      phi_res_fw_endcap_D4->Fill(phiRes);
                       break;
                   case 5:
-                      if (bend_res_fw_endcap_D5) {
-                          std::cout << "Filling bend_res_fw_endcap_D5 with value: " << bendRes << std::endl;
-                          bend_res_fw_endcap_D5->Fill(bendRes);
-                      }
-                      if (phi_res_fw_endcap_D5) {
-                          std::cout << "Filling phi_res_fw_endcap_D5 with value: " << phiRes << std::endl;
-                          phi_res_fw_endcap_D5->Fill(phiRes);
-                      }
+                      bend_res_fw_endcap_D5->Fill(bendRes);
+                      phi_res_fw_endcap_D5->Fill(phiRes);
                       break;
                   default:
                       break;
               }
           } else {
               // Fill histograms for the backward endcap
-              if (bend_res_bw_endcap) {
-                  std::cout << "Filling bend_res_bw_endcap with value: " << bendRes << std::endl;
-                  bend_res_bw_endcap->Fill(bendRes);
-              }
-              if (phi_res_bw_endcap) {
-                  std::cout << "Filling phi_res_bw_endcap with value: " << phiRes << std::endl;
-                  phi_res_bw_endcap->Fill(phiRes);
-              }
+              bend_res_bw_endcap->Fill(bendRes);
+              phi_res_bw_endcap->Fill(phiRes);
 
               // Fill histograms for specific discs in the backward endcap
               switch (layer) {
                   case 1:
-                      if (bend_res_bw_endcap_D1) {
-                          std::cout << "Filling bend_res_bw_endcap_D1 with value: " << bendRes << std::endl;
-                          bend_res_bw_endcap_D1->Fill(bendRes);
-                      }
-                      if (phi_res_bw_endcap_D1) {
-                          std::cout << "Filling phi_res_bw_endcap_D1 with value: " << phiRes << std::endl;
-                          phi_res_bw_endcap_D1->Fill(phiRes);
-                      }
+                      bend_res_bw_endcap_D1->Fill(bendRes);
+                      phi_res_bw_endcap_D1->Fill(phiRes);
                       break;
                   case 2:
-                      if (bend_res_bw_endcap_D2) {
-                          std::cout << "Filling bend_res_bw_endcap_D2 with value: " << bendRes << std::endl;
-                          bend_res_bw_endcap_D2->Fill(bendRes);
-                      }
-                      if (phi_res_bw_endcap_D2) {
-                          std::cout << "Filling phi_res_bw_endcap_D2 with value: " << phiRes << std::endl;
-                          phi_res_bw_endcap_D2->Fill(phiRes);
-                      }
+                      bend_res_bw_endcap_D2->Fill(bendRes);
+                      phi_res_bw_endcap_D2->Fill(phiRes);
                       break;
                   case 3:
-                      if (bend_res_bw_endcap_D3) {
-                          std::cout << "Filling bend_res_bw_endcap_D3 with value: " << bendRes << std::endl;
-                          bend_res_bw_endcap_D3->Fill(bendRes);
-                      }
-                      if (phi_res_bw_endcap_D3) {
-                          std::cout << "Filling phi_res_bw_endcap_D3 with value: " << phiRes << std::endl;
-                          phi_res_bw_endcap_D3->Fill(phiRes);
-                      }
+                      bend_res_bw_endcap_D3->Fill(bendRes);
+                      phi_res_bw_endcap_D3->Fill(phiRes);
                       break;
                   case 4:
-                      if (bend_res_bw_endcap_D4) {
-                          std::cout << "Filling bend_res_bw_endcap_D4 with value: " << bendRes << std::endl;
-                          bend_res_bw_endcap_D4->Fill(bendRes);
-                      }
-                      if (phi_res_bw_endcap_D4) {
-                          std::cout << "Filling phi_res_bw_endcap_D4 with value: " << phiRes << std::endl;
-                          phi_res_bw_endcap_D4->Fill(phiRes);
-                      }
+                      bend_res_bw_endcap_D4->Fill(bendRes);
+                      phi_res_bw_endcap_D4->Fill(phiRes);
                       break;
                   case 5:
-                      if (bend_res_bw_endcap_D5) {
-                          std::cout << "Filling bend_res_bw_endcap_D5 with value: " << bendRes << std::endl;
-                          bend_res_bw_endcap_D5->Fill(bendRes);
-                      }
-                      if (phi_res_bw_endcap_D5) {
-                          std::cout << "Filling phi_res_bw_endcap_D5 with value: " << phiRes << std::endl;
-                          phi_res_bw_endcap_D5->Fill(phiRes);
-                      }
+                      bend_res_bw_endcap_D5->Fill(bendRes);
+                      phi_res_bw_endcap_D5->Fill(phiRes);
                       break;
                   default:
                       break;
@@ -1069,7 +935,7 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions &de
   }
   {
     edm::ParameterSetDescription psd0;
-    psd0.add<int>("Nbinsx", 399);
+    psd0.add<int>("Nbinsx", 59);
     psd0.add<double>("xmax", 5.0);
     psd0.add<double>("xmin", -5.5);
     desc.add<edm::ParameterSetDescription>("TH1Bend_Res", psd0);

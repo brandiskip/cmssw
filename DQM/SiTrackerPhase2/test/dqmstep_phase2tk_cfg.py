@@ -21,14 +21,16 @@ process.load('DQMOffline.Configuration.DQMOffline_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(5),
+    output = cms.optional.untracked.allowed(cms.int32,cms.PSet)
 )
 
 # Input source
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
         "/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root",
-        #"/store/relval/CMSSW_14_1_0_pre4/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/140X_mcRun4_realistic_v4_STD_2026D110_noPU-v1/2590000/2556e4d4-97da-4708-9cf2-4e2eecbed0ab.root",
+        #"/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0c3cb20d-8556-450d-b4f0-e5c754818f74.root",
+        #"/store/relval/CMSSW_14_0_0_pre2/RelValSingleMuFlatPt1p5To8/GEN-SIM-DIGI-RAW/133X_mcRun4_realistic_v1_STD_2026D98_noPU_RV229-v1/2580000/060a1e29-87a9-4932-9206-a18c206d28e9.root",
         ),
     secondaryFileNames = cms.untracked.vstring()
 )
@@ -85,11 +87,11 @@ process.rechits_step = cms.Path(process.siPhase2RecHits * process.siPixelRecHits
 # DQM modules
 process.load('DQM.SiTrackerPhase2.Phase2TrackerDQMFirstStep_cff')
 process.load('DQM.SiTrackerPhase2.Phase2OTMonitorRecHit_cfi')
-process.otdqm_seq = cms.Sequence(process.trackerphase2DQMSource * process.Phase2OTMonitorRecHit)
+process.otdqm_seq = cms.Sequence(process.trackerphase2DQMSource.copy()*process.Phase2OTMonitorRecHit)
 
 process.load('Validation.SiTrackerPhase2V.Phase2TrackerValidationFirstStep_cff')
 process.load('Validation.SiTrackerPhase2V.Phase2OTValidateRecHit_cfi')
-process.otvalid_seq = cms.Sequence(process.trackerphase2ValidationSource * process.Phase2OTValidateRecHit)
+process.otvalid_seq = cms.Sequence(process.trackerphase2ValidationSource.copy()*process.Phase2OTValidateRecHit)
 
 process.dqm_step = cms.Path(process.otdqm_seq * process.stubValidOT)
 process.validation_step = cms.Path(process.otvalid_seq)

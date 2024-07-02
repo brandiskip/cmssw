@@ -20,6 +20,8 @@
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimTracker/TrackTriggerAssociation/interface/TTStubAssociationMap.h"
 
+#include "L1Trigger/TrackFindingTracklet/interface/Settings.h"
+
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -155,7 +157,6 @@ void Phase2OTValidateTTStub::dqmBeginRun(const edm::Run &iRun, const edm::EventS
 
 float Phase2OTValidateTTStub::phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1) {
     // Get R0, R1, Z0, Z1 values
-    // split resolution values between positive and negative z
     float R0 = det0->position().perp();
     float R1 = det1->position().perp();
     float Z0 = det0->position().z();
@@ -187,9 +188,11 @@ std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<Tracking
   double tp_phi = -99;
   double tp_r = -99;
   double tp_z = -99;
-  double bfield_ = 3.8;  //B-field in T
-  double c_ = 2.99792458E10;  //speed of light cm/s
-
+  
+  trklet::Settings settings;
+  double bfield_ = settings.bfield();
+  double c_ = settings.c();
+  
   // Get values from the tracking particle my_tp
   double myTP_pt = my_tp->pt();
   double myTP_charge = my_tp->charge();
@@ -199,14 +202,13 @@ std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<Tracking
 
   if (isBarrel) { 
       tp_r = stub_r;
-      tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
+      tp_phi = my_tp->p4().phi() - std::asin(tp_r * myTP_rinv * c_ / 2.0E2);
       tp_phi = reco::reduceRange(tp_phi);  
-      tp_z = myTP_z0 + (2.0E13 / c_) * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E13);
+      tp_z = myTP_z0 + (2.0E2 / c_) * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E2);
   } else {
       tp_z = (modMaxZ + modMinZ) / 2;
-      tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t; 
+      tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E2 / myTP_t; 
       tp_phi = reco::reduceRange(tp_phi);
-      //tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t);
   }
 
   std::vector<double> tpDerived_coords{tp_z, tp_phi};
@@ -221,8 +223,9 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
   edm::Handle<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTStubHandle;
   iEvent.getByToken(ttStubMCTruthToken_, MCTruthTTStubHandle);
 
-  double bfield_{3.8};  // B-field in T
-  double c_{2.99792458E10};  // Speed of light cm/s
+  trklet::Settings settings;
+  double bfield_ = settings.bfield();
+  double c_ = settings.c();
 
   // Ensure valid handles
   if (!Phase2TrackerDigiTTStubHandle.isValid() || !MCTruthTTStubHandle.isValid()) {
@@ -352,7 +355,7 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
 
       float correctionValue = phiOverBendCorrection(isBarrel, stub_z, stub_r, tTopo_, detid, det0, det1);
       float trackBend = -(sensorSpacing * stub_r * bfield_ * c_ * myTP_charge) /
-                        (stripPitch * 2.0E13 * myTP_pt * correctionValue);
+                        (stripPitch * 2.0E2 * myTP_pt * correctionValue);
 
       float bendRes = trackBend - trigBend;
       float zRes = tp_z - stub_z;
@@ -945,10 +948,7 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions &de
   desc.add<edm::InputTag>("TTStubs", edm::InputTag("TTStubsFromPhase2TrackerDigis", "StubAccepted"));
   desc.add<edm::InputTag>("trackingParticleToken", edm::InputTag("mix", "MergedTrackTruth"));
   desc.add<edm::InputTag>("MCTruthStubInputTag", edm::InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"));
-  desc.add<edm::InputTag>("MCTruthTrackInputTag", edm::InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks"));
   desc.add<edm::InputTag>("MCTruthClusterInputTag", edm::InputTag("TTClusterAssociatorFromPixelDigis", "ClusterInclusive"));
-  desc.add<int>("L1Tk_minNStub", 4);
-  desc.add<double>("L1Tk_maxChi2dof", 25.0);
   desc.add<int>("TP_minNStub", 4);
   desc.add<int>("TP_minNLayersStub", 4);
   desc.add<double>("TP_minPt", 2.0);

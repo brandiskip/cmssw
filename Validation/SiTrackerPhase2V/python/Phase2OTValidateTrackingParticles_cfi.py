@@ -17,6 +17,13 @@ Phase2OTValidateTrackingParticles = DQMEDAnalyzer('Phase2OTValidateTrackingParti
     TP_maxEta = cms.double(2.4),     # only save TPs with |eta| < X
     TP_maxVtxZ = cms.double(15.0),     # only save TPs with |z0| < X cm
 
+# check leading tp tp ratio
+    TH1LeadingTPPtRatio = cms.PSet(
+            Nbinsx = cms.int32(100),
+            xmin = cms.double(0.0),
+            xmax = cms.double(1.0)
+        ),
+
 # stub count for fake rate
     TH1Stubs = cms.PSet(
         Nbinsx = cms.int32(19),

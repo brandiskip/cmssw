@@ -53,24 +53,42 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
     MonitorElement *meN_VtxZ = dbe->get(topFolderName_ + "/EfficiencyIngredients/match_tp_VtxZ");
     MonitorElement *meD_VtxZ = dbe->get(topFolderName_ + "/EfficiencyIngredients/tp_VtxZ");
 
-    MonitorElement *merespt_eta0to0p7_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt2to3");
-    MonitorElement *merespt_eta0p7to1_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt2to3");
-    MonitorElement *merespt_eta1to1p2_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt2to3");
-    MonitorElement *merespt_eta1p2to1p6_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt2to3");
-    MonitorElement *merespt_eta1p6to2_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt2to3");
-    MonitorElement *merespt_eta2to2p4_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt2to3");
-    MonitorElement *merespt_eta0to0p7_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt3to8");
-    MonitorElement *merespt_eta0p7to1_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt3to8");
-    MonitorElement *merespt_eta1to1p2_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt3to8");
-    MonitorElement *merespt_eta1p2to1p6_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt3to8");
-    MonitorElement *merespt_eta1p6to2_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt3to8");
-    MonitorElement *merespt_eta2to2p4_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt3to8");
-    MonitorElement *merespt_eta0to0p7_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt8toInf");
-    MonitorElement *merespt_eta0p7to1_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt8toInf");
-    MonitorElement *merespt_eta1to1p2_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt8toInf");
-    MonitorElement *merespt_eta1p2to1p6_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt8toInf");
-    MonitorElement *merespt_eta1p6to2_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt8toInf");
-    MonitorElement *merespt_eta2to2p4_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt8toInf");
+    MonitorElement *merespt_eta0to0p7_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt2to3");
+    MonitorElement *merespt_eta0p7to1_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt2to3");
+    MonitorElement *merespt_eta1to1p2_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt2to3");
+    MonitorElement *merespt_eta1p2to1p6_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt2to3");
+    MonitorElement *merespt_eta1p6to2_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt2to3");
+    MonitorElement *merespt_eta2to2p4_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt2to3");
+    MonitorElement *merespt_eta0to0p7_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt3to8");
+    MonitorElement *merespt_eta0p7to1_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt3to8");
+    MonitorElement *merespt_eta1to1p2_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt3to8");
+    MonitorElement *merespt_eta1p2to1p6_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt3to8");
+    MonitorElement *merespt_eta1p6to2_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt3to8");
+    MonitorElement *merespt_eta2to2p4_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt3to8");
+    MonitorElement *merespt_eta0to0p7_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt8toInf");
+    MonitorElement *merespt_eta0p7to1_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt8toInf");
+    MonitorElement *merespt_eta1to1p2_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt8toInf");
+    MonitorElement *merespt_eta1p2to1p6_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt8toInf");
+    MonitorElement *merespt_eta1p6to2_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt8toInf");
+    MonitorElement *merespt_eta2to2p4_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt8toInf");
 
     MonitorElement *mereseta_eta0to0p7 = dbe->get(topFolderName_ + "/ResolutionIngredients/reseta_eta0to0p7");
     MonitorElement *mereseta_eta0p7to1 = dbe->get(topFolderName_ + "/ResolutionIngredients/reseta_eta0p7to1");
@@ -127,10 +145,10 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
 
       // Book the new histogram to contain the results
       MonitorElement *me_effic_clus = ibooker.book1D("StubEfficiency",
-                                                    "Stub Efficiency",
-                                                    numerator->GetNbinsX(),
-                                                    numerator->GetXaxis()->GetXmin(),
-                                                    numerator->GetXaxis()->GetXmax());
+                                                     "Stub Efficiency",
+                                                     numerator->GetNbinsX(),
+                                                     numerator->GetXaxis()->GetXmin(),
+                                                     numerator->GetXaxis()->GetXmax());
 
       // Calculate the efficiency
       me_effic_clus->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
@@ -156,10 +174,10 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
 
       // Book the new histogram to contain the results
       MonitorElement *me_effic_clus_zoom = ibooker.book1D("StubEfficiency_zoom",
-                                                    "Stub Efficiency",
-                                                    numerator_zoom->GetNbinsX(),
-                                                    numerator_zoom->GetXaxis()->GetXmin(),
-                                                    numerator_zoom->GetXaxis()->GetXmax());
+                                                          "Stub Efficiency",
+                                                          numerator_zoom->GetNbinsX(),
+                                                          numerator_zoom->GetXaxis()->GetXmin(),
+                                                          numerator_zoom->GetXaxis()->GetXmax());
 
       // Calculate the efficiency
       me_effic_clus_zoom->getTH1F()->Divide(numerator_zoom, denominator_zoom, 1., 1., "B");
@@ -568,183 +586,183 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
     }
 
     if (meN_fake_stubs && meD_total_stubs) {
-      TH1F* numerator = meN_fake_stubs->getTH1F();
-      TH1F* denominator = meD_total_stubs->getTH1F();
+      TH1F *numerator = meN_fake_stubs->getTH1F();
+      TH1F *denominator = meD_total_stubs->getTH1F();
       numerator->Sumw2();
       denominator->Sumw2();
 
       // Setting the current directory
       ibooker.setCurrentFolder(topFolderName_ + "/FakeRate");
 
-      MonitorElement* me_fake_rate = ibooker.book1D("StubFakeRate",
-                                                     "Stub Fake Rate",
-                                                     numerator->GetNbinsX(),
-                                                     numerator->GetXaxis()->GetXmin(),
-                                                     numerator->GetXaxis()->GetXmax());
+      MonitorElement *me_fake_rate = ibooker.book1D("StubFakeRate",
+                                                    "Stub Fake Rate",
+                                                    numerator->GetNbinsX(),
+                                                    numerator->GetXaxis()->GetXmin(),
+                                                    numerator->GetXaxis()->GetXmax());
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_fake_rate->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
-      me_fake_rate->getTH1F()->SetMaximum(1.1); 
-      me_fake_rate->getTH1F()->SetMinimum(0.0); 
-      me_fake_rate->getTH1F()->SetStats(false); 
+      me_fake_rate->getTH1F()->SetMaximum(1.1);
+      me_fake_rate->getTH1F()->SetMinimum(0.0);
+      me_fake_rate->getTH1F()->SetStats(false);
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate cannot be found!\n";
     }
 
     if (meN_fake_stubs_L1 && meD_total_stubs_L1) {
-      TH1F* numerator = meN_fake_stubs_L1->getTH1F();
-      TH1F* denominator = meD_total_stubs_L1->getTH1F();
+      TH1F *numerator = meN_fake_stubs_L1->getTH1F();
+      TH1F *denominator = meD_total_stubs_L1->getTH1F();
       numerator->Sumw2();
       denominator->Sumw2();
 
       // Setting the current directory
       ibooker.setCurrentFolder(topFolderName_ + "/FakeRate");
 
-      MonitorElement* me_fake_rate_L1 = ibooker.book1D("StubFakeRateL1",
-                                                     "Stub Fake Rate L1",
-                                                     numerator->GetNbinsX(),
-                                                     numerator->GetXaxis()->GetXmin(),
-                                                     numerator->GetXaxis()->GetXmax());
+      MonitorElement *me_fake_rate_L1 = ibooker.book1D("StubFakeRateL1",
+                                                       "Stub Fake Rate L1",
+                                                       numerator->GetNbinsX(),
+                                                       numerator->GetXaxis()->GetXmin(),
+                                                       numerator->GetXaxis()->GetXmax());
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate_L1->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_fake_rate_L1->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate_L1->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
-      me_fake_rate_L1->getTH1F()->SetMaximum(1.1); 
-      me_fake_rate_L1->getTH1F()->SetMinimum(0.0); 
-      me_fake_rate_L1->getTH1F()->SetStats(false); 
+      me_fake_rate_L1->getTH1F()->SetMaximum(1.1);
+      me_fake_rate_L1->getTH1F()->SetMinimum(0.0);
+      me_fake_rate_L1->getTH1F()->SetStats(false);
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate L1 cannot be found!\n";
     }
 
     if (meN_fake_stubs_L2 && meD_total_stubs_L2) {
-      TH1F* numerator = meN_fake_stubs_L2->getTH1F();
-      TH1F* denominator = meD_total_stubs_L2->getTH1F();
+      TH1F *numerator = meN_fake_stubs_L2->getTH1F();
+      TH1F *denominator = meD_total_stubs_L2->getTH1F();
       numerator->Sumw2();
       denominator->Sumw2();
 
       // Setting the current directory
       ibooker.setCurrentFolder(topFolderName_ + "/FakeRate");
 
-      MonitorElement* me_fake_rate_L2 = ibooker.book1D("StubFakeRateL2",
-                                                     "Stub Fake Rate L2",
-                                                     numerator->GetNbinsX(),
-                                                     numerator->GetXaxis()->GetXmin(),
-                                                     numerator->GetXaxis()->GetXmax());
+      MonitorElement *me_fake_rate_L2 = ibooker.book1D("StubFakeRateL2",
+                                                       "Stub Fake Rate L2",
+                                                       numerator->GetNbinsX(),
+                                                       numerator->GetXaxis()->GetXmin(),
+                                                       numerator->GetXaxis()->GetXmax());
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate_L2->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_fake_rate_L2->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate_L2->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
-      me_fake_rate_L2->getTH1F()->SetMaximum(1.1); 
-      me_fake_rate_L2->getTH1F()->SetMinimum(0.0); 
-      me_fake_rate_L2->getTH1F()->SetStats(false); 
+      me_fake_rate_L2->getTH1F()->SetMaximum(1.1);
+      me_fake_rate_L2->getTH1F()->SetMinimum(0.0);
+      me_fake_rate_L2->getTH1F()->SetStats(false);
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate L2 cannot be found!\n";
     }
 
     if (meN_fake_stubs_L3 && meD_total_stubs_L3) {
-      TH1F* numerator = meN_fake_stubs_L3->getTH1F();
-      TH1F* denominator = meD_total_stubs_L3->getTH1F();
+      TH1F *numerator = meN_fake_stubs_L3->getTH1F();
+      TH1F *denominator = meD_total_stubs_L3->getTH1F();
       numerator->Sumw2();
       denominator->Sumw2();
 
       // Setting the current directory
       ibooker.setCurrentFolder(topFolderName_ + "/FakeRate");
 
-      MonitorElement* me_fake_rate_L3 = ibooker.book1D("StubFakeRateL3",
-                                                     "Stub Fake Rate L3",
-                                                     numerator->GetNbinsX(),
-                                                     numerator->GetXaxis()->GetXmin(),
-                                                     numerator->GetXaxis()->GetXmax());
+      MonitorElement *me_fake_rate_L3 = ibooker.book1D("StubFakeRateL3",
+                                                       "Stub Fake Rate L3",
+                                                       numerator->GetNbinsX(),
+                                                       numerator->GetXaxis()->GetXmin(),
+                                                       numerator->GetXaxis()->GetXmax());
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate_L3->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_fake_rate_L3->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate_L3->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
-      me_fake_rate_L3->getTH1F()->SetMaximum(1.1); 
-      me_fake_rate_L3->getTH1F()->SetMinimum(0.0); 
-      me_fake_rate_L3->getTH1F()->SetStats(false); 
+      me_fake_rate_L3->getTH1F()->SetMaximum(1.1);
+      me_fake_rate_L3->getTH1F()->SetMinimum(0.0);
+      me_fake_rate_L3->getTH1F()->SetStats(false);
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate L3 cannot be found!\n";
     }
 
     if (meN_fake_stubs_L4 && meD_total_stubs_L4) {
-      TH1F* numerator = meN_fake_stubs_L4->getTH1F();
-      TH1F* denominator = meD_total_stubs_L4->getTH1F();
+      TH1F *numerator = meN_fake_stubs_L4->getTH1F();
+      TH1F *denominator = meD_total_stubs_L4->getTH1F();
       numerator->Sumw2();
       denominator->Sumw2();
 
       // Setting the current directory
       ibooker.setCurrentFolder(topFolderName_ + "/FakeRate");
 
-      MonitorElement* me_fake_rate_L4 = ibooker.book1D("StubFakeRateL4",
-                                                     "Stub Fake Rate L4",
-                                                     numerator->GetNbinsX(),
-                                                     numerator->GetXaxis()->GetXmin(),
-                                                     numerator->GetXaxis()->GetXmax());
+      MonitorElement *me_fake_rate_L4 = ibooker.book1D("StubFakeRateL4",
+                                                       "Stub Fake Rate L4",
+                                                       numerator->GetNbinsX(),
+                                                       numerator->GetXaxis()->GetXmin(),
+                                                       numerator->GetXaxis()->GetXmax());
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate_L4->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_fake_rate_L4->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate_L4->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
-      me_fake_rate_L4->getTH1F()->SetMaximum(1.1); 
-      me_fake_rate_L4->getTH1F()->SetMinimum(0.0); 
-      me_fake_rate_L4->getTH1F()->SetStats(false); 
+      me_fake_rate_L4->getTH1F()->SetMaximum(1.1);
+      me_fake_rate_L4->getTH1F()->SetMinimum(0.0);
+      me_fake_rate_L4->getTH1F()->SetStats(false);
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate L4 cannot be found!\n";
     }
 
     if (meN_fake_stubs_L5 && meD_total_stubs_L5) {
-      TH1F* numerator = meN_fake_stubs_L5->getTH1F();
-      TH1F* denominator = meD_total_stubs_L5->getTH1F();
+      TH1F *numerator = meN_fake_stubs_L5->getTH1F();
+      TH1F *denominator = meD_total_stubs_L5->getTH1F();
       numerator->Sumw2();
       denominator->Sumw2();
 
       // Setting the current directory
       ibooker.setCurrentFolder(topFolderName_ + "/FakeRate");
 
-      MonitorElement* me_fake_rate_L5 = ibooker.book1D("StubFakeRateL5",
-                                                     "Stub Fake Rate L5",
-                                                     numerator->GetNbinsX(),
-                                                     numerator->GetXaxis()->GetXmin(),
-                                                     numerator->GetXaxis()->GetXmax());
+      MonitorElement *me_fake_rate_L5 = ibooker.book1D("StubFakeRateL5",
+                                                       "Stub Fake Rate L5",
+                                                       numerator->GetNbinsX(),
+                                                       numerator->GetXaxis()->GetXmin(),
+                                                       numerator->GetXaxis()->GetXmax());
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate_L5->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_fake_rate_L5->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate_L5->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
-      me_fake_rate_L5->getTH1F()->SetMaximum(1.1); 
-      me_fake_rate_L5->getTH1F()->SetMinimum(0.0); 
-      me_fake_rate_L5->getTH1F()->SetStats(false); 
+      me_fake_rate_L5->getTH1F()->SetMaximum(1.1);
+      me_fake_rate_L5->getTH1F()->SetMinimum(0.0);
+      me_fake_rate_L5->getTH1F()->SetStats(false);
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate L5 cannot be found!\n";
     }
 
     if (meN_fake_stubs_L6 && meD_total_stubs_L6) {
-      TH1F* numerator = meN_fake_stubs_L6->getTH1F();
-      TH1F* denominator = meD_total_stubs_L6->getTH1F();
+      TH1F *numerator = meN_fake_stubs_L6->getTH1F();
+      TH1F *denominator = meD_total_stubs_L6->getTH1F();
       numerator->Sumw2();
       denominator->Sumw2();
 
       // Setting the current directory
       ibooker.setCurrentFolder(topFolderName_ + "/FakeRate");
 
-      MonitorElement* me_fake_rate_L6 = ibooker.book1D("StubFakeRateL6",
-                                                     "Stub Fake Rate L6",
-                                                     numerator->GetNbinsX(),
-                                                     numerator->GetXaxis()->GetXmin(),
-                                                     numerator->GetXaxis()->GetXmax());
+      MonitorElement *me_fake_rate_L6 = ibooker.book1D("StubFakeRateL6",
+                                                       "Stub Fake Rate L6",
+                                                       numerator->GetNbinsX(),
+                                                       numerator->GetXaxis()->GetXmin(),
+                                                       numerator->GetXaxis()->GetXmax());
 
       // Calculate the fake rate: fake stubs / total stubs
       me_fake_rate_L6->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
       me_fake_rate_L6->setAxisTitle("stub bend [full strip units]", 1);
       me_fake_rate_L6->getTH1F()->GetYaxis()->SetTitle("Fake Rate");
-      me_fake_rate_L6->getTH1F()->SetMaximum(1.1); 
-      me_fake_rate_L6->getTH1F()->SetMinimum(0.0); 
-      me_fake_rate_L6->getTH1F()->SetStats(false); 
+      me_fake_rate_L6->getTH1F()->SetMaximum(1.1);
+      me_fake_rate_L6->getTH1F()->SetMinimum(0.0);
+      me_fake_rate_L6->getTH1F()->SetStats(false);
     } else {
       edm::LogWarning("DataNotFound") << "Monitor elements for stub fake rate L6 cannot be found!\n";
     }

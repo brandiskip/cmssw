@@ -21,16 +21,16 @@ process.load('DQMOffline.Configuration.DQMOffline_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(5),
+    input = cms.untracked.int32(5000),
     output = cms.optional.untracked.allowed(cms.int32,cms.PSet)
 )
 
 # Input source
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-        "/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root",
+        #"/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root",
         #"/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0c3cb20d-8556-450d-b4f0-e5c754818f74.root",
-        #"/store/relval/CMSSW_14_0_0_pre2/RelValSingleMuFlatPt1p5To8/GEN-SIM-DIGI-RAW/133X_mcRun4_realistic_v1_STD_2026D98_noPU_RV229-v1/2580000/060a1e29-87a9-4932-9206-a18c206d28e9.root",
+        "/store/relval/CMSSW_14_0_0_pre2/RelValSingleMuFlatPt1p5To8/GEN-SIM-DIGI-RAW/133X_mcRun4_realistic_v1_STD_2026D98_noPU_RV229-v1/2580000/060a1e29-87a9-4932-9206-a18c206d28e9.root",
         ),
     secondaryFileNames = cms.untracked.vstring()
 )

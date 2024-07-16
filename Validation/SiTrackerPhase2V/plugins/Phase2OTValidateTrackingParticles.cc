@@ -212,46 +212,82 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
   // Loop over clusters
   const auto& clusterToTPMap = MCTruthTTClusterHandle->getTTClusterToTrackingParticlesMap();
   for (const auto& clusterTPPair : clusterToTPMap) {
-    const auto& theseTrackingParticles = clusterTPPair.second;
+      const auto& theseTrackingParticles = clusterTPPair.second;
 
-    if (theseTrackingParticles.empty()) {
-      continue;
-    }
-
-    std::vector<const TrackingParticle*> tpAddressVector;
-    std::vector<float> tp_mom;
-    float tp_tot = 0;
-    float leading_tp_pt = 0;
-
-    for (const auto& tp : theseTrackingParticles) {
-      if (!tp.isNull()) {
-        float pt = tp->p4().pt();
-        tp_tot += pt;
-        if (pt > leading_tp_pt) leading_tp_pt = pt;
-        tp_mom.push_back(pt);
-      } else {
-        tp_mom.push_back(0);
+      if (theseTrackingParticles.empty()) {
+          continue;
       }
-    }
 
-    if (tp_tot == 0) {
-      continue;
-    }
+      unsigned int goodDifferentTPs = 0;
+      std::vector<const TrackingParticle*> tpAddressVector;
+      std::vector<float> tp_mom;
+      float tp_tot = 0;
+      float leading_tp_pt = 0;
 
-    for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
-      TrackingParticlePtr curTP = theseTrackingParticles.at(itp);
-      if (tp_mom.at(itp) > 0.01 * tp_tot) {
-        tpAddressVector.push_back(curTP.get());
+      // Loop over the TrackingParticles
+      for (const auto& tp : theseTrackingParticles) {
+          const TrackingParticlePtr& curTP = tp;
+
+          if (curTP.isNull()) {
+              tp_mom.push_back(0);
+          } else {
+              float pt = curTP.get()->p4().pt();
+              tp_mom.push_back(pt);
+              tp_tot += pt;
+              if (pt > leading_tp_pt) leading_tp_pt = pt;
+          }
       }
-    }
 
-    float ratio = leading_tp_pt / tp_tot;
-    leading_tp_pt_ratio_genuine->Fill(ratio);
+      if (tp_tot == 0) {
+          continue;
+      }
 
-    // Check if there is exactly one TP with 100% of the total pT
-    if (ratio == 1.0) {
-      std::cout << "Cluster with exactly one TP having 100% of the pT found." << std::endl;
-    }
+      for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
+          TrackingParticlePtr curTP = theseTrackingParticles.at(itp);
+
+          if (tp_mom.at(itp) > 0.01 * tp_tot) {
+            tpAddressVector.push_back(curTP.get());
+        } else {
+            if (tp_mom.at(itp) != 0){
+              std::cout << "TrackingParticle " << itp << " with pT: " << tp_mom.at(itp)
+                      << " is less than 0.01 * tp_tot" << std::endl;
+            }
+        }
+      }
+
+      std::sort(tpAddressVector.begin(), tpAddressVector.end());
+      tpAddressVector.erase(std::unique(tpAddressVector.begin(), tpAddressVector.end()), tpAddressVector.end());
+      //goodDifferentTPs = tpAddressVector.size();
+
+      float ratio = leading_tp_pt / tp_tot;
+      leading_tp_pt_ratio_genuine->Fill(ratio);
+
+      if (ratio != 1.0) {
+          //std::cout << "leading_tp_pt: " << leading_tp_pt << std::endl;
+          //std::cout << "tp_tot: " << tp_tot << std::endl;
+          //std::cout << "ratio: " << ratio << std::endl;
+          //std::cout << "goodDifferentTPs: " << goodDifferentTPs << std::endl;
+
+          for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
+              TrackingParticlePtr curTP = theseTrackingParticles.at(itp);
+              if (std::find(tpAddressVector.begin(), tpAddressVector.end(), curTP.get()) != tpAddressVector.end()) {
+                  float pt_ratio = tp_mom[itp] / tp_tot;
+                  //std::cout << "TrackingParticle " << itp << " pt_ratio: " << pt_ratio << std::endl;
+              }
+          }
+
+          //std::cout << "All TrackingParticle pT contributions: ";
+          //for (const auto& pt : tp_mom) {
+              //std::cout << pt << " ";
+          //}
+          //std::cout << std::endl;
+
+          //std::cout << "Unique TrackingParticle addresses: ";
+          //for (const auto& tpAddress : tpAddressVector) {
+              //std::cout << tpAddress << " ";
+          //}
+          //std::cout << std::endl;
+      }
   }
 
   // Loop over tracking particles
@@ -1576,7 +1612,7 @@ void Phase2OTValidateTrackingParticles::fillDescriptions(edm::ConfigurationDescr
   {
     edm::ParameterSetDescription psd0;
     psd0.add<int>("Nbinsx", 100);
-    psd0.add<double>("xmax", 1.0);
+    psd0.add<double>("xmax", 1.1);
     psd0.add<double>("xmin", 0.0);
     desc.add<edm::ParameterSetDescription>("TH1LeadingTpPtRatioGenuine", psd0);
   }

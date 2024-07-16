@@ -247,6 +247,11 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
 
     float ratio = leading_tp_pt / tp_tot;
     leading_tp_pt_ratio_genuine->Fill(ratio);
+
+    // Check if there is exactly one TP with 100% of the total pT
+    if (ratio == 1.0) {
+      std::cout << "Cluster with exactly one TP having 100% of the pT found." << std::endl;
+    }
   }
 
   // Loop over tracking particles

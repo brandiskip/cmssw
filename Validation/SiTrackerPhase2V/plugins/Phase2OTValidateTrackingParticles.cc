@@ -249,44 +249,48 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
             tpAddressVector.push_back(curTP.get());
         } else {
             if (tp_mom.at(itp) != 0){
-              std::cout << "TrackingParticle " << itp << " with pT: " << tp_mom.at(itp)
-                      << " is less than 0.01 * tp_tot" << std::endl;
+              std::cout << "TrackingParticle " << itp << " with address: " << static_cast<const void*>(curTP.get()) << " has pT: " << tp_mom.at(itp) << " which is less than 0.01 * tp_tot" << std::endl;
             }
         }
       }
 
       std::sort(tpAddressVector.begin(), tpAddressVector.end());
       tpAddressVector.erase(std::unique(tpAddressVector.begin(), tpAddressVector.end()), tpAddressVector.end());
-      //goodDifferentTPs = tpAddressVector.size();
+      goodDifferentTPs = tpAddressVector.size();
 
       float ratio = leading_tp_pt / tp_tot;
       leading_tp_pt_ratio_genuine->Fill(ratio);
 
       if (ratio != 1.0) {
-          //std::cout << "leading_tp_pt: " << leading_tp_pt << std::endl;
-          //std::cout << "tp_tot: " << tp_tot << std::endl;
-          //std::cout << "ratio: " << ratio << std::endl;
-          //std::cout << "goodDifferentTPs: " << goodDifferentTPs << std::endl;
+        for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
+            if (tp_mom.at(itp) < 0.01 * tp_tot && tp_mom.at(itp) != 0) {
+                std::cout << "leading_tp_pt: " << leading_tp_pt << std::endl;
+                std::cout << "tp_tot: " << tp_tot << std::endl;
+                std::cout << "ratio: " << ratio << std::endl;
+                std::cout << "goodDifferentTPs: " << goodDifferentTPs << std::endl;
+                break; // Print once per ratio check
+            }
+        }
 
           for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
               TrackingParticlePtr curTP = theseTrackingParticles.at(itp);
               if (std::find(tpAddressVector.begin(), tpAddressVector.end(), curTP.get()) != tpAddressVector.end()) {
                   float pt_ratio = tp_mom[itp] / tp_tot;
-                  //std::cout << "TrackingParticle " << itp << " pt_ratio: " << pt_ratio << std::endl;
+                  std::cout << "TrackingParticle " << itp << " pt_ratio: " << pt_ratio << std::endl;
               }
           }
 
-          //std::cout << "All TrackingParticle pT contributions: ";
-          //for (const auto& pt : tp_mom) {
-              //std::cout << pt << " ";
-          //}
-          //std::cout << std::endl;
+          std::cout << "All TrackingParticle pT contributions: ";
+          for (const auto& pt : tp_mom) {
+              std::cout << pt << " ";
+          }
+          std::cout << std::endl;
 
-          //std::cout << "Unique TrackingParticle addresses: ";
-          //for (const auto& tpAddress : tpAddressVector) {
-              //std::cout << tpAddress << " ";
-          //}
-          //std::cout << std::endl;
+          std::cout << "Unique TrackingParticle addresses: ";
+          for (const auto& tpAddress : tpAddressVector) {
+              std::cout << tpAddress << " ";
+          }
+          std::cout << std::endl;
       }
   }
 

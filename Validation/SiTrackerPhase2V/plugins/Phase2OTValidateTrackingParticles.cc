@@ -46,6 +46,9 @@ public:
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
+
+  MonitorElement *leading_tp_pt_ratio_genuine = nullptr;
+
   // Tracking particle distributions
   MonitorElement *trackParts_Eta = nullptr;
   MonitorElement *trackParts_Phi = nullptr;
@@ -209,6 +212,91 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
   // Geometries
   const TrackerGeometry *theTrackerGeom = &iSetup.getData(getTokenTrackerGeom_);
   const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
+
+  // Loop over clusters
+  const auto& clusterToTPMap = MCTruthTTClusterHandle->getTTClusterToTrackingParticlesMap();
+  for (const auto& clusterTPPair : clusterToTPMap) {
+      const auto& theseTrackingParticles = clusterTPPair.second;
+
+      if (theseTrackingParticles.empty()) {
+          continue;
+      }
+
+      unsigned int goodDifferentTPs = 0;
+      std::vector<const TrackingParticle*> tpAddressVector;
+      std::vector<float> tp_mom;
+      float tp_tot = 0;
+      float leading_tp_pt = 0;
+
+      // Loop over the TrackingParticles
+      for (const auto& tp : theseTrackingParticles) {
+          const TrackingParticlePtr& curTP = tp;
+
+          if (curTP.isNull()) {
+              tp_mom.push_back(0);
+          } else {
+              float pt = curTP.get()->p4().pt();
+              tp_mom.push_back(pt);
+              tp_tot += pt;
+              if (pt > leading_tp_pt) leading_tp_pt = pt;
+          }
+      }
+
+      if (tp_tot == 0) {
+          continue;
+      }
+
+      for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
+          TrackingParticlePtr curTP = theseTrackingParticles.at(itp);
+
+          if (tp_mom.at(itp) > 0.01 * tp_tot) {
+            tpAddressVector.push_back(curTP.get());
+        } else {
+            if (tp_mom.at(itp) != 0){
+              std::cout << "TrackingParticle " << itp << " with address: " << static_cast<const void*>(curTP.get()) << " has pT: " << tp_mom.at(itp) << " which is less than 0.01 * tp_tot" << std::endl;
+            }
+        }
+      }
+
+      std::sort(tpAddressVector.begin(), tpAddressVector.end());
+      tpAddressVector.erase(std::unique(tpAddressVector.begin(), tpAddressVector.end()), tpAddressVector.end());
+      goodDifferentTPs = tpAddressVector.size();
+
+      float ratio = leading_tp_pt / tp_tot;
+      leading_tp_pt_ratio_genuine->Fill(ratio);
+
+      if (ratio != 1.0) {
+        for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
+            if (tp_mom.at(itp) < 0.01 * tp_tot && tp_mom.at(itp) != 0) {
+                std::cout << "leading_tp_pt: " << leading_tp_pt << std::endl;
+                std::cout << "tp_tot: " << tp_tot << std::endl;
+                std::cout << "ratio: " << ratio << std::endl;
+                std::cout << "goodDifferentTPs: " << goodDifferentTPs << std::endl;
+                break; // Print once per ratio check
+            }
+        }
+
+          for (unsigned int itp = 0; itp < theseTrackingParticles.size(); itp++) {
+              TrackingParticlePtr curTP = theseTrackingParticles.at(itp);
+              if (std::find(tpAddressVector.begin(), tpAddressVector.end(), curTP.get()) != tpAddressVector.end()) {
+                  float pt_ratio = tp_mom[itp] / tp_tot;
+                  std::cout << "TrackingParticle " << itp << " pt_ratio: " << pt_ratio << std::endl;
+              }
+          }
+
+          std::cout << "All TrackingParticle pT contributions: ";
+          for (const auto& pt : tp_mom) {
+              std::cout << pt << " ";
+          }
+          std::cout << std::endl;
+
+          std::cout << "Unique TrackingParticle addresses: ";
+          for (const auto& tpAddress : tpAddressVector) {
+              std::cout << tpAddress << " ";
+          }
+          std::cout << std::endl;
+      }
+  }
 
   // Loop over tracking particles
   int this_tp = 0;
@@ -690,6 +778,16 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
   // Histogram setup and definitions
   std::string HistoName;
   iBooker.setCurrentFolder(topFolderName_ + "/trackParticles");
+
+  edm::ParameterSet psLeadingTpPtRatioGenuine = conf_.getParameter<edm::ParameterSet>("TH1LeadingTpPtRatioGenuine");
+  HistoName = "leading_tp_pt_ratio_genuine";
+  leading_tp_pt_ratio_genuine = iBooker.book1D(HistoName,
+                                               HistoName,
+                                               psLeadingTpPtRatioGenuine.getParameter<int32_t>("Nbinsx"),
+                                               psLeadingTpPtRatioGenuine.getParameter<double>("xmin"),
+                                               psLeadingTpPtRatioGenuine.getParameter<double>("xmax"));
+  leading_tp_pt_ratio_genuine->setAxisTitle("Leading TP p_{T} Ratio", 1);
+  leading_tp_pt_ratio_genuine->setAxisTitle("# Clusters", 2);
 
   // 1D: pT
   edm::ParameterSet psTrackParts_Pt = conf_.getParameter<edm::ParameterSet>("TH1TrackParts_Pt");
@@ -1531,6 +1629,13 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
 void Phase2OTValidateTrackingParticles::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
   // OuterTrackerMonitorTrackingParticles
   edm::ParameterSetDescription desc;
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 100);
+    psd0.add<double>("xmax", 1.1);
+    psd0.add<double>("xmin", 0.0);
+    desc.add<edm::ParameterSetDescription>("TH1LeadingTpPtRatioGenuine", psd0);
+  }
   {
     edm::ParameterSetDescription psd0;
     psd0.add<int>("Nbinsx", 45);

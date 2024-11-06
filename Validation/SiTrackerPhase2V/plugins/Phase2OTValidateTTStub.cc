@@ -91,8 +91,11 @@ public:
   MonitorElement* z_res_is2S_barrel = nullptr;
 
   // delta_r hists
+<<<<<<< HEAD
   MonitorElement* r_res_fw_endcap = nullptr;
   MonitorElement* r_res_bw_endcap = nullptr;
+=======
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
   MonitorElement* r_res_isPS_fw_endcap = nullptr;
   MonitorElement* r_res_is2S_fw_endcap = nullptr;
   MonitorElement* r_res_isPS_bw_endcap = nullptr;
@@ -233,8 +236,12 @@ std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<Tracking
       //tp_z = (modMaxZ + modMinZ) / 2;
       tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E2 / myTP_t; 
       tp_phi = reco::reduceRange(tp_phi);
+<<<<<<< HEAD
       //tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E2 / myTP_t);
       tp_r = 2.0E2 / myTP_rinv / c_ * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E2 / myTP_t);
+=======
+      tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E13 / myTP_t);
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
   }
 
   std::vector<double> tpDerived_coords{tp_z, tp_phi, tp_r};
@@ -379,6 +386,7 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       float tp_z = tpDerivedCoords[0];
       float tp_phi = tpDerivedCoords[1];
       float tp_r = tpDerivedCoords[2];
+<<<<<<< HEAD
       float rRes = tp_r - stub_r;
         
       if (isBarrel == 0) {
@@ -453,6 +461,8 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
         //std::cout << "endcap stub_r: " << stub_r << std::endl;
         //std::cout << "endcap rRes: " << rRes << std::endl;
       }
+=======
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
 
       // Trigger information
       float trigBend = tempStubPtr->bendFE();
@@ -467,8 +477,13 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       float bendRes = trackBend - trigBend;
       float zRes = tp_z - stub_z;
       float phiRes = tp_phi - stub_phi;
+<<<<<<< HEAD
       //float rRes = tp_r - stub_r;
       
+=======
+      float rRes = tp_r - stub_r;
+
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
       // Fill histograms
       if (Stub_RZ) {
         Stub_RZ->Fill(stub_z, stub_r);
@@ -484,6 +499,7 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
               z_res_is2S_barrel->Fill(zRes);
               phi_res_is2S_barrel->Fill(phiRes);
           }
+<<<<<<< HEAD
       }
 
       // Ensure that the vectors are correctly assigned before use
@@ -508,6 +524,46 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
 
       // Fill the appropriate histogram based on layer/disc
       if (layer >= 1 && layer <= 6) {
+=======
+      } else {
+          if (stub_maxZ > 0) {
+              if (isPSmodule) {
+                  r_res_isPS_fw_endcap->Fill(rRes);
+              } else {
+                  r_res_is2S_fw_endcap->Fill(rRes);
+              }
+          } else {
+              if (isPSmodule) {
+                  r_res_isPS_bw_endcap->Fill(rRes);
+              } else {
+                  r_res_is2S_bw_endcap->Fill(rRes);
+              }
+          }
+      }
+
+      // Ensure that the vectors are correctly assigned before use
+      if (isBarrel == 1) {
+          phi_res_discs = &phi_res_barrel_layers; // Pointing to barrel layers vector
+          bend_res_discs = &bend_res_barrel_layers; // Pointing to barrel layers vector
+      } else {
+          if (stub_maxZ > 0) {
+              // Forward endcap
+              bend_res_fw_endcap->Fill(bendRes);
+              phi_res_fw_endcap->Fill(phiRes);
+              phi_res_discs = &phi_res_fw_endcap_discs; // Pointing to forward endcap vector
+              bend_res_discs = &bend_res_fw_endcap_discs; // Pointing to forward endcap vector
+          } else {
+              // Backward endcap
+              bend_res_bw_endcap->Fill(bendRes);
+              phi_res_bw_endcap->Fill(phiRes);
+              phi_res_discs = &phi_res_bw_endcap_discs; // Pointing to backward endcap vector
+              bend_res_discs = &bend_res_bw_endcap_discs; // Pointing to backward endcap vector
+          }
+      }
+
+      // Filling specific disc histograms
+      if (phi_res_discs && bend_res_discs && layer >= 1 && layer <= 5) {
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
           (*bend_res_discs)[layer - 1]->Fill(bendRes);
           (*phi_res_discs)[layer - 1]->Fill(phiRes);
       }
@@ -533,6 +589,7 @@ void Phase2OTValidateTTStub::bookHistograms(DQMStore::IBooker &iBooker,
                            psTTStub_RZ.getParameter<double>("ymax"));
 
   iBooker.setCurrentFolder(topFolderName_ + "/Residual");
+<<<<<<< HEAD
 
   // Histogram for rRes vs tp_pdgId
   edm::ParameterSet psrRes_vs_tp_pdgId = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_pdgId");
@@ -815,6 +872,12 @@ tp_r_vs_tp_dxy->setTitle("Tracking Particle r vs. Tracking Particle dxy");
   // stub vs tp z-coord diff
   edm::ParameterSet psZ_Res = conf_.getParameter<edm::ParameterSet>("TH1z_Res");
 
+=======
+  // stub vs tp z-coord diff
+  edm::ParameterSet psZ_Res = conf_.getParameter<edm::ParameterSet>("TH1z_Res");
+  edm::ParameterSet psR_Res = conf_.getParameter<edm::ParameterSet>("TH1r_Res");
+
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
   // z-res for PS modules
   HistoName = "#Delta z Barrel PS modules";
   z_res_isPS_barrel = iBooker.book1D(HistoName,
@@ -835,6 +898,7 @@ tp_r_vs_tp_dxy->setTitle("Tracking Particle r vs. Tracking Particle dxy");
   z_res_is2S_barrel->setAxisTitle("tp_z - stub_z [cm]", 1);
   z_res_is2S_barrel->setAxisTitle("events ", 2);
 
+<<<<<<< HEAD
   // r-res endcaps
   HistoName = "r_res_fw_endcap";
   r_res_fw_endcap = iBooker.book1D(HistoName,
@@ -887,6 +951,45 @@ tp_r_vs_tp_dxy->setTitle("Tracking Particle r vs. Tracking Particle dxy");
                             psZ_Res.getParameter<int32_t>("Nbinsx"),
                             psZ_Res.getParameter<double>("xmin"),
                             psZ_Res.getParameter<double>("xmax"));
+=======
+  // r-res for fw endcap PS modules
+  HistoName = "#Delta r FW Endcap PS modules";
+  r_res_isPS_fw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psR_Res.getParameter<int32_t>("Nbinsx"),
+                            psR_Res.getParameter<double>("xmin"),
+                            psR_Res.getParameter<double>("xmax"));
+  r_res_isPS_fw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_isPS_fw_endcap->setAxisTitle("events ", 2);
+
+  // r-res for fw endcap 2S modules
+  HistoName = "#Delta r FW Endcap 2S modules";
+  r_res_is2S_fw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psR_Res.getParameter<int32_t>("Nbinsx"),
+                            psR_Res.getParameter<double>("xmin"),
+                            psR_Res.getParameter<double>("xmax"));
+  r_res_is2S_fw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_is2S_fw_endcap->setAxisTitle("events ", 2);
+
+  // r-res for bw endcap PS modules
+  HistoName = "#Delta r BW Endcap PS modules";
+  r_res_isPS_bw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psR_Res.getParameter<int32_t>("Nbinsx"),
+                            psR_Res.getParameter<double>("xmin"),
+                            psR_Res.getParameter<double>("xmax"));
+  r_res_isPS_bw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_isPS_bw_endcap->setAxisTitle("events ", 2);
+
+  // r-res for bw endcap 2S modules
+  HistoName = "#Delta r BW Endcap 2S modules";
+  r_res_is2S_bw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psR_Res.getParameter<int32_t>("Nbinsx"),
+                            psR_Res.getParameter<double>("xmin"),
+                            psR_Res.getParameter<double>("xmax"));
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
   r_res_is2S_bw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
   r_res_is2S_bw_endcap->setAxisTitle("events ", 2);
 
@@ -1080,6 +1183,16 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions &de
     psd0.add<double>("xmax", 5.5);
     psd0.add<double>("xmin", -5.5);
     desc.add<edm::ParameterSetDescription>("TH1z_Res", psd0);
+<<<<<<< HEAD
+=======
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 99);
+    psd0.add<double>("xmax", 100.0);
+    psd0.add<double>("xmin", -100.);
+    desc.add<edm::ParameterSetDescription>("TH1r_Res", psd0);
+>>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
   }
   {
     edm::ParameterSetDescription psd0;

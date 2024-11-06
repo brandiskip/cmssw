@@ -59,17 +59,40 @@ public:
   void dqmBeginRun(const edm::Run &iRun, const edm::EventSetup &iSetup) override;
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
   float phiOverBendCorrection(bool isBarrel, float stub_z, float stub_r, const TrackerTopology* tTopo, uint32_t detid, const GeomDetUnit* det0, const GeomDetUnit* det1);
-  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const;
+  std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, float stub_z, float stub_r) const;
+  //std::vector<double> getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const;
 
   // TTStub stacks
   // Global position of the stubs
   MonitorElement *Stub_RZ = nullptr;  // TTStub #rho vs. z
+  MonitorElement *rRes_vs_tp_pT = nullptr;
+  MonitorElement *rRes_vs_tp_t = nullptr;
+  MonitorElement *tp_r_vs_stub_r = nullptr;
+  MonitorElement *tp_r_val = nullptr;
+  MonitorElement *stub_r_val = nullptr;
+  MonitorElement *tp_r_vs_tp_pT = nullptr;
+  MonitorElement *tp_r_vs_tp_pT_l23 = nullptr;
+  MonitorElement *rRes_vs_tp_dxy = nullptr;
+  MonitorElement *rRes_vs_tp_pdgId = nullptr;
+  MonitorElement *rRes_vs_tp_charge = nullptr;
+  MonitorElement *rRes_vs_tp_eta = nullptr;
+  MonitorElement *rRes_vs_tp_z0 = nullptr;
+  MonitorElement *rRes_vs_tp_z = nullptr;
+  MonitorElement *tp_r_vs_tp_t = nullptr;
+  MonitorElement *tp_r_vs_tp_dxy = nullptr;
+  MonitorElement *tp_r_vs_tp_pdgId = nullptr;
+  MonitorElement *tp_r_vs_tp_charge = nullptr;
+  MonitorElement *tp_r_vs_tp_eta = nullptr;
+  MonitorElement *tp_r_vs_tp_z0 = nullptr;
+  MonitorElement *tp_r_vs_tp_z = nullptr;
 
   // delta_z hists
   MonitorElement* z_res_isPS_barrel = nullptr;
   MonitorElement* z_res_is2S_barrel = nullptr;
 
   // delta_r hists
+  MonitorElement* r_res_fw_endcap = nullptr;
+  MonitorElement* r_res_bw_endcap = nullptr;
   MonitorElement* r_res_isPS_fw_endcap = nullptr;
   MonitorElement* r_res_is2S_fw_endcap = nullptr;
   MonitorElement* r_res_isPS_bw_endcap = nullptr;
@@ -105,6 +128,8 @@ private:
   const TrackerTopology *tTopo_ = nullptr;
   double TP_minPt;
   double TP_maxEta;
+  double TP_maxVtxZ;
+
 };
 
 // constructors and destructor
@@ -120,6 +145,8 @@ Phase2OTValidateTTStub::Phase2OTValidateTTStub(const edm::ParameterSet &iConfig)
       consumes<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>>(conf_.getParameter<edm::InputTag>("TTStubs"));
   TP_minPt = conf_.getParameter<double>("TP_minPt");      // min pT to consider matching
   TP_maxEta = conf_.getParameter<double>("TP_maxEta");    // max eta to consider matching
+  TP_maxVtxZ = conf_.getParameter<double>("TP_maxVtxZ");
+
 }
 
 Phase2OTValidateTTStub::~Phase2OTValidateTTStub() {
@@ -179,7 +206,8 @@ float Phase2OTValidateTTStub::phiOverBendCorrection(bool isBarrel, float stub_z,
     return correction;
 }
 
-std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const {
+std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, float stub_z, float stub_r) const {
+//std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<TrackingParticle> my_tp, bool isBarrel, double modMaxZ, double modMinZ, float stub_r) const {
   double tp_phi = -99;
   double tp_r = -99;
   double tp_z = -99;
@@ -201,12 +229,15 @@ std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<Tracking
       tp_phi = reco::reduceRange(tp_phi);  
       tp_z = myTP_z0 + (2.0E2 / c_) * myTP_t * (1 / myTP_rinv) * std::asin(tp_r * myTP_rinv * c_ / 2.0E2);
   } else {
-      tp_z = (modMaxZ + modMinZ) / 2;
+      tp_z = stub_z;
+      //tp_z = (modMaxZ + modMinZ) / 2;
       tp_phi = my_tp->p4().phi() - (tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E2 / myTP_t; 
       tp_phi = reco::reduceRange(tp_phi);
+      //tp_r = 2 / myTP_rinv * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E2 / myTP_t);
+      tp_r = 2.0E2 / myTP_rinv / c_ * std::sin((tp_z - myTP_z0) * myTP_rinv * c_ / 2.0E2 / myTP_t);
   }
 
-  std::vector<double> tpDerived_coords{tp_z, tp_phi};
+  std::vector<double> tpDerived_coords{tp_z, tp_phi, tp_r};
   return tpDerived_coords;
 }
 
@@ -332,16 +363,97 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       int myTP_charge = my_tp->charge();
       float myTP_pt = my_tp->p4().pt();
       float myTP_eta = my_tp->p4().eta();
+      float myTP_z0 = my_tp->vertex().z();
+      double myTP_t = my_tp->tanl();
+      int myTP_pdgId = my_tp->pdgId();
+      float myTP_dxy = my_tp->dxy();
 
       if (myTP_charge == 0) continue;
       if (myTP_pt < TP_minPt) continue;
       if (std::abs(myTP_eta) > TP_maxEta) continue;
+      if (std::abs(my_tp->vertex().z()) > TP_maxVtxZ) continue;
 
       // Derived coordinates
-      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r);
+      std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, stub_z, stub_r);
+      //std::vector<double> tpDerivedCoords = getTPDerivedCoords(my_tp, isBarrel, modMaxZ, modMinZ, stub_r);
       float tp_z = tpDerivedCoords[0];
       float tp_phi = tpDerivedCoords[1];
-      
+      float tp_r = tpDerivedCoords[2];
+      float rRes = tp_r - stub_r;
+        
+      if (isBarrel == 0) {
+        rRes_vs_tp_pT->Fill(myTP_pt, rRes);
+        rRes_vs_tp_t->Fill(myTP_t, rRes);
+        rRes_vs_tp_dxy->Fill(myTP_dxy, rRes);
+        rRes_vs_tp_pdgId->Fill(myTP_pdgId, rRes);
+        rRes_vs_tp_charge->Fill(myTP_charge, rRes);
+        rRes_vs_tp_eta->Fill(myTP_eta, rRes);
+        rRes_vs_tp_z0->Fill(myTP_z0, rRes);
+        rRes_vs_tp_z->Fill(tp_z, rRes);
+        tp_r_vs_stub_r->Fill(stub_r, tp_r);
+        tp_r_vs_tp_pT->Fill(myTP_pt, tp_r);
+        tp_r_vs_tp_t->Fill(myTP_t, tp_r);
+        tp_r_vs_tp_dxy->Fill(myTP_dxy, tp_r);
+        tp_r_vs_tp_pdgId->Fill(myTP_pdgId, tp_r);
+        tp_r_vs_tp_charge->Fill(myTP_charge, tp_r);
+        tp_r_vs_tp_eta->Fill(myTP_eta, tp_r);
+        tp_r_vs_tp_z0->Fill(myTP_z0, tp_r);
+        tp_r_vs_tp_z->Fill(tp_z, tp_r);
+        stub_r_val->Fill(stub_r);
+        tp_r_val->Fill(tp_r);
+        
+        if (stub_maxZ > 0) {
+          r_res_fw_endcap->Fill(rRes);
+          if (isPSmodule) {
+            r_res_isPS_fw_endcap->Fill(rRes);
+          }
+          else {
+            r_res_is2S_fw_endcap->Fill(rRes);
+          }
+        }
+        else {
+          r_res_bw_endcap->Fill(rRes);
+          if (isPSmodule) {
+            r_res_isPS_bw_endcap->Fill(rRes);
+          }
+          else {
+            r_res_is2S_bw_endcap->Fill(rRes);
+          }
+        }
+        if (tp_r < 23) {
+          tp_r_vs_tp_pT_l23->Fill(myTP_pt, tp_r);
+        }
+        if (tp_r > 150) {
+          std::cout << "tp_pdgId: " << myTP_pdgId << std::endl;
+          std::cout << "Stub with address: " << tempStubPtr.get() << std::endl;
+          std::cout << "TrackingParticle with address: " << my_tp.get() << std::endl;
+          std::cout << "tp_r: " << tp_r << " stub_r: " << stub_r << std::endl;
+          std::cout << "stub_z: " << stub_z << " tp_z: " << tp_z << std::endl;
+          std::cout << "stub_phi: " << stub_phi
+                    << " myTP_pt: " << myTP_pt
+                    << " myTP_charge: " << myTP_charge
+                    << " myTP_z0: " << myTP_z0
+                    << " myTP_t: " << myTP_t << std::endl;
+        }
+        
+        if (tp_r < 0) {
+          //std::cout << "tp_pdgId: " << myTP_pdgId << std::endl;
+          //std::cout << "Stub with address: " << tempStubPtr.get() << std::endl;
+          //std::cout << "TrackingParticle with address: " << my_tp.get() << std::endl;
+          std::cout << "tp_r: " << tp_r << " stub_r: " << stub_r << std::endl;
+          //std::cout << "stub_z: " << stub_z << " tp_z: " << tp_z << std::endl;
+          //std::cout << "stub_phi: " << stub_phi
+            //        << " myTP_pt: " << myTP_pt
+            //        << " myTP_charge: " << myTP_charge
+            //        << " myTP_z0: " << myTP_z0
+            //        << " myTP_t: " << myTP_t << std::endl;
+        }
+        
+        //std::cout << "endcap tp_r: " << tp_r << std::endl;
+        //std::cout << "endcap stub_r: " << stub_r << std::endl;
+        //std::cout << "endcap rRes: " << rRes << std::endl;
+      }
+
       // Trigger information
       float trigBend = tempStubPtr->bendFE();
       if (!isBarrel && stub_maxZ < 0.0) {
@@ -355,6 +467,7 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       float bendRes = trackBend - trigBend;
       float zRes = tp_z - stub_z;
       float phiRes = tp_phi - stub_phi;
+      //float rRes = tp_r - stub_r;
       
       // Fill histograms
       if (Stub_RZ) {
@@ -420,6 +533,285 @@ void Phase2OTValidateTTStub::bookHistograms(DQMStore::IBooker &iBooker,
                            psTTStub_RZ.getParameter<double>("ymax"));
 
   iBooker.setCurrentFolder(topFolderName_ + "/Residual");
+
+  // Histogram for rRes vs tp_pdgId
+  edm::ParameterSet psrRes_vs_tp_pdgId = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_pdgId");
+  HistoName = "rRes_vs_tp_pdgId";
+  rRes_vs_tp_pdgId = iBooker.book2D(HistoName,
+                                    HistoName,
+                                    psrRes_vs_tp_pdgId.getParameter<int32_t>("Nbinsx"),  
+                                    psrRes_vs_tp_pdgId.getParameter<double>("xmin"),     
+                                    psrRes_vs_tp_pdgId.getParameter<double>("xmax"),     
+                                    psrRes_vs_tp_pdgId.getParameter<int32_t>("Nbinsy"),  
+                                    psrRes_vs_tp_pdgId.getParameter<double>("ymin"),     
+                                    psrRes_vs_tp_pdgId.getParameter<double>("ymax"));
+  rRes_vs_tp_pdgId->setAxisTitle("Tracking Particle PDG ID", 1);
+  rRes_vs_tp_pdgId->setAxisTitle("rRes [cm]", 2);
+  rRes_vs_tp_pdgId->setTitle("rRes vs. Tracking Particle PDG ID");
+
+  // tp_r vs. tp_pdgId
+  HistoName = "tp_r_vs_tp_pdgId";
+  tp_r_vs_tp_pdgId = iBooker.book2D(HistoName,
+                                    HistoName,
+                                    psrRes_vs_tp_pdgId.getParameter<int32_t>("Nbinsx"),
+                                    psrRes_vs_tp_pdgId.getParameter<double>("xmin"),
+                                    psrRes_vs_tp_pdgId.getParameter<double>("xmax"),
+                                    psrRes_vs_tp_pdgId.getParameter<int32_t>("Nbinsy"),
+                                    psrRes_vs_tp_pdgId.getParameter<double>("ymin"),
+                                    psrRes_vs_tp_pdgId.getParameter<double>("ymax"));
+  tp_r_vs_tp_pdgId->setAxisTitle("Tracking Particle PDG ID", 1);
+  tp_r_vs_tp_pdgId->setAxisTitle("Tracking Particle r [cm]", 2);
+  tp_r_vs_tp_pdgId->setTitle("Tracking Particle r vs. Tracking Particle PDG ID");
+
+  // Histogram for rRes vs tp_charge
+  edm::ParameterSet psrRes_vs_tp_charge = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_charge");
+  HistoName = "rRes_vs_tp_charge";
+  rRes_vs_tp_charge = iBooker.book2D(HistoName,
+                                     HistoName,
+                                     psrRes_vs_tp_charge.getParameter<int32_t>("Nbinsx"),  
+                                     psrRes_vs_tp_charge.getParameter<double>("xmin"),     
+                                     psrRes_vs_tp_charge.getParameter<double>("xmax"),     
+                                     psrRes_vs_tp_charge.getParameter<int32_t>("Nbinsy"),  
+                                     psrRes_vs_tp_charge.getParameter<double>("ymin"),     
+                                     psrRes_vs_tp_charge.getParameter<double>("ymax"));
+  rRes_vs_tp_charge->setAxisTitle("Tracking Particle Charge", 1);
+  rRes_vs_tp_charge->setAxisTitle("rRes [cm]", 2);
+  rRes_vs_tp_charge->setTitle("rRes vs. Tracking Particle Charge");
+
+  // tp_r vs. tp_charge
+  HistoName = "tp_r_vs_tp_charge";
+  tp_r_vs_tp_charge = iBooker.book2D(HistoName,
+                                     HistoName,
+                                     psrRes_vs_tp_charge.getParameter<int32_t>("Nbinsx"),
+                                     psrRes_vs_tp_charge.getParameter<double>("xmin"),
+                                     psrRes_vs_tp_charge.getParameter<double>("xmax"),
+                                     psrRes_vs_tp_charge.getParameter<int32_t>("Nbinsy"),
+                                     psrRes_vs_tp_charge.getParameter<double>("ymin"),
+                                     psrRes_vs_tp_charge.getParameter<double>("ymax"));
+  tp_r_vs_tp_charge->setAxisTitle("Tracking Particle Charge", 1);
+  tp_r_vs_tp_charge->setAxisTitle("Tracking Particle r [cm]", 2);
+  tp_r_vs_tp_charge->setTitle("Tracking Particle r vs. Tracking Particle Charge");
+
+
+  // Histogram for rRes vs tp_eta
+  edm::ParameterSet psrRes_vs_tp_eta = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_eta");
+  HistoName = "rRes_vs_tp_eta";
+  rRes_vs_tp_eta = iBooker.book2D(HistoName,
+                                  HistoName,
+                                  psrRes_vs_tp_eta.getParameter<int32_t>("Nbinsx"),  
+                                  psrRes_vs_tp_eta.getParameter<double>("xmin"),     
+                                  psrRes_vs_tp_eta.getParameter<double>("xmax"),     
+                                  psrRes_vs_tp_eta.getParameter<int32_t>("Nbinsy"),  
+                                  psrRes_vs_tp_eta.getParameter<double>("ymin"),     
+                                  psrRes_vs_tp_eta.getParameter<double>("ymax"));
+  rRes_vs_tp_eta->setAxisTitle("Tracking Particle #eta", 1);
+  rRes_vs_tp_eta->setAxisTitle("rRes [cm]", 2);
+  rRes_vs_tp_eta->setTitle("rRes vs. Tracking Particle #eta");
+
+  // tp_r vs. tp_eta
+  HistoName = "tp_r_vs_tp_eta";
+  tp_r_vs_tp_eta = iBooker.book2D(HistoName,
+                                  HistoName,
+                                  psrRes_vs_tp_eta.getParameter<int32_t>("Nbinsx"),
+                                  psrRes_vs_tp_eta.getParameter<double>("xmin"),
+                                  psrRes_vs_tp_eta.getParameter<double>("xmax"),
+                                  psrRes_vs_tp_eta.getParameter<int32_t>("Nbinsy"),
+                                  psrRes_vs_tp_eta.getParameter<double>("ymin"),
+                                  psrRes_vs_tp_eta.getParameter<double>("ymax"));
+  tp_r_vs_tp_eta->setAxisTitle("Tracking Particle #eta", 1);
+  tp_r_vs_tp_eta->setAxisTitle("Tracking Particle r [cm]", 2);
+  tp_r_vs_tp_eta->setTitle("Tracking Particle r vs. Tracking Particle #eta");
+
+
+  // Histogram for rRes vs tp_z0
+  edm::ParameterSet psrRes_vs_tp_z0 = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_z0");
+  HistoName = "rRes_vs_tp_z0";
+  rRes_vs_tp_z0 = iBooker.book2D(HistoName,
+                                 HistoName,
+                                 psrRes_vs_tp_z0.getParameter<int32_t>("Nbinsx"),  
+                                 psrRes_vs_tp_z0.getParameter<double>("xmin"),     
+                                 psrRes_vs_tp_z0.getParameter<double>("xmax"),     
+                                 psrRes_vs_tp_z0.getParameter<int32_t>("Nbinsy"),  
+                                 psrRes_vs_tp_z0.getParameter<double>("ymin"),     
+                                 psrRes_vs_tp_z0.getParameter<double>("ymax"));
+  rRes_vs_tp_z0->setAxisTitle("Tracking Particle z0 [cm]", 1);
+  rRes_vs_tp_z0->setAxisTitle("rRes [cm]", 2);
+  rRes_vs_tp_z0->setTitle("rRes vs. Tracking Particle z0");
+
+  // tp_r vs. tp_z0
+  HistoName = "tp_r_vs_tp_z0";
+  tp_r_vs_tp_z0 = iBooker.book2D(HistoName,
+                                 HistoName,
+                                 psrRes_vs_tp_z0.getParameter<int32_t>("Nbinsx"),
+                                 psrRes_vs_tp_z0.getParameter<double>("xmin"),
+                                 psrRes_vs_tp_z0.getParameter<double>("xmax"),
+                                 psrRes_vs_tp_z0.getParameter<int32_t>("Nbinsy"),
+                                 psrRes_vs_tp_z0.getParameter<double>("ymin"),
+                                 psrRes_vs_tp_z0.getParameter<double>("ymax"));
+  tp_r_vs_tp_z0->setAxisTitle("Tracking Particle z0 [cm]", 1);
+  tp_r_vs_tp_z0->setAxisTitle("Tracking Particle r [cm]", 2);
+  tp_r_vs_tp_z0->setTitle("Tracking Particle r vs. Tracking Particle z0");
+
+  edm::ParameterSet psrRes_vs_tp_z = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_z");
+  HistoName = "rRes_vs_tp_z";
+  rRes_vs_tp_z = iBooker.book2D(HistoName,
+                                 HistoName,
+                                 psrRes_vs_tp_z.getParameter<int32_t>("Nbinsx"),  
+                                 psrRes_vs_tp_z.getParameter<double>("xmin"),     
+                                 psrRes_vs_tp_z.getParameter<double>("xmax"),     
+                                 psrRes_vs_tp_z.getParameter<int32_t>("Nbinsy"),  
+                                 psrRes_vs_tp_z.getParameter<double>("ymin"),     
+                                 psrRes_vs_tp_z.getParameter<double>("ymax"));
+  rRes_vs_tp_z->setAxisTitle("Tracking Particle z [cm]", 1);
+  rRes_vs_tp_z->setAxisTitle("rRes [cm]", 2);
+  rRes_vs_tp_z->setTitle("rRes vs. Tracking Particle z");
+
+  HistoName = "tp_r_vs_tp_z";
+  tp_r_vs_tp_z = iBooker.book2D(HistoName,
+                                 HistoName,
+                                 psrRes_vs_tp_z.getParameter<int32_t>("Nbinsx"),  
+                                 psrRes_vs_tp_z.getParameter<double>("xmin"),     
+                                 psrRes_vs_tp_z.getParameter<double>("xmax"),     
+                                 psrRes_vs_tp_z.getParameter<int32_t>("Nbinsy"),  
+                                 psrRes_vs_tp_z.getParameter<double>("ymin"),     
+                                 psrRes_vs_tp_z.getParameter<double>("ymax"));
+  tp_r_vs_tp_z->setAxisTitle("Tracking Particle z [cm]", 1);
+  tp_r_vs_tp_z->setAxisTitle("Tracking Particle r [cm]", 2);
+  tp_r_vs_tp_z->setTitle("Tracking Particle r vs. Tracking Particle z");
+
+  edm::ParameterSet psrRes_vs_tp_dxy = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_dxy");
+  HistoName = "rRes_vs_tp_dxy";
+  rRes_vs_tp_dxy = iBooker.book2D(HistoName,
+                              HistoName,
+                              psrRes_vs_tp_dxy.getParameter<int32_t>("Nbinsx"),  
+                              psrRes_vs_tp_dxy.getParameter<double>("xmin"),     
+                              psrRes_vs_tp_dxy.getParameter<double>("xmax"),     
+                              psrRes_vs_tp_dxy.getParameter<int32_t>("Nbinsy"),  
+                              psrRes_vs_tp_dxy.getParameter<double>("ymin"),     
+                              psrRes_vs_tp_dxy.getParameter<double>("ymax")); 
+  rRes_vs_tp_dxy->setAxisTitle("Tracking Particle dxy [cm]", 1);  
+  rRes_vs_tp_dxy->setAxisTitle("rRes [cm]", 2);          
+  rRes_vs_tp_dxy->setTitle("rRes vs. Tracking Particle dxy");  
+
+  // tp_r vs. tp_dxy
+HistoName = "tp_r_vs_tp_dxy";
+tp_r_vs_tp_dxy = iBooker.book2D(HistoName,
+                                HistoName,
+                                psrRes_vs_tp_dxy.getParameter<int32_t>("Nbinsx"),
+                                psrRes_vs_tp_dxy.getParameter<double>("xmin"),
+                                psrRes_vs_tp_dxy.getParameter<double>("xmax"),
+                                psrRes_vs_tp_dxy.getParameter<int32_t>("Nbinsy"),
+                                psrRes_vs_tp_dxy.getParameter<double>("ymin"),
+                                psrRes_vs_tp_dxy.getParameter<double>("ymax"));
+tp_r_vs_tp_dxy->setAxisTitle("Tracking Particle dxy [cm]", 1);
+tp_r_vs_tp_dxy->setAxisTitle("Tracking Particle r [cm]", 2);
+tp_r_vs_tp_dxy->setTitle("Tracking Particle r vs. Tracking Particle dxy");
+
+  edm::ParameterSet psrRes_vs_tp_t = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_t");
+  HistoName = "rRes_vs_tp_t";
+  rRes_vs_tp_t = iBooker.book2D(HistoName,
+                              HistoName,
+                              psrRes_vs_tp_t.getParameter<int32_t>("Nbinsx"),  
+                              psrRes_vs_tp_t.getParameter<double>("xmin"),     
+                              psrRes_vs_tp_t.getParameter<double>("xmax"),     
+                              psrRes_vs_tp_t.getParameter<int32_t>("Nbinsy"),  
+                              psrRes_vs_tp_t.getParameter<double>("ymin"),     
+                              psrRes_vs_tp_t.getParameter<double>("ymax")); 
+  rRes_vs_tp_t->setAxisTitle("Tracking Particle t", 1);  
+  rRes_vs_tp_t->setAxisTitle("rRes [cm]", 2);          
+  rRes_vs_tp_t->setTitle("rRes vs. Tracking Particle t");  
+
+  // tp_r vs. tp_t
+  HistoName = "tp_r_vs_tp_t";
+  tp_r_vs_tp_t = iBooker.book2D(HistoName,
+                                HistoName,
+                                psrRes_vs_tp_t.getParameter<int32_t>("Nbinsx"),
+                                psrRes_vs_tp_t.getParameter<double>("xmin"),
+                                psrRes_vs_tp_t.getParameter<double>("xmax"),
+                                psrRes_vs_tp_t.getParameter<int32_t>("Nbinsy"),
+                                psrRes_vs_tp_t.getParameter<double>("ymin"),
+                                psrRes_vs_tp_t.getParameter<double>("ymax"));
+  tp_r_vs_tp_t->setAxisTitle("Tracking Particle t", 1);
+  tp_r_vs_tp_t->setAxisTitle("Tracking Particle r [cm]", 2);
+  tp_r_vs_tp_t->setTitle("Tracking Particle r vs. Tracking Particle t");
+
+  edm::ParameterSet psrRes_vs_tp_pT = conf_.getParameter<edm::ParameterSet>("TH2rRes_vs_pT");
+  HistoName = "rRes_vs_tp_pT";
+  rRes_vs_tp_pT = iBooker.book2D(HistoName,
+                              HistoName,
+                              psrRes_vs_tp_pT.getParameter<int32_t>("Nbinsx"),  
+                              psrRes_vs_tp_pT.getParameter<double>("xmin"),     
+                              psrRes_vs_tp_pT.getParameter<double>("xmax"),     
+                              psrRes_vs_tp_pT.getParameter<int32_t>("Nbinsy"),  
+                              psrRes_vs_tp_pT.getParameter<double>("ymin"),     
+                              psrRes_vs_tp_pT.getParameter<double>("ymax")); 
+  rRes_vs_tp_pT->setAxisTitle("Tracking Particle p_{T} [GeV]", 1);  
+  rRes_vs_tp_pT->setAxisTitle("rRes [cm]", 2);          
+  rRes_vs_tp_pT->setTitle("rRes vs. Tracking Particle p_{T}");   
+
+  HistoName = "tp_r_vs_tp_pT_l23";
+  tp_r_vs_tp_pT_l23 = iBooker.book2D(HistoName,
+                              HistoName,
+                              psrRes_vs_tp_pT.getParameter<int32_t>("Nbinsx"),  
+                              psrRes_vs_tp_pT.getParameter<double>("xmin"),     
+                              psrRes_vs_tp_pT.getParameter<double>("xmax"),     
+                              psrRes_vs_tp_pT.getParameter<int32_t>("Nbinsy"),  
+                              psrRes_vs_tp_pT.getParameter<double>("ymin"),     
+                              psrRes_vs_tp_pT.getParameter<double>("ymax")); 
+  tp_r_vs_tp_pT_l23->setAxisTitle("Tracking Particle p_{T} [GeV]", 1);  
+  tp_r_vs_tp_pT_l23->setAxisTitle("Tracking Particle r [cm]", 2);          
+  tp_r_vs_tp_pT_l23->setTitle("Tracking Particle r vs. Tracking Particle p_{T}"); 
+
+  HistoName = "tp_r_vs_tp_pT";
+  tp_r_vs_tp_pT = iBooker.book2D(HistoName,
+                              HistoName,
+                              psrRes_vs_tp_pT.getParameter<int32_t>("Nbinsx"),  
+                              psrRes_vs_tp_pT.getParameter<double>("xmin"),     
+                              psrRes_vs_tp_pT.getParameter<double>("xmax"),     
+                              psrRes_vs_tp_pT.getParameter<int32_t>("Nbinsy"),  
+                              psrRes_vs_tp_pT.getParameter<double>("ymin"),     
+                              psrRes_vs_tp_pT.getParameter<double>("ymax")); 
+  tp_r_vs_tp_pT->setAxisTitle("Tracking Particle p_{T} [GeV]", 1);  
+  tp_r_vs_tp_pT->setAxisTitle("Tracking Particle r [cm]", 2);          
+  tp_r_vs_tp_pT->setTitle("Tracking Particle r vs. Tracking Particle p_{T}"); 
+
+  // stub_r and tp_r values 
+  edm::ParameterSet pstp_r_vs_stub_r = conf_.getParameter<edm::ParameterSet>("TH2tp_r_vs_stub_r");
+  HistoName = "tp_r_vs_stub_r";
+  tp_r_vs_stub_r = iBooker.book2D(HistoName,
+                              HistoName,
+                              pstp_r_vs_stub_r.getParameter<int32_t>("Nbinsx"),  
+                              pstp_r_vs_stub_r.getParameter<double>("xmin"),     
+                              pstp_r_vs_stub_r.getParameter<double>("xmax"),     
+                              pstp_r_vs_stub_r.getParameter<int32_t>("Nbinsy"),  
+                              pstp_r_vs_stub_r.getParameter<double>("ymin"),     
+                              pstp_r_vs_stub_r.getParameter<double>("ymax"));
+  tp_r_vs_stub_r->setAxisTitle("Stub Radius r [cm]", 1);            
+  tp_r_vs_stub_r->setAxisTitle("Tracking Particle Radius r [cm]", 2); 
+  tp_r_vs_stub_r->setTitle("Tracking Particle r vs. Stub r");   
+
+  edm::ParameterSet psR_Vals = conf_.getParameter<edm::ParameterSet>("TH1r_Val");
+
+  // stub_r
+  HistoName = "stub r";
+  stub_r_val = iBooker.book1D(HistoName,
+                            HistoName,
+                            psR_Vals.getParameter<int32_t>("Nbinsx"),
+                            psR_Vals.getParameter<double>("xmin"),
+                            psR_Vals.getParameter<double>("xmax"));
+  stub_r_val->setAxisTitle("stub r vals", 1);
+  stub_r_val->setAxisTitle("events ", 2);
+
+  // tp_r
+  HistoName = "tp r";
+  tp_r_val = iBooker.book1D(HistoName,
+                            HistoName,
+                            psR_Vals.getParameter<int32_t>("Nbinsx"),
+                            psR_Vals.getParameter<double>("xmin"),
+                            psR_Vals.getParameter<double>("xmax"));
+  tp_r_val->setAxisTitle("tp r vals", 1);
+  tp_r_val->setAxisTitle("events ", 2);
+
   // stub vs tp z-coord diff
   edm::ParameterSet psZ_Res = conf_.getParameter<edm::ParameterSet>("TH1z_Res");
 
@@ -442,6 +834,61 @@ void Phase2OTValidateTTStub::bookHistograms(DQMStore::IBooker &iBooker,
                             psZ_Res.getParameter<double>("xmax"));
   z_res_is2S_barrel->setAxisTitle("tp_z - stub_z [cm]", 1);
   z_res_is2S_barrel->setAxisTitle("events ", 2);
+
+  // r-res endcaps
+  HistoName = "r_res_fw_endcap";
+  r_res_fw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  r_res_fw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_fw_endcap->setAxisTitle("events ", 2);
+
+  HistoName = "r_res_isPS_fw_endcap";
+  r_res_isPS_fw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  r_res_isPS_fw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_isPS_fw_endcap->setAxisTitle("events ", 2);
+
+  HistoName = "r_res_is2S_fw_endcap";
+  r_res_is2S_fw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  r_res_is2S_fw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_is2S_fw_endcap->setAxisTitle("events ", 2);
+
+  HistoName = "r_res_bw_endcap";
+  r_res_bw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  r_res_bw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_bw_endcap->setAxisTitle("events ", 2);
+
+  HistoName = "r_res_isPS_bw_endcap";
+  r_res_isPS_bw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  r_res_isPS_bw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_isPS_bw_endcap->setAxisTitle("events ", 2);
+
+  HistoName = "r_res_is2S_bw_endcap";
+  r_res_is2S_bw_endcap = iBooker.book1D(HistoName,
+                            HistoName,
+                            psZ_Res.getParameter<int32_t>("Nbinsx"),
+                            psZ_Res.getParameter<double>("xmin"),
+                            psZ_Res.getParameter<double>("xmax"));
+  r_res_is2S_bw_endcap->setAxisTitle("tp_r - stub_r [cm]", 1);
+  r_res_is2S_bw_endcap->setAxisTitle("events ", 2);
 
   edm::ParameterSet psPhi_Res = conf_.getParameter<edm::ParameterSet>("TH1Phi_Res");
   edm::ParameterSet psBend_Res = conf_.getParameter<edm::ParameterSet>("TH1Bend_Res");
@@ -529,6 +976,103 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions &de
     psd0.add<double>("ymax", 120);
     psd0.add<double>("ymin", 0);
     desc.add<edm::ParameterSetDescription>("TH2TTStub_RZ", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 3500);
+    psd0.add<double>("xmin", -3500);
+    psd0.add<double>("xmax", 3500);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymin", -150);
+    psd0.add<double>("ymax", 150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_pdgId", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 2);
+    psd0.add<double>("xmin", -1.5);
+    psd0.add<double>("xmax", 1.5);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymin", -150);
+    psd0.add<double>("ymax", 150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_charge", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 50);
+    psd0.add<double>("xmin", -2.4);
+    psd0.add<double>("xmax", 2.4);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymin", -150);
+    psd0.add<double>("ymax", 150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_eta", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 100);
+    psd0.add<double>("xmin", -100);
+    psd0.add<double>("xmax", 100);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymin", -150);
+    psd0.add<double>("ymax", 150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_z0", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 300);
+    psd0.add<double>("xmin", -300);
+    psd0.add<double>("xmax", 300);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymin", -150);
+    psd0.add<double>("ymax", 150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_z", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 80);
+    psd0.add<double>("xmax", 20);
+    psd0.add<double>("xmin", -20);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymax", 150);
+    psd0.add<double>("ymin", -150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_dxy", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 48);
+    psd0.add<double>("xmax", 6);
+    psd0.add<double>("xmin", -6);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymax", 150);
+    psd0.add<double>("ymin", -150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_t", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 100);
+    psd0.add<double>("xmax", 50);
+    psd0.add<double>("xmin", 0);
+    psd0.add<int>("Nbinsy", 300);
+    psd0.add<double>("ymax", 150);
+    psd0.add<double>("ymin", -150);
+    desc.add<edm::ParameterSetDescription>("TH2rRes_vs_pT", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 200);
+    psd0.add<double>("xmax", 200);
+    psd0.add<double>("xmin", 0);
+    psd0.add<int>("Nbinsy", 200);
+    psd0.add<double>("ymax", 200);
+    psd0.add<double>("ymin", 0);
+    desc.add<edm::ParameterSetDescription>("TH2tp_r_vs_stub_r", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 250);
+    psd0.add<double>("xmax", 250);
+    psd0.add<double>("xmin", 0);
+    desc.add<edm::ParameterSetDescription>("TH1r_Val", psd0);
   }
   {
     edm::ParameterSetDescription psd0;

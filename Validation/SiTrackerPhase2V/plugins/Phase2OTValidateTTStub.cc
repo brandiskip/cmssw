@@ -91,11 +91,8 @@ public:
   MonitorElement* z_res_is2S_barrel = nullptr;
 
   // delta_r hists
-<<<<<<< HEAD
   MonitorElement* r_res_fw_endcap = nullptr;
   MonitorElement* r_res_bw_endcap = nullptr;
-=======
->>>>>>> 8d571949bab19c0046abeb39216c4f2b210ac615
   MonitorElement* r_res_isPS_fw_endcap = nullptr;
   MonitorElement* r_res_is2S_fw_endcap = nullptr;
   MonitorElement* r_res_isPS_bw_endcap = nullptr;

@@ -111,6 +111,7 @@ private:
   const TrackerTopology *tTopo_ = nullptr;
   double TP_minPt;
   double TP_maxEta;
+  float TP_maxD0;
 };
 
 // constructors and destructor
@@ -126,6 +127,7 @@ Phase2OTValidateTTStub::Phase2OTValidateTTStub(const edm::ParameterSet &iConfig)
       consumes<TTStubAssociationMap<Ref_Phase2TrackerDigi_>>(conf_.getParameter<edm::InputTag>("MCTruthStubInputTag"));
   TP_minPt = conf_.getParameter<double>("TP_minPt");   
   TP_maxEta = conf_.getParameter<double>("TP_maxEta");  
+  TP_maxD0 = conf_.getParameter<double>("TP_maxD0");
 }
 
 Phase2OTValidateTTStub::~Phase2OTValidateTTStub() {
@@ -383,12 +385,15 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       int tp_charge = associatedTP->charge();
       float tp_pt = associatedTP->p4().pt();
       float tp_eta = associatedTP->p4().eta();
+      float tp_d0 = associatedTP->d0();
 
       if (tp_charge == 0)
         continue;
       if (tp_pt < TP_minPt)
         continue;
       if (std::abs(tp_eta) > TP_maxEta)
+        continue;
+      if (std::abs(tp_d0) > TP_maxD0)
         continue;
 
       // Derived coordinates
@@ -397,6 +402,9 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       float tp_phi = tpDerivedCoords[1];
       float tp_r = tpDerivedCoords[2];
 
+      if (tp_r > 120 || tp_r < 20) {
+        std::cout << "stub_r: " << stub_r << " tp_r: " << tp_r << std::endl;
+      }
 
        // Trigger information
       float trigBend = tempStubPtr->bendFE();
@@ -707,6 +715,7 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions& de
   desc.add<double>("TP_minPt", 2.0);
   desc.add<double>("TP_maxEta", 2.4);
   desc.add<double>("TP_maxVtxZ", 15.0);
+  desc.add<double>("TP_maxD0", 1.0);
   descriptions.add("Phase2OTValidateTTStub", desc);
   // or use the following to generate the label from the module's C++ type
   //descriptions.addWithDefaultLabel(desc);

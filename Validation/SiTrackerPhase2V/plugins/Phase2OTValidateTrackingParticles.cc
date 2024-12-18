@@ -346,8 +346,9 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
             continue;
 
         for (const auto &associatedTP : theseTrackingParticles) {
-          if (!associatedTP)
+          if (!associatedTP) {
             continue;
+          }
             auto associatedTP_address = associatedTP.get();
 
             // Compare addresses

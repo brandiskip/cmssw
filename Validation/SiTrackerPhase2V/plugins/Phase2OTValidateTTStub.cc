@@ -111,7 +111,9 @@ private:
   const TrackerTopology *tTopo_ = nullptr;
   double TP_minPt;
   double TP_maxEta;
-  float TP_maxD0;
+  double TP_maxVtxZ;
+  double TP_maxD0;
+  double TP_maxDxy;
 };
 
 // constructors and destructor
@@ -126,8 +128,10 @@ Phase2OTValidateTTStub::Phase2OTValidateTTStub(const edm::ParameterSet &iConfig)
   ttStubMCTruthToken_ =
       consumes<TTStubAssociationMap<Ref_Phase2TrackerDigi_>>(conf_.getParameter<edm::InputTag>("MCTruthStubInputTag"));
   TP_minPt = conf_.getParameter<double>("TP_minPt");   
-  TP_maxEta = conf_.getParameter<double>("TP_maxEta");  
+  TP_maxEta = conf_.getParameter<double>("TP_maxEta"); 
+  TP_maxVtxZ = conf_.getParameter<double>("TP_maxVtxZ"); 
   TP_maxD0 = conf_.getParameter<double>("TP_maxD0");
+  TP_maxDxy = conf_.getParameter<double>("TP_maxDxy");
 }
 
 Phase2OTValidateTTStub::~Phase2OTValidateTTStub() {
@@ -386,6 +390,10 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       float tp_pt = associatedTP->p4().pt();
       float tp_eta = associatedTP->p4().eta();
       float tp_d0 = associatedTP->d0();
+      float tp_vx = associatedTP->vx();
+      float tp_vy = associatedTP->vy();
+      float tp_vz = associatedTP->vz();
+      float tp_dxy = std::sqrt(tp_vx*tp_vx + tp_vy*tp_vy);
 
       if (tp_charge == 0)
         continue;
@@ -393,9 +401,13 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
         continue;
       if (std::abs(tp_eta) > TP_maxEta)
         continue;
+      if (std::abs(tp_vz) > TP_maxVtxZ)
+        continue;
       if (std::abs(tp_d0) > TP_maxD0)
         continue;
-
+      if (std::abs(tp_dxy) > TP_maxDxy)
+        continue;
+      
       // Derived coordinates
       std::vector<double> tpDerivedCoords = getTPDerivedCoords(associatedTP, isBarrel, stub_z, stub_r);
       float tp_z = tpDerivedCoords[0];
@@ -716,6 +728,7 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions& de
   desc.add<double>("TP_maxEta", 2.4);
   desc.add<double>("TP_maxVtxZ", 15.0);
   desc.add<double>("TP_maxD0", 1.0);
+  desc.add<double>("TP_maxDxy", 1.0);
   descriptions.add("Phase2OTValidateTTStub", desc);
   // or use the following to generate the label from the module's C++ type
   //descriptions.addWithDefaultLabel(desc);

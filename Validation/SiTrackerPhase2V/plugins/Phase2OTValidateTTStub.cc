@@ -401,9 +401,9 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       float tp_phi = tpDerivedCoords[1];
       float tp_r = tpDerivedCoords[2];
 
-      if (tp_r > 120 || tp_r < 20) {
-        std::cout << " stub_r: " << stub_r << " tp_r: " << tp_r << std::endl;
-      }
+      //if (tp_r > 120 || tp_r < 20) {
+        //std::cout << " stub_r: " << stub_r << " tp_r: " << tp_r << std::endl;
+      //}
 
        // Trigger information
       float trigBend = tempStubPtr->bendFE();
@@ -708,7 +708,6 @@ void Phase2OTValidateTTStub::fillDescriptions(edm::ConfigurationDescriptions& de
   desc.add<edm::InputTag>("TTStubs", edm::InputTag("TTStubsFromPhase2TrackerDigis", "StubAccepted"));
   desc.add<edm::InputTag>("trackingParticleToken", edm::InputTag("mix", "MergedTrackTruth"));
   desc.add<edm::InputTag>("MCTruthStubInputTag", edm::InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"));
-  desc.add<edm::InputTag>("MCTruthClusterInputTag", edm::InputTag("TTClusterAssociatorFromPixelDigis", "ClusterInclusive"));
   desc.add<int>("TP_minNStub", 4);
   desc.add<int>("TP_minNLayersStub", 4);
   desc.add<double>("TP_minPt", 2.0);

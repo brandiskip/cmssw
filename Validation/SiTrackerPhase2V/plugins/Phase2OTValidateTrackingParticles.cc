@@ -69,8 +69,12 @@ public:
   // stub efficiency plots
   MonitorElement *gen_clusters_barrel = nullptr;               // denominator
   MonitorElement *gen_clusters_zoom_barrel = nullptr;          // denominator
+  MonitorElement *gen_clusters_endcaps = nullptr;              // denominator
+  MonitorElement *gen_clusters_zoom_endcaps = nullptr;         // denominator
   MonitorElement *gen_clusters_if_stub_barrel = nullptr;       // numerator
   MonitorElement *gen_clusters_if_stub_zoom_barrel = nullptr;  // numerator
+  MonitorElement *gen_clusters_if_stub_endcaps = nullptr;      // numerator
+  MonitorElement *gen_clusters_if_stub_zoom_endcaps = nullptr; // numerator
 
   // 1D intermediate resolution plots (pT and eta)
   MonitorElement *res_eta = nullptr;    // for all eta and pT
@@ -312,9 +316,6 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
     std::vector<edm::Ref<edmNew::DetSetVector<TTCluster<Ref_Phase2TrackerDigi_>>, TTCluster<Ref_Phase2TrackerDigi_>>>
         associatedClusters = MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr);
 
-    // Address of tracking particle
-    auto tp_ptr_address = tp_ptr.get();
-
     // Loop through associated clusters
     for (std::size_t k = 0; k < associatedClusters.size(); ++k) {
         auto clusA = associatedClusters[k];
@@ -328,36 +329,11 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
         if (!isGenuine)
             continue;
 
-        // Suppress unused variable warnings
         DetId detidA = tTopo->stack(clusdetid);
-        (void)detidA;
-
         const GeomDetUnit *detA = theTrackerGeom->idToDetUnit(clusdetid);
         const PixelGeomDetUnit *theGeomDetA = dynamic_cast<const PixelGeomDetUnit *>(detA);
         const PixelTopology *topoA = dynamic_cast<const PixelTopology *>(&(theGeomDetA->specificTopology()));
         GlobalPoint coordsA = theGeomDetA->surface().toGlobal(topoA->localPosition(clusA->findAverageLocalCoordinatesCentered()));
-        (void)coordsA;
-
-        // Retrieve TrackingParticles associated with the cluster
-        const std::vector<TrackingParticlePtr> &theseTrackingParticles =
-            MCTruthTTClusterHandle->findTrackingParticlePtrs(clusA);
-
-        if (theseTrackingParticles.empty())
-            continue;
-
-        for (const auto &associatedTP : theseTrackingParticles) {
-          if (!associatedTP) {
-            continue;
-          }
-            auto associatedTP_address = associatedTP.get();
-
-            // Compare addresses
-            if (tp_ptr_address != associatedTP_address) {
-                std::cout << "Addresses not the same: "
-                          << "tp_ptr_address = " << tp_ptr_address 
-                          << ", associatedTP_address = " << associatedTP_address << std::endl;
-            }
-        }
 
       int isBarrel = 0;
       if (clusdetid.subdetId() == StripSubdetector::TOB) {
@@ -371,6 +347,10 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
       if (isBarrel == 1) { 
         gen_clusters_barrel->Fill(tmp_tp_pt);
         gen_clusters_zoom_barrel->Fill(tmp_tp_pt);
+      }
+      else {
+        gen_clusters_endcaps->Fill(tmp_tp_pt);
+        gen_clusters_zoom_endcaps->Fill(tmp_tp_pt);
       }
 
       // If there are stubs on the same detid, loop on those stubs
@@ -410,6 +390,11 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
                 gen_clusters_if_stub_barrel->Fill(tmp_tp_pt);
                 gen_clusters_if_stub_zoom_barrel->Fill(tmp_tp_pt);
               }
+              else {
+                gen_clusters_if_stub_endcaps->Fill(tmp_tp_pt);
+                gen_clusters_if_stub_zoom_endcaps->Fill(tmp_tp_pt);
+              }
+              break;
             }
           }
         }
@@ -651,7 +636,7 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
   match_tp_pt->setAxisTitle("p_{T} [GeV]", 1);
   match_tp_pt->setAxisTitle("# matched tracking particles", 2);
 
-  // Gen clusters
+  // Gen clusters barrel
   HistoName = "gen_clusters_barrel";
   gen_clusters_barrel = iBooker.book1D(HistoName,
                                 HistoName,
@@ -661,7 +646,7 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
   gen_clusters_barrel->setAxisTitle("p_{T} [GeV]", 1);
   gen_clusters_barrel->setAxisTitle("# tracking particles", 2);
 
-  // Gen clusters if stub
+  // Gen clusters if stub barrel
   HistoName = "gen_clusters_if_stub_barrel";
   gen_clusters_if_stub_barrel = iBooker.book1D(HistoName,
                                         HistoName,
@@ -670,6 +655,26 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
                                         psEffic_pt.getParameter<double>("xmax"));
   gen_clusters_if_stub_barrel->setAxisTitle("p_{T} [GeV]", 1);
   gen_clusters_if_stub_barrel->setAxisTitle("# tracking particles", 2);
+
+  // Gen clusters endcaps
+  HistoName = "gen_clusters_endcaps";
+  gen_clusters_endcaps = iBooker.book1D(HistoName,
+                                HistoName,
+                                psEffic_pt.getParameter<int32_t>("Nbinsx"),
+                                psEffic_pt.getParameter<double>("xmin"),
+                                psEffic_pt.getParameter<double>("xmax"));
+  gen_clusters_endcaps->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters_endcaps->setAxisTitle("# tracking particles", 2);
+
+  // Gen clusters if stub endcaps
+  HistoName = "gen_clusters_if_stub_endcaps";
+  gen_clusters_if_stub_endcaps = iBooker.book1D(HistoName,
+                                        HistoName,
+                                        psEffic_pt.getParameter<int32_t>("Nbinsx"),
+                                        psEffic_pt.getParameter<double>("xmin"),
+                                        psEffic_pt.getParameter<double>("xmax"));
+  gen_clusters_if_stub_endcaps->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters_if_stub_endcaps->setAxisTitle("# tracking particles", 2);
 
   // pT zoom (0-10 GeV)
   edm::ParameterSet psEffic_pt_zoom = conf_.getParameter<edm::ParameterSet>("TH1Effic_pt_zoom");
@@ -692,7 +697,7 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
   match_tp_pt_zoom->setAxisTitle("p_{T} [GeV]", 1);
   match_tp_pt_zoom->setAxisTitle("# matched tracking particles", 2);
 
-  // pT zoom (0-10 GeV)
+  // Gen clusters pT zoom (0-10 GeV) barrel
   HistoName = "gen_clusters_zoom_barrel";
   gen_clusters_zoom_barrel = iBooker.book1D(HistoName,
                                      HistoName,
@@ -702,7 +707,7 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
   gen_clusters_zoom_barrel->setAxisTitle("p_{T} [GeV]", 1);
   gen_clusters_zoom_barrel->setAxisTitle("# tracking particles", 2);
 
-  // pT zoom (0-10 GeV)
+  // Gen cluters if stub pT zoom (0-10 GeV) barrel
   HistoName = "gen_clusters_if_stub_zoom_barrel";
   gen_clusters_if_stub_zoom_barrel = iBooker.book1D(HistoName,
                                              HistoName,
@@ -711,6 +716,26 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
                                              psEffic_pt_zoom.getParameter<double>("xmax"));
   gen_clusters_if_stub_zoom_barrel->setAxisTitle("p_{T} [GeV]", 1);
   gen_clusters_if_stub_zoom_barrel->setAxisTitle("# tracking particles", 2);
+
+  // Gen clusters pT zoom (0-10 GeV) endcaps
+  HistoName = "gen_clusters_zoom_endcaps";
+  gen_clusters_zoom_endcaps = iBooker.book1D(HistoName,
+                                     HistoName,
+                                     psEffic_pt_zoom.getParameter<int32_t>("Nbinsx"),
+                                     psEffic_pt_zoom.getParameter<double>("xmin"),
+                                     psEffic_pt_zoom.getParameter<double>("xmax"));
+  gen_clusters_zoom_endcaps->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters_zoom_endcaps->setAxisTitle("# tracking particles", 2);
+
+  // Gen cluters if stub pT zoom (0-10 GeV) endcaps
+  HistoName = "gen_clusters_if_stub_zoom_endcaps";
+  gen_clusters_if_stub_zoom_endcaps = iBooker.book1D(HistoName,
+                                             HistoName,
+                                             psEffic_pt_zoom.getParameter<int32_t>("Nbinsx"),
+                                             psEffic_pt_zoom.getParameter<double>("xmin"),
+                                             psEffic_pt_zoom.getParameter<double>("xmax"));
+  gen_clusters_if_stub_zoom_endcaps->setAxisTitle("p_{T} [GeV]", 1);
+  gen_clusters_if_stub_zoom_endcaps->setAxisTitle("# tracking particles", 2);
 
   // eta
   edm::ParameterSet psEffic_eta = conf_.getParameter<edm::ParameterSet>("TH1Effic_eta");
@@ -1379,12 +1404,12 @@ void Phase2OTValidateTrackingParticles::fillDescriptions(edm::ConfigurationDescr
   desc.add<edm::InputTag>("MCTruthStubInputTag", edm::InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"));
   desc.add<edm::InputTag>("MCTruthTrackInputTag", edm::InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks"));
   desc.add<edm::InputTag>("MCTruthClusterInputTag",
-                          edm::InputTag("TTClusterAssociatorFromPixelDigis", "ClusterAccepted"));
+                          edm::InputTag("TTClusterAssociatorFromPixelDigis", "ClusterInclusive"));
   desc.add<int>("L1Tk_minNStub", 4);
   desc.add<double>("L1Tk_maxChi2dof", 25.0);
   desc.add<int>("TP_minNStub", 4);
   desc.add<int>("TP_minNLayersStub", 4);
-  desc.add<double>("TP_minPt", 2.0);
+  desc.add<double>("TP_minPt", 1.5);
   desc.add<double>("TP_maxEta", 2.4);
   desc.add<double>("TP_maxVtxZ", 15.0);
   descriptions.add("Phase2OTValidateTrackingParticles", desc);

@@ -50,12 +50,12 @@
 
 class Phase2OTValidateTTStub : public DQMEDAnalyzer {
 public:
-  explicit Phase2OTValidateTTStub(const edm::ParameterSet &);
+  explicit Phase2OTValidateTTStub(const edm::ParameterSet&);
   ~Phase2OTValidateTTStub() override;
-  void analyze(const edm::Event &, const edm::EventSetup &) override;
-  void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
-  void dqmBeginRun(const edm::Run &iRun, const edm::EventSetup &iSetup) override;
-  static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
+  void analyze(const edm::Event&, const edm::EventSetup&) override;
+  void bookHistograms(DQMStore::IBooker&, edm::Run const&, edm::EventSetup const&) override;
+  void dqmBeginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) override;
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   float phiOverBendCorrection(bool isBarrel,
                               float stub_z,
                               float stub_r,
@@ -69,7 +69,7 @@ public:
                                          float stub_r) const;
   // TTStub stacks
   // Global position of the stubs
-  MonitorElement *Stub_RZ = nullptr;  // TTStub #rho vs. z
+  MonitorElement* Stub_RZ = nullptr;  // TTStub #rho vs. z
 
   // delta_z hists
   MonitorElement* z_res_isPS_barrel = nullptr;
@@ -103,19 +103,19 @@ public:
 private:
   edm::ParameterSet conf_;
   edm::EDGetTokenT<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>> tagTTStubsToken_;
-  edm::EDGetTokenT<TTStubAssociationMap<Ref_Phase2TrackerDigi_>>ttStubMCTruthToken_; 
+  edm::EDGetTokenT<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> ttStubMCTruthToken_;
   std::string topFolderName_;
   const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> geomToken_;
   const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> topoToken_;
-  const TrackerGeometry *tkGeom_ = nullptr;
-  const TrackerTopology *tTopo_ = nullptr;
+  const TrackerGeometry* tkGeom_ = nullptr;
+  const TrackerTopology* tTopo_ = nullptr;
   double TP_minPt;
   double TP_maxEta;
   float TP_maxD0;
 };
 
 // constructors and destructor
-Phase2OTValidateTTStub::Phase2OTValidateTTStub(const edm::ParameterSet &iConfig)
+Phase2OTValidateTTStub::Phase2OTValidateTTStub(const edm::ParameterSet& iConfig)
     : conf_(iConfig),
       geomToken_(esConsumes<TrackerGeometry, TrackerDigiGeometryRecord, edm::Transition::BeginRun>()),
       topoToken_(esConsumes<TrackerTopology, TrackerTopologyRcd, edm::Transition::BeginRun>()) {
@@ -125,8 +125,8 @@ Phase2OTValidateTTStub::Phase2OTValidateTTStub(const edm::ParameterSet &iConfig)
       consumes<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>>(conf_.getParameter<edm::InputTag>("TTStubs"));
   ttStubMCTruthToken_ =
       consumes<TTStubAssociationMap<Ref_Phase2TrackerDigi_>>(conf_.getParameter<edm::InputTag>("MCTruthStubInputTag"));
-  TP_minPt = conf_.getParameter<double>("TP_minPt");   
-  TP_maxEta = conf_.getParameter<double>("TP_maxEta");  
+  TP_minPt = conf_.getParameter<double>("TP_minPt");
+  TP_maxEta = conf_.getParameter<double>("TP_maxEta");
   TP_maxD0 = conf_.getParameter<double>("TP_maxD0");
 }
 
@@ -135,7 +135,7 @@ Phase2OTValidateTTStub::~Phase2OTValidateTTStub() {
   // (e.g. close files, deallocate resources etc.)
 }
 
-void Phase2OTValidateTTStub::dqmBeginRun(const edm::Run &iRun, const edm::EventSetup &iSetup) {
+void Phase2OTValidateTTStub::dqmBeginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
   tkGeom_ = &(iSetup.getData(geomToken_));
   tTopo_ = &(iSetup.getData(topoToken_));
 
@@ -197,7 +197,7 @@ float Phase2OTValidateTTStub::phiOverBendCorrection(bool isBarrel,
   return correction;
 }
 
-// Compute derived coordinates (z, phi, r) for tracking particle (TP) 
+// Compute derived coordinates (z, phi, r) for tracking particle (TP)
 std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<TrackingParticle> associatedTP,
                                                                bool isBarrel,
                                                                float stub_z,
@@ -234,7 +234,7 @@ std::vector<double> Phase2OTValidateTTStub::getTPDerivedCoords(edm::Ptr<Tracking
 }
 
 // ------------ method called for each event  ------------
-void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventSetup &iSetup) {
+void Phase2OTValidateTTStub::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   /// Track Trigger Stubs
   edm::Handle<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>> Phase2TrackerDigiTTStubHandle;
   iEvent.getByToken(tagTTStubsToken_, Phase2TrackerDigiTTStubHandle);
@@ -271,7 +271,7 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
 
       /// Define position stub by position inner cluster
       MeasurementPoint mp = (tempStubRef->clusterRef(0))->findAverageLocalCoordinates();
-      const GeomDet *theGeomDet = tkGeom_->idToDet(detIdStub);
+      const GeomDet* theGeomDet = tkGeom_->idToDet(detIdStub);
       Global3DPoint posStub = theGeomDet->surface().toGlobal(theGeomDet->topology().localPosition(mp));
 
       Stub_RZ->Fill(posStub.z(), posStub.perp());
@@ -345,7 +345,7 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       // Retrieve tracking particle associated with TTStub
       edm::Ptr<TrackingParticle> associatedTP = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
       if (associatedTP.isNull())
-          continue;
+        continue;
 
       // Determine layer and subdetector information
       int isBarrel = 0;
@@ -402,10 +402,10 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
       float tp_r = tpDerivedCoords[2];
 
       //if (tp_r > 120 || tp_r < 20) {
-        //std::cout << " stub_r: " << stub_r << " tp_r: " << tp_r << std::endl;
+      //std::cout << " stub_r: " << stub_r << " tp_r: " << tp_r << std::endl;
       //}
 
-       // Trigger information
+      // Trigger information
       float trigBend = tempStubPtr->bendFE();
       if (!isBarrel && stub_maxZ < 0.0) {
         trigBend = -trigBend;
@@ -447,21 +447,21 @@ void Phase2OTValidateTTStub::analyze(const edm::Event &iEvent, const edm::EventS
 
       // Ensure that the vectors are correctly assigned before use
       if (isBarrel == 1) {
-        phi_res_vec = &phi_res_barrel_layers;    
-        bend_res_vec = &bend_res_barrel_layers;  
+        phi_res_vec = &phi_res_barrel_layers;
+        bend_res_vec = &bend_res_barrel_layers;
       } else {
         if (stub_maxZ > 0) {
           // Forward endcap
           bend_res_fw_endcap->Fill(bendRes);
           phi_res_fw_endcap->Fill(phiRes);
-          phi_res_vec = &phi_res_fw_endcap_discs;    
-          bend_res_vec = &bend_res_fw_endcap_discs;  
+          phi_res_vec = &phi_res_fw_endcap_discs;
+          bend_res_vec = &bend_res_fw_endcap_discs;
         } else {
           // Backward endcap
           bend_res_bw_endcap->Fill(bendRes);
           phi_res_bw_endcap->Fill(phiRes);
-          phi_res_vec = &phi_res_bw_endcap_discs;    
-          bend_res_vec = &bend_res_bw_endcap_discs;  
+          phi_res_vec = &phi_res_bw_endcap_discs;
+          bend_res_vec = &bend_res_bw_endcap_discs;
         }
       }
       // Fill the appropriate histogram based on layer/disc

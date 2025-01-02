@@ -40,12 +40,15 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
     // Find all monitor elements for histograms
     MonitorElement *meN_clus_barrel = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_if_stub_barrel");
     MonitorElement *meD_clus_barrel = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_barrel");
-    MonitorElement *meN_clus_zoom_barrel = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_if_stub_zoom_barrel");
+    MonitorElement *meN_clus_zoom_barrel =
+        dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_if_stub_zoom_barrel");
     MonitorElement *meD_clus_zoom_barrel = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_zoom_barrel");
     MonitorElement *meN_clus_endcaps = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_if_stub_endcaps");
     MonitorElement *meD_clus_endcaps = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_endcaps");
-    MonitorElement *meN_clus_zoom_endcaps = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_if_stub_zoom_endcaps");
-    MonitorElement *meD_clus_zoom_endcaps = dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_zoom_endcaps");
+    MonitorElement *meN_clus_zoom_endcaps =
+        dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_if_stub_zoom_endcaps");
+    MonitorElement *meD_clus_zoom_endcaps =
+        dbe->get(topFolderName_ + "/EfficiencyIngredients/gen_clusters_zoom_endcaps");
     MonitorElement *meN_eta = dbe->get(topFolderName_ + "/EfficiencyIngredients/match_tp_eta");
     MonitorElement *meD_eta = dbe->get(topFolderName_ + "/EfficiencyIngredients/tp_eta");
     MonitorElement *meN_pt = dbe->get(topFolderName_ + "/EfficiencyIngredients/match_tp_pt");
@@ -59,24 +62,42 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
     MonitorElement *meN_VtxZ = dbe->get(topFolderName_ + "/EfficiencyIngredients/match_tp_VtxZ");
     MonitorElement *meD_VtxZ = dbe->get(topFolderName_ + "/EfficiencyIngredients/tp_VtxZ");
 
-    MonitorElement *merespt_eta0to0p7_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt2to3");
-    MonitorElement *merespt_eta0p7to1_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt2to3");
-    MonitorElement *merespt_eta1to1p2_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt2to3");
-    MonitorElement *merespt_eta1p2to1p6_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt2to3");
-    MonitorElement *merespt_eta1p6to2_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt2to3");
-    MonitorElement *merespt_eta2to2p4_pt2to3 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt2to3");
-    MonitorElement *merespt_eta0to0p7_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt3to8");
-    MonitorElement *merespt_eta0p7to1_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt3to8");
-    MonitorElement *merespt_eta1to1p2_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt3to8");
-    MonitorElement *merespt_eta1p2to1p6_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt3to8");
-    MonitorElement *merespt_eta1p6to2_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt3to8");
-    MonitorElement *merespt_eta2to2p4_pt3to8 = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt3to8");
-    MonitorElement *merespt_eta0to0p7_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt8toInf");
-    MonitorElement *merespt_eta0p7to1_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt8toInf");
-    MonitorElement *merespt_eta1to1p2_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt8toInf");
-    MonitorElement *merespt_eta1p2to1p6_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt8toInf");
-    MonitorElement *merespt_eta1p6to2_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt8toInf");
-    MonitorElement *merespt_eta2to2p4_pt8toInf = dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt8toInf");
+    MonitorElement *merespt_eta0to0p7_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt2to3");
+    MonitorElement *merespt_eta0p7to1_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt2to3");
+    MonitorElement *merespt_eta1to1p2_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt2to3");
+    MonitorElement *merespt_eta1p2to1p6_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt2to3");
+    MonitorElement *merespt_eta1p6to2_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt2to3");
+    MonitorElement *merespt_eta2to2p4_pt2to3 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt2to3");
+    MonitorElement *merespt_eta0to0p7_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt3to8");
+    MonitorElement *merespt_eta0p7to1_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt3to8");
+    MonitorElement *merespt_eta1to1p2_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt3to8");
+    MonitorElement *merespt_eta1p2to1p6_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt3to8");
+    MonitorElement *merespt_eta1p6to2_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt3to8");
+    MonitorElement *merespt_eta2to2p4_pt3to8 =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt3to8");
+    MonitorElement *merespt_eta0to0p7_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt8toInf");
+    MonitorElement *merespt_eta0p7to1_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt8toInf");
+    MonitorElement *merespt_eta1to1p2_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt8toInf");
+    MonitorElement *merespt_eta1p2to1p6_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt8toInf");
+    MonitorElement *merespt_eta1p6to2_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt8toInf");
+    MonitorElement *merespt_eta2to2p4_pt8toInf =
+        dbe->get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt8toInf");
 
     MonitorElement *mereseta_eta0to0p7 = dbe->get(topFolderName_ + "/ResolutionIngredients/reseta_eta0to0p7");
     MonitorElement *mereseta_eta0p7to1 = dbe->get(topFolderName_ + "/ResolutionIngredients/reseta_eta0p7to1");
@@ -176,10 +197,10 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
 
       // Book the new histogram to contain the results
       MonitorElement *me_effic_clus_endcaps = ibooker.book1D("StubEfficiencyEndcaps",
-                                                            "Stub Efficiency Endcaps",
-                                                            numerator->GetNbinsX(),
-                                                            numerator->GetXaxis()->GetXmin(),
-                                                            numerator->GetXaxis()->GetXmax());
+                                                             "Stub Efficiency Endcaps",
+                                                             numerator->GetNbinsX(),
+                                                             numerator->GetXaxis()->GetXmin(),
+                                                             numerator->GetXaxis()->GetXmax());
 
       // Calculate the efficiency
       me_effic_clus_endcaps->getTH1F()->Divide(numerator, denominator, 1., 1., "B");
@@ -205,10 +226,10 @@ void Phase2OTHarvestTrackingParticles::dqmEndJob(DQMStore::IBooker &ibooker, DQM
 
       // Book the new histogram to contain the results
       MonitorElement *me_effic_clus_zoom_endcaps = ibooker.book1D("StubEfficiencyZoomEndcaps",
-                                                                 "Stub Efficiency Zoom Endcaps",
-                                                                 numerator_zoom->GetNbinsX(),
-                                                                 numerator_zoom->GetXaxis()->GetXmin(),
-                                                                 numerator_zoom->GetXaxis()->GetXmax());
+                                                                  "Stub Efficiency Zoom Endcaps",
+                                                                  numerator_zoom->GetNbinsX(),
+                                                                  numerator_zoom->GetXaxis()->GetXmin(),
+                                                                  numerator_zoom->GetXaxis()->GetXmax());
 
       // Calculate the efficiency
       me_effic_clus_zoom_endcaps->getTH1F()->Divide(numerator_zoom, denominator_zoom, 1., 1., "B");

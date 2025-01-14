@@ -1,4 +1,4 @@
- -*- C++ -*-
+// -*- C++ -*-
 //
 /**\class SiOuterTracker Phase2OTValidateTTStub.cc
  Description: [one line class summary]
@@ -281,7 +281,7 @@ void Phase2OTValidateTTStub::analyze(const edm::Event& iEvent, const edm::EventS
       Stub_RZ->Fill(posStub.z(), posStub.perp());
     }
   }
-  
+
   // Loop over geometric detectors
   for (auto gd = tkGeom_->dets().begin(); gd != tkGeom_->dets().end(); gd++) {
     DetId detid = (*gd)->geographicalId();

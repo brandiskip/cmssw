@@ -66,6 +66,14 @@ public:
   MonitorElement *match_tp_VtxR = nullptr;     // numerator (also known as vxy)
   MonitorElement *match_tp_VtxZ = nullptr;     // numerator
 
+  // extended tracks pT and eta for efficiency plots
+  MonitorElement *match_ext_tp_pt = nullptr;       // numerator
+  MonitorElement *match_ext_tp_pt_zoom = nullptr;  // numerator
+  MonitorElement *match_ext_tp_eta = nullptr;      // numerator
+  MonitorElement *match_ext_tp_d0 = nullptr;       // numerator
+  MonitorElement *match_ext_tp_VtxR = nullptr;     // numerator (also known as vxy)
+  MonitorElement *match_ext_tp_VtxZ = nullptr;     // numerator
+
   // stub efficiency plots
   MonitorElement *gen_clusters_barrel = nullptr;                // denominator
   MonitorElement *gen_clusters_zoom_barrel = nullptr;           // denominator
@@ -573,6 +581,88 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
           respt_eta2to2p4_pt8toInf->Fill(pt_res);
       }
     }  //if MC TTTrack handle is valid
+
+    // ----------------------------------------------------------------------------------------------
+    // look for L1 extended tracks matched to the tracking particle  
+    int ext_tp_nMatch = 0;
+    int ext_track = -1;
+    float ext_chi2dof = 99999;
+
+    if (MCTruthTTTrackExtendedHandle.isValid()) {
+      std::vector<edm::Ptr<TTTrack<Ref_Phase2TrackerDigi_>>> matchedExtendedTracks =
+          MCTruthTTTrackExtendedHandle->findTTTrackPtrs(tp_ptr);
+
+      // Loop over matched extended L1 tracks
+      int extTrkCounter = 0;
+      for (const auto &thisTrack : matchedExtendedTracks) {
+        if (!MCTruthTTTrackExtendedHandle->isGenuine(thisTrack))
+            continue;
+
+        // Require L1 extended track to have >= L1Tk_minNStub stubs (if applicable)
+        int tmp_ext_trk_nStub = thisTrack->getStubRefs().size();
+        if (tmp_ext_trk_nStub < L1Tk_minNStub)
+            continue;
+
+        float ext_dmatch_pt = 999;
+        float ext_dmatch_eta = 999;
+        float ext_dmatch_phi = 999;
+        int ext_match_id = 999;
+
+        edm::Ptr<TrackingParticle> ext_my_tp = MCTruthTTTrackExtendedHandle->findTrackingParticlePtr(thisTrack);
+        ext_dmatch_pt = std::fabs(ext_my_tp->p4().pt() - tmp_tp_pt);
+        ext_dmatch_eta = std::fabs(ext_my_tp->p4().eta() - tmp_tp_eta);
+        ext_dmatch_phi = std::fabs(ext_my_tp->p4().phi() - tmp_tp_phi);
+        ext_match_id = ext_my_tp->pdgId();
+        float tmp_ext_trk_chi2dof = thisTrack->chi2Red();
+
+        // Ensure that the extended track is uniquely matched to the TP
+        if (ext_dmatch_pt < 0.1 && ext_dmatch_eta < 0.1 && ext_dmatch_phi < 0.1 && tmp_tp_pdgid == ext_match_id) {
+            ext_tp_nMatch++;  // Increment match counter
+            if (ext_track < 0 || tmp_ext_trk_chi2dof < ext_chi2dof) {
+                ext_track = extTrkCounter;       // Save index of the best-matched track
+                ext_chi2dof = tmp_ext_trk_chi2dof;  // Update best chi2/dof
+            }
+        }
+        extTrkCounter++;  // Increment track counter
+      }  // End loop over matched extended L1 tracks
+
+      if (ext_tp_nMatch < 1)
+        continue;
+      // Get information on the matched tracks
+      //float tmp_match_ext_trk_pt = -999;
+      //float tmp_match_ext_trk_eta = -999;
+      //float tmp_match_ext_trk_phi = -999;
+      //float tmp_match_ext_trk_VtxZ = -999;
+      float tmp_match_ext_trk_chi2dof = -999;
+      int tmp_match_ext_trk_nStub = -999;
+      //float tmp_match_ext_trk_d0 = -999;
+
+      //tmp_match_ext_trk_pt = matchedExtendedTracks[ext_track]->momentum().perp();
+      //tmp_match_ext_trk_eta = matchedExtendedTracks[ext_track]->momentum().eta();
+      //tmp_match_ext_trk_phi = matchedExtendedTracks[ext_track]->momentum().phi();
+      //tmp_match_ext_trk_VtxZ = matchedExtendedTracks[ext_track]->z0();
+      tmp_match_ext_trk_chi2dof = matchedExtendedTracks[ext_track]->chi2Red();
+      tmp_match_ext_trk_nStub = (int)matchedExtendedTracks[ext_track]->getStubRefs().size();
+
+      //for d0
+      //float tmp_match_ext_trk_x0 = matchedExtendedTracks[ext_track]->POCA().x();
+      //float tmp_match_ext_trk_y0 = matchedExtendedTracks[ext_track]->POCA().y();
+      //tmp_match_ext_trk_d0 = -tmp_match_ext_trk_x0 * sin(tmp_match_ext_trk_phi) + tmp_match_ext_trk_y0 * cos(tmp_match_ext_trk_phi);
+
+      //Add cuts for the matched tracks, numerator
+      if (tmp_match_ext_trk_nStub < L1Tk_minNStub || tmp_match_ext_trk_chi2dof > L1Tk_maxChi2dof)
+        return;
+
+      // fill matched track histograms (if passes all criteria)
+      match_ext_tp_pt->Fill(tmp_tp_pt);
+      if (tmp_tp_pt > 0 && tmp_tp_pt <= 10)
+          match_ext_tp_pt_zoom->Fill(tmp_tp_pt);
+      match_ext_tp_eta->Fill(tmp_tp_eta);
+      match_ext_tp_d0->Fill(tmp_tp_d0);
+      match_ext_tp_VtxR->Fill(tmp_tp_VtxR);
+      match_ext_tp_VtxZ->Fill(tmp_tp_VtxZ);
+
+    } // if MC TTTrack Extended handle is valid
   }  //end loop over tracking particles
 }  // end of method
 
@@ -1291,6 +1381,68 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
                                    psRes_d0.getParameter<double>("xmax"));
   resd0_eta2to2p4->setAxisTitle("d0_{trk} - d0_{tp} [cm]", 1);
   resd0_eta2to2p4->setAxisTitle("# tracking particles", 2);
+
+  // Histograms for extended tracks
+  iBooker.setCurrentFolder(topFolderName_ + "/Extended");
+  // Matched Extended TP's pt
+  HistoName = "match_ext_tp_pt";
+  match_ext_tp_pt = iBooker.book1D(HistoName,
+                                   HistoName,
+                                   psEffic_pt.getParameter<int32_t>("Nbinsx"),
+                                   psEffic_pt.getParameter<double>("xmin"),
+                                   psEffic_pt.getParameter<double>("xmax"));
+  match_ext_tp_pt->setAxisTitle("p_{T} [GeV]", 1);
+  match_ext_tp_pt->setAxisTitle("# matched extended tracking particles", 2);
+
+  // Matched Extended TP's pt zoom
+  HistoName = "match_ext_tp_pt_zoom";
+  match_ext_tp_pt_zoom = iBooker.book1D(HistoName,
+                                        HistoName,
+                                        psEffic_pt_zoom.getParameter<int32_t>("Nbinsx"),
+                                        psEffic_pt_zoom.getParameter<double>("xmin"),
+                                        psEffic_pt_zoom.getParameter<double>("xmax"));
+  match_ext_tp_pt_zoom->setAxisTitle("p_{T} [GeV]", 1);
+  match_ext_tp_pt_zoom->setAxisTitle("# matched extended tracking particles", 2);
+
+  // Matched Extended TP's eta
+  HistoName = "match_ext_tp_eta";
+  match_ext_tp_eta = iBooker.book1D(HistoName,
+                                    HistoName,
+                                    psEffic_eta.getParameter<int32_t>("Nbinsx"),
+                                    psEffic_eta.getParameter<double>("xmin"),
+                                    psEffic_eta.getParameter<double>("xmax"));
+  match_ext_tp_eta->setAxisTitle("#eta", 1);
+  match_ext_tp_eta->setAxisTitle("# matched extended tracking particles", 2);
+
+  // Matched Extended TP's d0
+  HistoName = "match_ext_tp_d0";
+  match_ext_tp_d0 = iBooker.book1D(HistoName,
+                                   HistoName,
+                                   psEffic_d0.getParameter<int32_t>("Nbinsx"),
+                                   psEffic_d0.getParameter<double>("xmin"),
+                                   psEffic_d0.getParameter<double>("xmax"));
+  match_ext_tp_d0->setAxisTitle("d_{0} [cm]", 1);
+  match_ext_tp_d0->setAxisTitle("# matched extended tracking particles", 2);
+
+  // Matched Extended TP's VtxR
+  HistoName = "match_ext_tp_VtxR";
+  match_ext_tp_VtxR = iBooker.book1D(HistoName,
+                                     HistoName,
+                                     psEffic_VtxR.getParameter<int32_t>("Nbinsx"),
+                                     psEffic_VtxR.getParameter<double>("xmin"),
+                                     psEffic_VtxR.getParameter<double>("xmax"));
+  match_ext_tp_VtxR->setAxisTitle("d_{xy} [cm]", 1);
+  match_ext_tp_VtxR->setAxisTitle("# matched extended tracking particles", 2);
+
+  // Matched Extended TP's VtxZ
+  HistoName = "match_ext_tp_VtxZ";
+  match_ext_tp_VtxZ = iBooker.book1D(HistoName,
+                                     HistoName,
+                                     psEffic_VtxZ.getParameter<int32_t>("Nbinsx"),
+                                     psEffic_VtxZ.getParameter<double>("xmin"),
+                                     psEffic_VtxZ.getParameter<double>("xmax"));
+  match_ext_tp_VtxZ->setAxisTitle("z_{0} [cm]", 1);
+  match_ext_tp_VtxZ->setAxisTitle("# matched extended tracking particles", 2);
 
 }  // end of method
 

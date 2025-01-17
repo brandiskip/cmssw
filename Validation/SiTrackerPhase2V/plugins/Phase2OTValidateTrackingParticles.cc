@@ -135,6 +135,8 @@ private:
       ttStubMCTruthToken_;  // MC truth association map for stubs
   edm::EDGetTokenT<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>>
       ttTrackMCTruthToken_;  // MC truth association map for tracks
+  edm::EDGetTokenT<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>> 
+      ttTrackMCTruthExtendedToken_; // MC truth association map for extended tracks
   edm::EDGetTokenT<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>> ttStubToken_;  // L1 Stub token
   edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> getTokenTrackerGeom_;     // Tracker geometry token
   int L1Tk_minNStub;
@@ -161,6 +163,8 @@ Phase2OTValidateTrackingParticles::Phase2OTValidateTrackingParticles(const edm::
       conf_.getParameter<edm::InputTag>("MCTruthClusterInputTag"));
   ttTrackMCTruthToken_ = consumes<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>>(
       conf_.getParameter<edm::InputTag>("MCTruthTrackInputTag"));
+  ttTrackMCTruthExtendedToken_ = consumes<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>>(
+      conf_.getParameter<edm::InputTag>("MCTruthTrackExtendedInputTag"));
   ttStubToken_ = consumes<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>>(
       edm::InputTag("TTStubsFromPhase2TrackerDigis", "StubAccepted"));
   getTokenTrackerGeom_ = esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>();
@@ -187,6 +191,8 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
   // Truth Association Maps
   edm::Handle<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTTrackHandle;
   iEvent.getByToken(ttTrackMCTruthToken_, MCTruthTTTrackHandle);
+  edm::Handle<TTTrackAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTTrackExtendedHandle;
+  iEvent.getByToken(ttTrackMCTruthExtendedToken_, MCTruthTTTrackExtendedHandle);
   edm::Handle<TTClusterAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTClusterHandle;
   iEvent.getByToken(ttClusterMCTruthToken_, MCTruthTTClusterHandle);
   edm::Handle<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> MCTruthTTStubHandle;
@@ -1402,6 +1408,7 @@ void Phase2OTValidateTrackingParticles::fillDescriptions(edm::ConfigurationDescr
   desc.add<edm::InputTag>("trackingParticleToken", edm::InputTag("mix", "MergedTrackTruth"));
   desc.add<edm::InputTag>("MCTruthStubInputTag", edm::InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"));
   desc.add<edm::InputTag>("MCTruthTrackInputTag", edm::InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks"));
+  desc.add<edm::InputTag>("MCTruthTrackExtendedInputTag", edm::InputTag("TTTrackAssociatorFromPixelDigisExtended", "Level1TTTracks"));
   desc.add<edm::InputTag>("MCTruthClusterInputTag",
                           edm::InputTag("TTClusterAssociatorFromPixelDigis", "ClusterInclusive"));
   desc.add<int>("L1Tk_minNStub", 4);

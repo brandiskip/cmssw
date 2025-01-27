@@ -74,6 +74,9 @@ public:
   MonitorElement *match_ext_tp_VtxR = nullptr;     // numerator (also known as vxy)
   MonitorElement *match_ext_tp_VtxZ = nullptr;     // numerator
 
+  MonitorElement *ext_d0_res_hist = nullptr;
+  MonitorElement *ext_VtxZ_res_hist = nullptr;
+
   // stub efficiency plots
   MonitorElement *gen_clusters_barrel = nullptr;                // denominator
   MonitorElement *gen_clusters_zoom_barrel = nullptr;           // denominator
@@ -631,23 +634,26 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
       // Get information on the matched tracks
       //float tmp_match_ext_trk_pt = -999;
       //float tmp_match_ext_trk_eta = -999;
-      //float tmp_match_ext_trk_phi = -999;
-      //float tmp_match_ext_trk_VtxZ = -999;
+      float tmp_match_ext_trk_phi = -999;
+      float tmp_match_ext_trk_VtxZ = -999;
       float tmp_match_ext_trk_chi2dof = -999;
       int tmp_match_ext_trk_nStub = -999;
-      //float tmp_match_ext_trk_d0 = -999;
+      float tmp_match_ext_trk_d0 = -999;
 
       //tmp_match_ext_trk_pt = matchedExtendedTracks[ext_track]->momentum().perp();
       //tmp_match_ext_trk_eta = matchedExtendedTracks[ext_track]->momentum().eta();
-      //tmp_match_ext_trk_phi = matchedExtendedTracks[ext_track]->momentum().phi();
-      //tmp_match_ext_trk_VtxZ = matchedExtendedTracks[ext_track]->z0();
+      tmp_match_ext_trk_phi = matchedExtendedTracks[ext_track]->momentum().phi();
+      tmp_match_ext_trk_VtxZ = matchedExtendedTracks[ext_track]->z0();
       tmp_match_ext_trk_chi2dof = matchedExtendedTracks[ext_track]->chi2Red();
       tmp_match_ext_trk_nStub = (int)matchedExtendedTracks[ext_track]->getStubRefs().size();
 
       //for d0
-      //float tmp_match_ext_trk_x0 = matchedExtendedTracks[ext_track]->POCA().x();
-      //float tmp_match_ext_trk_y0 = matchedExtendedTracks[ext_track]->POCA().y();
-      //tmp_match_ext_trk_d0 = -tmp_match_ext_trk_x0 * sin(tmp_match_ext_trk_phi) + tmp_match_ext_trk_y0 * cos(tmp_match_ext_trk_phi);
+      float tmp_match_ext_trk_x0 = matchedExtendedTracks[ext_track]->POCA().x();
+      float tmp_match_ext_trk_y0 = matchedExtendedTracks[ext_track]->POCA().y();
+      tmp_match_ext_trk_d0 = -tmp_match_ext_trk_x0 * sin(tmp_match_ext_trk_phi) + tmp_match_ext_trk_y0 * cos(tmp_match_ext_trk_phi);
+
+      float ext_d0_res = tmp_match_ext_trk_d0 - tmp_tp_d0;
+      float ext_VtxZ_res = tmp_match_ext_trk_VtxZ - tmp_tp_VtxZ;
 
       //Add cuts for the matched tracks, numerator
       if (tmp_match_ext_trk_nStub < L1Tk_minNStub || tmp_match_ext_trk_chi2dof > L1Tk_maxChi2dof)
@@ -661,6 +667,11 @@ void Phase2OTValidateTrackingParticles::analyze(const edm::Event &iEvent, const 
       match_ext_tp_d0->Fill(tmp_tp_d0);
       match_ext_tp_VtxR->Fill(tmp_tp_VtxR);
       match_ext_tp_VtxZ->Fill(tmp_tp_VtxZ);
+
+      // residual histogram filling
+      ext_d0_res_hist->Fill(ext_d0_res);
+      ext_VtxZ_res_hist->Fill(ext_VtxZ_res);
+
 
     } // if MC TTTrack Extended handle is valid
   }  //end loop over tracking particles
@@ -1444,6 +1455,28 @@ void Phase2OTValidateTrackingParticles::bookHistograms(DQMStore::IBooker &iBooke
   match_ext_tp_VtxZ->setAxisTitle("z_{0} [cm]", 1);
   match_ext_tp_VtxZ->setAxisTitle("# matched extended tracking particles", 2);
 
+  // Extended d0 res 
+  edm::ParameterSet psResExt_d0 = conf_.getParameter<edm::ParameterSet>("TH1ResExt_d0");
+  HistoName = "ext_d0_res";
+  ext_d0_res_hist = iBooker.book1D(HistoName,
+                                   HistoName,
+                                   psResExt_d0.getParameter<int32_t>("Nbinsx"),
+                                   psResExt_d0.getParameter<double>("xmin"),
+                                   psResExt_d0.getParameter<double>("xmax"));
+  ext_d0_res_hist->setAxisTitle("d0_{trk} - d0_{tp} [cm]", 1);
+  ext_d0_res_hist->setAxisTitle("# tracking particles", 2);
+
+  // Extended VtxZ res
+  edm::ParameterSet psResExt_VtxZ = conf_.getParameter<edm::ParameterSet>("TH1ResExt_VtxZ");
+  HistoName = "ext_VtxZ_res";
+  ext_VtxZ_res_hist = iBooker.book1D(HistoName,
+                                   HistoName,
+                                   psResExt_VtxZ.getParameter<int32_t>("Nbinsx"),
+                                   psResExt_VtxZ.getParameter<double>("xmin"),
+                                   psResExt_VtxZ.getParameter<double>("xmax"));
+  ext_VtxZ_res_hist->setAxisTitle("VtxZ_{trk} - VtxZ_{tp} [cm]", 1);
+  ext_VtxZ_res_hist->setAxisTitle("# tracking particles", 2);
+
 }  // end of method
 
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
@@ -1503,8 +1536,8 @@ void Phase2OTValidateTrackingParticles::fillDescriptions(edm::ConfigurationDescr
   {
     edm::ParameterSetDescription psd0;
     psd0.add<int>("Nbinsx", 50);
-    psd0.add<double>("xmax", 2);
-    psd0.add<double>("xmin", -2);
+    psd0.add<double>("xmax", 0.2);
+    psd0.add<double>("xmin", -0.2);
     desc.add<edm::ParameterSetDescription>("TH1Effic_d0", psd0);
   }
   {
@@ -1555,6 +1588,20 @@ void Phase2OTValidateTrackingParticles::fillDescriptions(edm::ConfigurationDescr
     psd0.add<double>("xmax", 0.05);
     psd0.add<double>("xmin", -0.05);
     desc.add<edm::ParameterSetDescription>("TH1Res_d0", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 100);
+    psd0.add<double>("xmax", 1);
+    psd0.add<double>("xmin", -1);
+    desc.add<edm::ParameterSetDescription>("TH1ResExt_d0", psd0);
+  }
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("Nbinsx", 300);
+    psd0.add<double>("xmax", 16);
+    psd0.add<double>("xmin", -16);
+    desc.add<edm::ParameterSetDescription>("TH1ResExt_VtxZ", psd0);
   }
   desc.add<std::string>("TopFolderName", "TrackerPhase2OTL1TrackV");
   desc.add<edm::InputTag>("trackingParticleToken", edm::InputTag("mix", "MergedTrackTruth"));

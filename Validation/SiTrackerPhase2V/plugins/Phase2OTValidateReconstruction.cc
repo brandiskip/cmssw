@@ -485,6 +485,7 @@ void Phase2OTValidateReconstruction::analyze(const edm::Event &iEvent, const edm
       res_ptRel->Fill(pt_res);
       res_eta->Fill(eta_res);
 
+      std::cout << "start fills" << std::endl;
       // Fill resolution plots for different abs(eta) bins:
       // (0, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
       float bins[7] = {0, 0.7, 1.0, 1.2, 1.6, 2.0, 2.4};
@@ -504,7 +505,7 @@ void Phase2OTValidateReconstruction::analyze(const edm::Event &iEvent, const edm
       	}
       }
     }  //if MC TTTrack handle is valid
-
+	std::cout << "end fills" << std::endl;
     // ----------------------------------------------------------------------------------------------
     // look for L1 extended tracks matched to the tracking particle  
     int ext_tp_nMatch = 0;
@@ -882,6 +883,8 @@ void Phase2OTValidateReconstruction::bookHistograms(DQMStore::IBooker &iBooker,
   res_ptRel->setAxisTitle("Relative p_{T} [GeV]", 1);
   res_ptRel->setAxisTitle("# tracking particles", 2);
 
+  std::cout << "my books" << std::endl;
+
   std::string ranges[6] = {"eta0to0p7", "eta0p7to1", "eta1to1p2", "eta1p2to1p6", "eta1p6to2", "eta2to2p4"};
   for (int i=0; i < 5; i++) {
 
@@ -960,7 +963,7 @@ void Phase2OTValidateReconstruction::bookHistograms(DQMStore::IBooker &iBooker,
   	resd0_vect[i]->setAxisTitle("# tracking particles", 2);
 
   }
-
+  std::cout << "end my books" << std::endl;
   // Histograms for extended tracks
   iBooker.setCurrentFolder(topFolderName_ + "/Extended");
   // Matched Extended TP's pt

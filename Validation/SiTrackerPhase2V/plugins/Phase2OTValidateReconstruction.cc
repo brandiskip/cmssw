@@ -882,7 +882,7 @@ void Phase2OTValidateReconstruction::bookHistograms(DQMStore::IBooker &iBooker,
   res_ptRel->setAxisTitle("Relative p_{T} [GeV]", 1);
   res_ptRel->setAxisTitle("# tracking particles", 2);
 
-  std::string ranges[5] = {"eta0to0p7", "eta0p7to1", "eta1to1p2", "eta1p2to1p6", "eta1p6to2", "eta2to2p4"};
+  std::string ranges[6] = {"eta0to0p7", "eta0p7to1", "eta1to1p2", "eta1p2to1p6", "eta1p6to2", "eta2to2p4"};
   for (int i=0; i < 5; i++) {
 
     // Eta parts (for resolution)

@@ -92,19 +92,19 @@ public:
   MonitorElement *res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
 
-  MonitorElement *respt_pt2to3[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt2to3;
 
-  MonitorElement *respt_pt3to8[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt3to8;
 
-  MonitorElement *respt_pt8toInf[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt8toInf;
 
-  MonitorElement *reseta_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> reseta_vect;
 
-  MonitorElement *resphi_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> resphi_vect;
 
-  MonitorElement *resVtxZ_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> resVtxZ_vect;
   // For d0
-  MonitorElement *resd0_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> resd0_vect;
 
 
 private:
@@ -185,6 +185,24 @@ void Phase2OTValidateReconstruction::analyze(const edm::Event &iEvent, const edm
   // Geometries
   const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
   const TrackerGeometry *theTrackerGeom = &iSetup.getData(getTokenTrackerGeom_);
+
+  // Clear existing histograms
+  respt_pt2to3.clear();
+  respt_pt3to8.clear();
+  respt_pt8toInf.clear();
+  reseta_vect.clear();
+  resphi_vect.clear();
+  resVtxZ_vect.clear();
+  resd0_vect.clear();
+
+  // Resize vectors and set elements to nullptr
+  respt_pt2to3.resize(6, nullptr);
+  respt_pt3to8.resize(6, nullptr);
+  respt_pt8toInf.resize(6, nullptr);
+  reseta_vect.resize(6, nullptr);
+  resphi_vect.resize(6, nullptr);
+  resVtxZ_vect.resize(6, nullptr);
+  resd0_vect.resize(6, nullptr);
 
   // Loop over tracking particles
   int this_tp = 0;

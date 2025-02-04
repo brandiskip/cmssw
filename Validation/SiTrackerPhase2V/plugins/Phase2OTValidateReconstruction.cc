@@ -46,6 +46,7 @@ public:
   ~Phase2OTValidateReconstruction() override;
   void analyze(const edm::Event &, const edm::EventSetup &) override;
   void bookHistograms(DQMStore::IBooker &, edm::Run const &, edm::EventSetup const &) override;
+  void dqmBeginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) override;
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
   // Tracking particle distributions
   MonitorElement *trackParts_Eta = nullptr;
@@ -161,7 +162,26 @@ Phase2OTValidateReconstruction::Phase2OTValidateReconstruction(const edm::Parame
 }
 
 Phase2OTValidateReconstruction::~Phase2OTValidateReconstruction() = default;
+void Phase2OTValidateReconstruction::dqmBeginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
 
+  // Clear existing histograms
+  respt_pt2to3.clear();
+  respt_pt3to8.clear();
+  respt_pt8toInf.clear();
+  reseta_vect.clear();
+  resphi_vect.clear();
+  resVtxZ_vect.clear();
+  resd0_vect.clear();
+
+  // Resize vectors and set elements to nullptr
+  respt_pt2to3.resize(6, nullptr);
+  respt_pt3to8.resize(6, nullptr);
+  respt_pt8toInf.resize(6, nullptr);
+  reseta_vect.resize(6, nullptr);
+  resphi_vect.resize(6, nullptr);
+  resVtxZ_vect.resize(6, nullptr);
+  resd0_vect.resize(6, nullptr);
+  }
 // member functions
 
 // ------------ method called for each event  ------------
@@ -185,24 +205,6 @@ void Phase2OTValidateReconstruction::analyze(const edm::Event &iEvent, const edm
   // Geometries
   const TrackerTopology *const tTopo = &iSetup.getData(m_topoToken);
   const TrackerGeometry *theTrackerGeom = &iSetup.getData(getTokenTrackerGeom_);
-
-  // Clear existing histograms
-  respt_pt2to3.clear();
-  respt_pt3to8.clear();
-  respt_pt8toInf.clear();
-  reseta_vect.clear();
-  resphi_vect.clear();
-  resVtxZ_vect.clear();
-  resd0_vect.clear();
-
-  // Resize vectors and set elements to nullptr
-  respt_pt2to3.resize(6, nullptr);
-  respt_pt3to8.resize(6, nullptr);
-  respt_pt8toInf.resize(6, nullptr);
-  reseta_vect.resize(6, nullptr);
-  resphi_vect.resize(6, nullptr);
-  resVtxZ_vect.resize(6, nullptr);
-  resd0_vect.resize(6, nullptr);
 
   // Loop over tracking particles
   int this_tp = 0;

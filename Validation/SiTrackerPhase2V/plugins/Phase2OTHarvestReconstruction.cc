@@ -87,7 +87,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
   std::vector<MonitorElement*> meresVtxZ_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
   std::vector<MonitorElement*> meresd0_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
-  for (int i=0; i<5; i++){
+  for (int i=0; i<6; i++){
     respt_pt2to3[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/respt_" + eta_ranges[i] + "_pt2to3");
     respt_pt3to8[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/respt_" + eta_ranges[i] + "_pt3to8");
     respt_pt8toInf[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/respt_" + eta_ranges[i] + "_pt8toInf");

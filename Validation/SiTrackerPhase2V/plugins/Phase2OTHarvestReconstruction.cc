@@ -23,6 +23,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
+#include <algorithm>
 
 class Phase2OTHarvestReconstruction : public DQMEDHarvester {
 public:
@@ -76,70 +77,25 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
   MonitorElement *meN_VtxZ = igetter.get(topFolderName_ + "/EfficiencyIngredients/match_tp_VtxZ");
   MonitorElement *meD_VtxZ = igetter.get(topFolderName_ + "/EfficiencyIngredients/tp_VtxZ");
 
-  MonitorElement *merespt_eta0to0p7_pt2to3 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt2to3");
-  MonitorElement *merespt_eta0p7to1_pt2to3 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt2to3");
-  MonitorElement *merespt_eta1to1p2_pt2to3 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt2to3");
-  MonitorElement *merespt_eta1p2to1p6_pt2to3 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt2to3");
-  MonitorElement *merespt_eta1p6to2_pt2to3 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt2to3");
-  MonitorElement *merespt_eta2to2p4_pt2to3 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt2to3");
-  MonitorElement *merespt_eta0to0p7_pt3to8 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt3to8");
-  MonitorElement *merespt_eta0p7to1_pt3to8 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt3to8");
-  MonitorElement *merespt_eta1to1p2_pt3to8 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt3to8");
-  MonitorElement *merespt_eta1p2to1p6_pt3to8 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt3to8");
-  MonitorElement *merespt_eta1p6to2_pt3to8 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt3to8");
-  MonitorElement *merespt_eta2to2p4_pt3to8 =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt3to8");
-  MonitorElement *merespt_eta0to0p7_pt8toInf =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta0to0p7_pt8toInf");
-  MonitorElement *merespt_eta0p7to1_pt8toInf =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta0p7to1_pt8toInf");
-  MonitorElement *merespt_eta1to1p2_pt8toInf =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1to1p2_pt8toInf");
-  MonitorElement *merespt_eta1p2to1p6_pt8toInf =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1p2to1p6_pt8toInf");
-  MonitorElement *merespt_eta1p6to2_pt8toInf =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta1p6to2_pt8toInf");
-  MonitorElement *merespt_eta2to2p4_pt8toInf =
-      igetter.get(topFolderName_ + "/ResolutionIngredients/respt_eta2to2p4_pt8toInf");
+  std::string eta_ranges[6] = {"eta0to0p7", "eta0p7to1", "eta1to1p2", "eta1p2to1p6", "eta1p6to2", "eta2to2p4"};
 
-  MonitorElement *mereseta_eta0to0p7 = igetter.get(topFolderName_ + "/ResolutionIngredients/reseta_eta0to0p7");
-  MonitorElement *mereseta_eta0p7to1 = igetter.get(topFolderName_ + "/ResolutionIngredients/reseta_eta0p7to1");
-  MonitorElement *mereseta_eta1to1p2 = igetter.get(topFolderName_ + "/ResolutionIngredients/reseta_eta1to1p2");
-  MonitorElement *mereseta_eta1p2to1p6 = igetter.get(topFolderName_ + "/ResolutionIngredients/reseta_eta1p2to1p6");
-  MonitorElement *mereseta_eta1p6to2 = igetter.get(topFolderName_ + "/ResolutionIngredients/reseta_eta1p6to2");
-  MonitorElement *mereseta_eta2to2p4 = igetter.get(topFolderName_ + "/ResolutionIngredients/reseta_eta2to2p4");
+  std::vector<MonitorElement*> respt_pt2to3 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt3to8 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt8toInf = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> mereseta_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> meresphi_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> meresVtxZ_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> meresd0_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
-  MonitorElement *meresphi_eta0to0p7 = igetter.get(topFolderName_ + "/ResolutionIngredients/resphi_eta0to0p7");
-  MonitorElement *meresphi_eta0p7to1 = igetter.get(topFolderName_ + "/ResolutionIngredients/resphi_eta0p7to1");
-  MonitorElement *meresphi_eta1to1p2 = igetter.get(topFolderName_ + "/ResolutionIngredients/resphi_eta1to1p2");
-  MonitorElement *meresphi_eta1p2to1p6 = igetter.get(topFolderName_ + "/ResolutionIngredients/resphi_eta1p2to1p6");
-  MonitorElement *meresphi_eta1p6to2 = igetter.get(topFolderName_ + "/ResolutionIngredients/resphi_eta1p6to2");
-  MonitorElement *meresphi_eta2to2p4 = igetter.get(topFolderName_ + "/ResolutionIngredients/resphi_eta2to2p4");
-
-  MonitorElement *meresVtxZ_eta0to0p7 = igetter.get(topFolderName_ + "/ResolutionIngredients/resVtxZ_eta0to0p7");
-  MonitorElement *meresVtxZ_eta0p7to1 = igetter.get(topFolderName_ + "/ResolutionIngredients/resVtxZ_eta0p7to1");
-  MonitorElement *meresVtxZ_eta1to1p2 = igetter.get(topFolderName_ + "/ResolutionIngredients/resVtxZ_eta1to1p2");
-  MonitorElement *meresVtxZ_eta1p2to1p6 = igetter.get(topFolderName_ + "/ResolutionIngredients/resVtxZ_eta1p2to1p6");
-  MonitorElement *meresVtxZ_eta1p6to2 = igetter.get(topFolderName_ + "/ResolutionIngredients/resVtxZ_eta1p6to2");
-  MonitorElement *meresVtxZ_eta2to2p4 = igetter.get(topFolderName_ + "/ResolutionIngredients/resVtxZ_eta2to2p4");
-
-  MonitorElement *meresd0_eta0to0p7 = igetter.get(topFolderName_ + "/ResolutionIngredients/resd0_eta0to0p7");
-  MonitorElement *meresd0_eta0p7to1 = igetter.get(topFolderName_ + "/ResolutionIngredients/resd0_eta0p7to1");
-  MonitorElement *meresd0_eta1to1p2 = igetter.get(topFolderName_ + "/ResolutionIngredients/resd0_eta1to1p2");
-  MonitorElement *meresd0_eta1p2to1p6 = igetter.get(topFolderName_ + "/ResolutionIngredients/resd0_eta1p2to1p6");
-  MonitorElement *meresd0_eta1p6to2 = igetter.get(topFolderName_ + "/ResolutionIngredients/resd0_eta1p6to2");
-  MonitorElement *meresd0_eta2to2p4 = igetter.get(topFolderName_ + "/ResolutionIngredients/resd0_eta2to2p4");
+  for (int i=0; i<6; i++){
+    respt_pt2to3[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/respt_" + eta_ranges[i] + "_pt2to3");
+    respt_pt3to8[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/respt_" + eta_ranges[i] + "_pt3to8");
+    respt_pt8toInf[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/respt_" + eta_ranges[i] + "_pt8toInf");
+    mereseta_vect[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/reseta_" + eta_ranges[i]);
+    meresphi_vect[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/resphi_" + eta_ranges[i]);
+    meresVtxZ_vect[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/resVtxZ_" + eta_ranges[i]);
+    meresd0_vect[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/resd0_" + eta_ranges[i]);
+  }
 
   if (meN_clus_barrel && meD_clus_barrel) {
     // Get the numerator and denominator histograms
@@ -431,18 +387,15 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for VtxZ efficiency cannot be found!\n";
   }
 
-  if (merespt_eta0to0p7_pt2to3 && merespt_eta0p7to1_pt2to3 && merespt_eta1to1p2_pt2to3 && merespt_eta1p2to1p6_pt2to3 &&
-      merespt_eta1p6to2_pt2to3 && merespt_eta2to2p4_pt2to3) {
+  if (std::find(respt_pt2to3.begin(), respt_pt2to3.end(), nullptr)==respt_pt2to3.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
     // Grab the histograms
-    TH1F *resPt1a = merespt_eta0to0p7_pt2to3->getTH1F();
-    TH1F *resPt2a = merespt_eta0p7to1_pt2to3->getTH1F();
-    TH1F *resPt3a = merespt_eta1to1p2_pt2to3->getTH1F();
-    TH1F *resPt4a = merespt_eta1p2to1p6_pt2to3->getTH1F();
-    TH1F *resPt5a = merespt_eta1p6to2_pt2to3->getTH1F();
-    TH1F *resPt6a = merespt_eta2to2p4_pt2to3->getTH1F();
+    std::vector<TH1F *> vResPt1 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int i=0; i<6; i++){
+      vResPt1[i] = respt_pt2to3[i]->getTH1F();
+    }
 
     // Book the new histogram to contain the results
     MonitorElement *me_res_pt1 =
@@ -453,7 +406,6 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     resPt1->SetMinimum(0.0);
     resPt1->SetStats(false);
 
-    std::vector<TH1F *> vResPt1 = {resPt1a, resPt2a, resPt3a, resPt4a, resPt5a, resPt6a};
     for (int i = 0; i < 6; i++) {
       resPt1->SetBinContent(i + 1, vResPt1[i]->GetStdDev());
       resPt1->SetBinError(i + 1, vResPt1[i]->GetStdDevError());
@@ -463,18 +415,15 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for pT resolution (2-3) cannot be found!\n";
   }
 
-  if (merespt_eta0to0p7_pt3to8 && merespt_eta0p7to1_pt3to8 && merespt_eta1to1p2_pt3to8 && merespt_eta1p2to1p6_pt3to8 &&
-      merespt_eta1p6to2_pt3to8 && merespt_eta2to2p4_pt3to8) {
+  if (std::find(respt_pt3to8.begin(), respt_pt3to8.end(), nullptr)==respt_pt3to8.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
     // Grab the histograms
-    TH1F *resPt1b = merespt_eta0to0p7_pt3to8->getTH1F();
-    TH1F *resPt2b = merespt_eta0p7to1_pt3to8->getTH1F();
-    TH1F *resPt3b = merespt_eta1to1p2_pt3to8->getTH1F();
-    TH1F *resPt4b = merespt_eta1p2to1p6_pt3to8->getTH1F();
-    TH1F *resPt5b = merespt_eta1p6to2_pt3to8->getTH1F();
-    TH1F *resPt6b = merespt_eta2to2p4_pt3to8->getTH1F();
+    std::vector<TH1F *> vResPt2 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int i=0; i<6; i++){
+      vResPt2[i] = respt_pt3to8[i]->getTH1F();
+    }
 
     // Book the new histogram to contain the results
     MonitorElement *me_res_pt2 =
@@ -485,7 +434,6 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     resPt2->SetMinimum(0.0);
     resPt2->SetStats(false);
 
-    std::vector<TH1F *> vResPt2 = {resPt1b, resPt2b, resPt3b, resPt4b, resPt5b, resPt6b};
     for (int i = 0; i < 6; i++) {
       resPt2->SetBinContent(i + 1, vResPt2[i]->GetStdDev());
       resPt2->SetBinError(i + 1, vResPt2[i]->GetStdDevError());
@@ -495,18 +443,15 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for pT resolution (3-8) cannot be found!\n";
   }
 
-  if (merespt_eta0to0p7_pt8toInf && merespt_eta0p7to1_pt8toInf && merespt_eta1to1p2_pt8toInf &&
-      merespt_eta1p2to1p6_pt8toInf && merespt_eta1p6to2_pt8toInf && merespt_eta2to2p4_pt8toInf) {
+  if (std::find(respt_pt8toInf.begin(), respt_pt8toInf.end(), nullptr)==respt_pt8toInf.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
     // Grab the histograms
-    TH1F *resPt1c = merespt_eta0to0p7_pt8toInf->getTH1F();
-    TH1F *resPt2c = merespt_eta0p7to1_pt8toInf->getTH1F();
-    TH1F *resPt3c = merespt_eta1to1p2_pt8toInf->getTH1F();
-    TH1F *resPt4c = merespt_eta1p2to1p6_pt8toInf->getTH1F();
-    TH1F *resPt5c = merespt_eta1p6to2_pt8toInf->getTH1F();
-    TH1F *resPt6c = merespt_eta2to2p4_pt8toInf->getTH1F();
+    std::vector<TH1F *> vResPt3 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int i=0; i<6; i++){
+      vResPt3[i] = respt_pt8toInf[i]->getTH1F();
+    }
 
     // Book the new histogram to contain the results
     MonitorElement *me_res_pt3 =
@@ -517,7 +462,6 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     resPt3->SetMinimum(0.0);
     resPt3->SetStats(false);
 
-    std::vector<TH1F *> vResPt3 = {resPt1c, resPt2c, resPt3c, resPt4c, resPt5c, resPt6c};
     for (int i = 0; i < 6; i++) {
       resPt3->SetBinContent(i + 1, vResPt3[i]->GetStdDev());
       resPt3->SetBinError(i + 1, vResPt3[i]->GetStdDevError());
@@ -527,18 +471,15 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for pT resolution (8-inf) cannot be found!\n";
   }
 
-  if (mereseta_eta0to0p7 && mereseta_eta0p7to1 && mereseta_eta1to1p2 && mereseta_eta1p2to1p6 && mereseta_eta1p6to2 &&
-      mereseta_eta2to2p4) {
+  if (std::find(mereseta_vect.begin(), mereseta_vect.end(), nullptr)==mereseta_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
     // Grab the histograms
-    TH1F *resEta1 = mereseta_eta0to0p7->getTH1F();
-    TH1F *resEta2 = mereseta_eta0p7to1->getTH1F();
-    TH1F *resEta3 = mereseta_eta1to1p2->getTH1F();
-    TH1F *resEta4 = mereseta_eta1p2to1p6->getTH1F();
-    TH1F *resEta5 = mereseta_eta1p6to2->getTH1F();
-    TH1F *resEta6 = mereseta_eta2to2p4->getTH1F();
+    std::vector<TH1F *> vResEta = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int i=0; i<6; i++){
+      vResEta[i] = mereseta_vect[i]->getTH1F();
+    }
 
     // Book the new histogram to contain the results
     MonitorElement *me_res_eta = ibooker.book1D("EtaResolution", "#eta resolution vs |#eta|", eta_binnum, eta_bins);
@@ -548,7 +489,6 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     resEta->SetMinimum(0.0);
     resEta->SetStats(false);
 
-    std::vector<TH1F *> vResEta = {resEta1, resEta2, resEta3, resEta4, resEta5, resEta6};
     for (int i = 0; i < 6; i++) {
       resEta->SetBinContent(i + 1, vResEta[i]->GetStdDev());
       resEta->SetBinError(i + 1, vResEta[i]->GetStdDevError());
@@ -558,18 +498,15 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for eta resolution cannot be found!\n";
   }
 
-  if (meresphi_eta0to0p7 && meresphi_eta0p7to1 && meresphi_eta1to1p2 && meresphi_eta1p2to1p6 && meresphi_eta1p6to2 &&
-      meresphi_eta2to2p4) {
+  if (std::find(meresphi_vect.begin(), meresphi_vect.end(), nullptr)==meresphi_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
     // Grab the histograms
-    TH1F *resPhi1 = meresphi_eta0to0p7->getTH1F();
-    TH1F *resPhi2 = meresphi_eta0p7to1->getTH1F();
-    TH1F *resPhi3 = meresphi_eta1to1p2->getTH1F();
-    TH1F *resPhi4 = meresphi_eta1p2to1p6->getTH1F();
-    TH1F *resPhi5 = meresphi_eta1p6to2->getTH1F();
-    TH1F *resPhi6 = meresphi_eta2to2p4->getTH1F();
+    std::vector<TH1F *> vResPhi = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int i=0; i<6; i++){
+      vResPhi[i] = meresphi_vect[i]->getTH1F();
+    }
 
     // Book the new histogram to contain the results
     MonitorElement *me_res_phi = ibooker.book1D("PhiResolution", "#phi resolution vs |#eta|", eta_binnum, eta_bins);
@@ -579,7 +516,6 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     resPhi->SetMinimum(0.0);
     resPhi->SetStats(false);
 
-    std::vector<TH1F *> vResPhi = {resPhi1, resPhi2, resPhi3, resPhi4, resPhi5, resPhi6};
     for (int i = 0; i < 6; i++) {
       resPhi->SetBinContent(i + 1, vResPhi[i]->GetStdDev());
       resPhi->SetBinError(i + 1, vResPhi[i]->GetStdDevError());
@@ -589,18 +525,15 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for phi resolution cannot be found!\n";
   }
 
-  if (meresVtxZ_eta0to0p7 && meresVtxZ_eta0p7to1 && meresVtxZ_eta1to1p2 && meresVtxZ_eta1p2to1p6 &&
-      meresVtxZ_eta1p6to2 && meresVtxZ_eta2to2p4) {
+  if (std::find(meresVtxZ_vect.begin(), meresVtxZ_vect.end(), nullptr)==meresVtxZ_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
     // Grab the histograms
-    TH1F *resVtxZ_1 = meresVtxZ_eta0to0p7->getTH1F();
-    TH1F *resVtxZ_2 = meresVtxZ_eta0p7to1->getTH1F();
-    TH1F *resVtxZ_3 = meresVtxZ_eta1to1p2->getTH1F();
-    TH1F *resVtxZ_4 = meresVtxZ_eta1p2to1p6->getTH1F();
-    TH1F *resVtxZ_5 = meresVtxZ_eta1p6to2->getTH1F();
-    TH1F *resVtxZ_6 = meresVtxZ_eta2to2p4->getTH1F();
+    std::vector<TH1F *> vResVtxZ = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int i=0; i<6; i++){
+      vResVtxZ[i] = meresVtxZ_vect[i]->getTH1F();
+    }
 
     // Book the new histogram to contain the results
     MonitorElement *me_res_VtxZ = ibooker.book1D("VtxZResolution", "VtxZ resolution vs |#eta|", eta_binnum, eta_bins);
@@ -610,7 +543,6 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     resVtxZ->SetMinimum(0.0);
     resVtxZ->SetStats(false);
 
-    std::vector<TH1F *> vResVtxZ = {resVtxZ_1, resVtxZ_2, resVtxZ_3, resVtxZ_4, resVtxZ_5, resVtxZ_6};
     for (int i = 0; i < 6; i++) {
       resVtxZ->SetBinContent(i + 1, vResVtxZ[i]->GetStdDev());
       resVtxZ->SetBinError(i + 1, vResVtxZ[i]->GetStdDevError());
@@ -620,18 +552,15 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for VtxZ resolution cannot be found!\n";
   }
 
-  if (meresd0_eta0to0p7 && meresd0_eta0p7to1 && meresd0_eta1to1p2 && meresd0_eta1p2to1p6 && meresd0_eta1p6to2 &&
-      meresd0_eta2to2p4) {
+  if (std::find(meresd0_vect.begin(), meresd0_vect.end(), nullptr)==meresd0_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
     // Grab the histograms
-    TH1F *resd0_1 = meresd0_eta0to0p7->getTH1F();
-    TH1F *resd0_2 = meresd0_eta0p7to1->getTH1F();
-    TH1F *resd0_3 = meresd0_eta1to1p2->getTH1F();
-    TH1F *resd0_4 = meresd0_eta1p2to1p6->getTH1F();
-    TH1F *resd0_5 = meresd0_eta1p6to2->getTH1F();
-    TH1F *resd0_6 = meresd0_eta2to2p4->getTH1F();
+    std::vector<TH1F *> vResD0 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    for (int i=0; i<6; i++){
+      vResD0[i] = meresd0_vect[i]->getTH1F();
+    }
 
     // Book the new histogram to contain the results
     MonitorElement *me_res_d0 = ibooker.book1D("d0Resolution", "d_{0} resolution vs |#eta|", eta_binnum, eta_bins);
@@ -641,7 +570,6 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     resd0->SetMinimum(0.0);
     resd0->SetStats(false);
 
-    std::vector<TH1F *> vResD0 = {resd0_1, resd0_2, resd0_3, resd0_4, resd0_5, resd0_6};
     for (int i = 0; i < 6; i++) {
       resd0->SetBinContent(i + 1, vResD0[i]->GetStdDev());
       resd0->SetBinError(i + 1, vResD0[i]->GetStdDevError());

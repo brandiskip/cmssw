@@ -79,13 +79,13 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
 
   std::string eta_ranges[6] = {"eta0to0p7", "eta0p7to1", "eta1to1p2", "eta1p2to1p6", "eta1p6to2", "eta2to2p4"};
 
-  MonitorElement* respt_pt2to3[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-  MonitorElement* respt_pt3to8[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-  MonitorElement* respt_pt8toInf[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-  MonitorElement* mereseta_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-  MonitorElement* meresphi_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-  MonitorElement* meresVtxZ_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-  MonitorElement* meresd0_vect[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt2to3 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt3to8 = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> respt_pt8toInf = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> mereseta_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> meresphi_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> meresVtxZ_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+  std::vector<MonitorElement*> meresd0_vect = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
   for (int i=0; i<5; i++){
     respt_pt2to3[i] = igetter.get(topFolderName_ + "/ResolutionIngredients/respt_" + eta_ranges[i] + "_pt2to3");
@@ -387,7 +387,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for VtxZ efficiency cannot be found!\n";
   }
 
-  if (std::find(respt_pt2to3.begin(), respt_pt2to3.end(), nullptr)=respt_pt2to3.end()) {
+  if (std::find(respt_pt2to3.begin(), respt_pt2to3.end(), nullptr)==respt_pt2to3.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
@@ -415,7 +415,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for pT resolution (2-3) cannot be found!\n";
   }
 
-  if (std::find(respt_pt3to8.begin(), respt_pt3to8.end(), nullptr)=respt_pt3to8.end()) {
+  if (std::find(respt_pt3to8.begin(), respt_pt3to8.end(), nullptr)==respt_pt3to8.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
@@ -443,7 +443,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for pT resolution (3-8) cannot be found!\n";
   }
 
-  if (std::find(respt_pt8toInf.begin(), respt_pt8toInf.end(), nullptr)=respt_pt8toInf.end()) {
+  if (std::find(respt_pt8toInf.begin(), respt_pt8toInf.end(), nullptr)==respt_pt8toInf.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
@@ -471,7 +471,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for pT resolution (8-inf) cannot be found!\n";
   }
 
-  if (std::find(mereseta_vect.begin(), mereseta_vect.end(), nullptr)=mereseta_vect.end()) {
+  if (std::find(mereseta_vect.begin(), mereseta_vect.end(), nullptr)==mereseta_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
@@ -498,7 +498,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for eta resolution cannot be found!\n";
   }
 
-  if (std::find(meresphi_vect.begin(), meresphi_vect.end(), nullptr)=meresphi_vect.end()) {
+  if (std::find(meresphi_vect.begin(), meresphi_vect.end(), nullptr)==meresphi_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
@@ -525,7 +525,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for phi resolution cannot be found!\n";
   }
 
-  if (std::find(meresVtxZ_vect.begin(), meresVtxZ_vect.end(), nullptr)=meresVtxZ_vect.end()) {
+  if (std::find(meresVtxZ_vect.begin(), meresVtxZ_vect.end(), nullptr)==meresVtxZ_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 
@@ -552,7 +552,7 @@ void Phase2OTHarvestReconstruction::dqmEndJob(DQMStore::IBooker &ibooker, DQMSto
     edm::LogWarning("DataNotFound") << "Monitor elements for VtxZ resolution cannot be found!\n";
   }
 
-  if (std::find(meresd0_vect.begin(), meresd0_vect.end(), nullptr)=meresd0_vect.end()) {
+  if (std::find(meresd0_vect.begin(), meresd0_vect.end(), nullptr)==meresd0_vect.end()) {
     // Set the current directoy
     igetter.setCurrentFolder(topFolderName_ + "/FinalResolution");
 

@@ -509,11 +509,11 @@ void Phase2OTValidateReconstruction::analyze(const edm::Event &iEvent, const edm
       // (0, 0.7), (0.7, 1.0), (1.0, 1.2), (1.2, 1.6), (1.6, 2.0), (2.0, 2.4)
       float bins[7] = {0, 0.7, 1.0, 1.2, 1.6, 2.0, 2.4};
       for (int i=0; i<6; i++){
-      	if (std::fabs(tmp_tp_eta) >= bins[i] && std::fabs(tmp_tp_eta) < bins[i+1]) {
-        	reseta_vect[i]->Fill(eta_res);
-        	resphi_vect[i]->Fill(phi_res);
-        	resVtxZ_vect[i]->Fill(VtxZ_res);
-        	resd0_vect[i]->Fill(d0_res);
+        if (std::fabs(tmp_tp_eta) >= bins[i] && std::fabs(tmp_tp_eta) < bins[i+1]) {
+          reseta_vect[i]->Fill(eta_res);
+          resphi_vect[i]->Fill(phi_res);
+          resVtxZ_vect[i]->Fill(VtxZ_res);
+          resd0_vect[i]->Fill(d0_res);
 
         if (tmp_tp_pt >= 2 && tmp_tp_pt < 3)
           respt_pt2to3[i]->Fill(pt_res);
@@ -521,7 +521,7 @@ void Phase2OTValidateReconstruction::analyze(const edm::Event &iEvent, const edm
           respt_pt3to8[i]->Fill(pt_res);
         else if (tmp_tp_pt >= 8)
           respt_pt8toInf[i]->Fill(pt_res);
-      	break;
+        break;
         }
       }
     }  //if MC TTTrack handle is valid
@@ -913,19 +913,19 @@ void Phase2OTValidateReconstruction::bookHistograms(DQMStore::IBooker &iBooker,
                                     psRes_eta.getParameter<int32_t>("Nbinsx"),
                                     psRes_eta.getParameter<double>("xmin"),
                                     psRes_eta.getParameter<double>("xmax"));
-  	reseta_vect[i]->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
-  	reseta_vect[i]->setAxisTitle("# tracking particles", 2);
+    reseta_vect[i]->setAxisTitle("#eta_{trk} - #eta_{tp}", 1);
+    reseta_vect[i]->setAxisTitle("# tracking particles", 2);
 
     // pT parts for resolution (pT res vs eta)
-  	// pT a (2 to 3 GeV)
+    // pT a (2 to 3 GeV)
     HistoName = "reseta_" + ranges[i] + "_pt2to3";
     respt_pt2to3[i] = iBooker.book1D(HistoName,
                                      HistoName,
                                      psRes_pt.getParameter<int32_t>("Nbinsx"),
                                      psRes_pt.getParameter<double>("xmin"),
                                      psRes_pt.getParameter<double>("xmax"));
-  	respt_pt2to3[i]->setAxisTitle("(p_{T}(trk) - p_{T}(tp))/p_{T}(tp)", 1);
-  	respt_pt2to3[i]->setAxisTitle("# tracking particles", 2);
+    respt_pt2to3[i]->setAxisTitle("(p_{T}(trk) - p_{T}(tp))/p_{T}(tp)", 1);
+    respt_pt2to3[i]->setAxisTitle("# tracking particles", 2);
 
     // pT b (3 to 8 GeV)
     HistoName = "reseta_" + ranges[i] + "_pt3to8";
@@ -934,51 +934,51 @@ void Phase2OTValidateReconstruction::bookHistograms(DQMStore::IBooker &iBooker,
                                      psRes_pt.getParameter<int32_t>("Nbinsx"),
                                      psRes_pt.getParameter<double>("xmin"),
                                      psRes_pt.getParameter<double>("xmax"));
-  	respt_pt3to8[i]->setAxisTitle("(p_{T}(trk) - p_{T}(tp))/p_{T}(tp)", 1);
-  	respt_pt3to8[i]->setAxisTitle("# tracking particles", 2);
+    respt_pt3to8[i]->setAxisTitle("(p_{T}(trk) - p_{T}(tp))/p_{T}(tp)", 1);
+    respt_pt3to8[i]->setAxisTitle("# tracking particles", 2);
 
     // pT c (>8 GeV)
-  	HistoName = "respt_" + ranges[i] + "_pt8toInf";
-  	respt_pt8toInf[i] = iBooker.book1D(HistoName,
+    HistoName = "respt_" + ranges[i] + "_pt8toInf";
+    respt_pt8toInf[i] = iBooker.book1D(HistoName,
                                        HistoName,
                                        psRes_pt.getParameter<int32_t>("Nbinsx"),
                                        psRes_pt.getParameter<double>("xmin"),
                                        psRes_pt.getParameter<double>("xmax"));
-  	respt_pt8toInf[i]->setAxisTitle("(p_{T}(trk) - p_{T}(tp))/p_{T}(tp)", 1);
-  	respt_pt8toInf[i]->setAxisTitle("# tracking particles", 2);
+    respt_pt8toInf[i]->setAxisTitle("(p_{T}(trk) - p_{T}(tp))/p_{T}(tp)", 1);
+    respt_pt8toInf[i]->setAxisTitle("# tracking particles", 2);
 
     // Phi parts (for resolution)
-   	edm::ParameterSet psRes_phi = conf_.getParameter<edm::ParameterSet>("TH1Res_phi");
-  	HistoName = "resphi_" + ranges[i];
-  	resphi_vect[i] = iBooker.book1D(HistoName,
+    edm::ParameterSet psRes_phi = conf_.getParameter<edm::ParameterSet>("TH1Res_phi");
+    HistoName = "resphi_" + ranges[i];
+    resphi_vect[i] = iBooker.book1D(HistoName,
                                     HistoName,
                                     psRes_phi.getParameter<int32_t>("Nbinsx"),
                                     psRes_phi.getParameter<double>("xmin"),
                                     psRes_phi.getParameter<double>("xmax"));
-  	resphi_vect[i]->setAxisTitle("#phi_{trk} - #phi_{tp}", 1);
-  	resphi_vect[i]->setAxisTitle("# tracking particles", 2);
+    resphi_vect[i]->setAxisTitle("#phi_{trk} - #phi_{tp}", 1);
+    resphi_vect[i]->setAxisTitle("# tracking particles", 2);
 
     // VtxZ parts (for resolution)
     edm::ParameterSet psRes_VtxZ = conf_.getParameter<edm::ParameterSet>("TH1Res_VtxZ");
-  	HistoName = "resVtxZ_" + ranges[i];
-  	resVtxZ_vect[i] = iBooker.book1D(HistoName,
+    HistoName = "resVtxZ_" + ranges[i];
+    resVtxZ_vect[i] = iBooker.book1D(HistoName,
                                      HistoName,
                                      psRes_VtxZ.getParameter<int32_t>("Nbinsx"),
                                      psRes_VtxZ.getParameter<double>("xmin"),
                                      psRes_VtxZ.getParameter<double>("xmax"));
-  	resVtxZ_vect[i]->setAxisTitle("VtxZ_{trk} - VtxZ_{tp} [cm]", 1);
-  	resVtxZ_vect[i]->setAxisTitle("# tracking particles", 2);
+    resVtxZ_vect[i]->setAxisTitle("VtxZ_{trk} - VtxZ_{tp} [cm]", 1);
+    resVtxZ_vect[i]->setAxisTitle("# tracking particles", 2);
 
     // d0 parts (for resolution)
     edm::ParameterSet psRes_d0 = conf_.getParameter<edm::ParameterSet>("TH1Res_d0");
     HistoName = "resd0_" + ranges[i];
-  	resd0_vect[i] = iBooker.book1D(HistoName,
+    resd0_vect[i] = iBooker.book1D(HistoName,
                                    HistoName,
                                    psRes_d0.getParameter<int32_t>("Nbinsx"),
                                    psRes_d0.getParameter<double>("xmin"),
                                    psRes_d0.getParameter<double>("xmax"));
-  	resd0_vect[i]->setAxisTitle("d0_{trk} - d0_{tp} [cm]", 1);
-  	resd0_vect[i]->setAxisTitle("# tracking particles", 2);
+    resd0_vect[i]->setAxisTitle("d0_{trk} - d0_{tp} [cm]", 1);
+    resd0_vect[i]->setAxisTitle("# tracking particles", 2);
 
   }
   // Histograms for extended tracks

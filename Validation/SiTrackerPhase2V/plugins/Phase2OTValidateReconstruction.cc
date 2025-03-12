@@ -918,7 +918,7 @@ void Phase2OTValidateReconstruction::bookHistograms(DQMStore::IBooker &iBooker,
 
     // pT parts for resolution (pT res vs eta)
     // pT a (2 to 3 GeV)
-    HistoName = "reseta_" + ranges[i] + "_pt2to3";
+    HistoName = "respt_" + ranges[i] + "_pt2to3";
     respt_pt2to3[i] = iBooker.book1D(HistoName,
                                      HistoName,
                                      psRes_pt.getParameter<int32_t>("Nbinsx"),
@@ -928,7 +928,7 @@ void Phase2OTValidateReconstruction::bookHistograms(DQMStore::IBooker &iBooker,
     respt_pt2to3[i]->setAxisTitle("# tracking particles", 2);
 
     // pT b (3 to 8 GeV)
-    HistoName = "reseta_" + ranges[i] + "_pt3to8";
+    HistoName = "respt_" + ranges[i] + "_pt3to8";
     respt_pt3to8[i] = iBooker.book1D(HistoName,
                                      HistoName,
                                      psRes_pt.getParameter<int32_t>("Nbinsx"),

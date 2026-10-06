@@ -835,7 +835,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
       book1DFromPS(iBooker, "trackParts_Num", n_trackParticles, "# track particles per event", "# tracking particles");
 
   // Nominal L1TF: efficiency ingredients (denominator + matched numerator)
-  iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/EfficiencyIngredients");
+  iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/FinalEfficiency/Ingredients");
   // Denominator: all selected TPs
   tp_pt = book1DFromPS(iBooker, "tp_pt", psEffic_pt, "p_{T} [GeV]", "# tracking particles");
   tp_pt_zoom = book1DFromPS(iBooker, "tp_pt_zoom", psEffic_pt_zoom, "p_{T} [GeV]", "# tracking particles");
@@ -861,7 +861,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
   d0_res_hist = book1DFromPS(iBooker, "res_d0", psRes_d0, "trk d_{0} - tp d_{0} [cm]", "# tracking particles");
 
   // Nominal L1TF: resolution vs eta and pT slices
-  iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/ResolutionIngredients");
+  iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/FinalResolution/Ingredients");
   for (int i = 0; i < 6; i++) {
     reseta_vect[i] =
         book1DFromPS(iBooker, "reseta_" + ranges[i], psRes_eta, "#eta_{trk} - #eta_{tp}", "# tracking particles");
@@ -889,7 +889,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
   }
 
   // Extended L1TF (Displaced): efficiency ingredients
-  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Displaced/EfficiencyIngredients");
+  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Displaced/FinalEfficiency/Ingredients");
   // Denominator: displaced TP selection
   tp_pt_for_dis = book1DFromPS(iBooker, "tp_pt_for_dis", psEffic_pt, "p_{T} [GeV]", "# tracking particles");
   tp_pt_zoom_for_dis =
@@ -926,7 +926,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
       book1DFromPS(iBooker, "res_displaced_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
 
   // Extended L1TF (Displaced): resolution vs eta and pT slices
-  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Displaced/ResolutionIngredients");
+  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Displaced/FinalResolution/Ingredients");
   for (int i = 0; i < 6; i++) {
     reseta_displaced_vect[i] = book1DFromPS(
         iBooker, "reseta_displaced_" + ranges[i], psRes_eta, "#eta_{trk} - #eta_{tp}", "# tracking particles");
@@ -945,7 +945,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
   }
 
   // Extended L1TF (Prompt): efficiency ingredients (matched prompt TPs)
-  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Prompt/EfficiencyIngredients");
+  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Prompt/FinalEfficiency/Ingredients");
 
   // Denominator: prompt TP selection
   tp_pt_for_prompt = book1DFromPS(iBooker, "tp_pt_for_prompt", psEffic_pt, "p_{T} [GeV]", "# tracking particles");
@@ -979,7 +979,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
       book1DFromPS(iBooker, "res_prompt_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
 
   // Extended L1TF (Prompt): resolution vs eta and pT slices
-  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Prompt/ResolutionIngredients");
+  iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Prompt/FinalResolution/Ingredients");
   for (int i = 0; i < 6; i++) {
     reseta_prompt_vect[i] = book1DFromPS(
         iBooker, "reseta_prompt_" + ranges[i], psRes_eta, "#eta_{trk} - #eta_{tp}", "# tracking particles");

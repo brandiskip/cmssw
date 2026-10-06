@@ -77,7 +77,7 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
       displaced_meresz0_vect(6, nullptr), displaced_meresd0_vect(6, nullptr);
 
   for (int i = 0; i < 6; i++) {
-    std::string resIng = topFolderName_ + "/Nominal_L1TF/ResolutionIngredients/";
+    std::string resIng = topFolderName_ + "/Nominal_L1TF/FinalResolution/Ingredients/";
     respt_pt2to3[i] = igetter.get(resIng + "respt_" + eta_ranges[i] + "_pt2to3");
     respt_pt3to8[i] = igetter.get(resIng + "respt_" + eta_ranges[i] + "_pt3to8");
     respt_pt8toInf[i] = igetter.get(resIng + "respt_" + eta_ranges[i] + "_pt8toInf");
@@ -86,7 +86,7 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
     meresz0_vect[i] = igetter.get(resIng + "resz0_" + eta_ranges[i]);
     meresd0_vect[i] = igetter.get(resIng + "resd0_" + eta_ranges[i]);
 
-    std::string promptIng = topFolderName_ + "/Extended_L1TF/Prompt/ResolutionIngredients/";
+    std::string promptIng = topFolderName_ + "/Extended_L1TF/Prompt/FinalResolution/Ingredients/";
     prompt_respt_pt2to3[i] = igetter.get(promptIng + "respt_prompt_" + eta_ranges[i] + "_pt2to3");
     prompt_respt_pt3to8[i] = igetter.get(promptIng + "respt_prompt_" + eta_ranges[i] + "_pt3to8");
     prompt_respt_pt8toInf[i] = igetter.get(promptIng + "respt_prompt_" + eta_ranges[i] + "_pt8toInf");
@@ -95,7 +95,7 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
     prompt_meresz0_vect[i] = igetter.get(promptIng + "resz0_prompt_" + eta_ranges[i]);
     prompt_meresd0_vect[i] = igetter.get(promptIng + "resd0_prompt_" + eta_ranges[i]);
 
-    std::string dispIng = topFolderName_ + "/Extended_L1TF/Displaced/ResolutionIngredients/";
+    std::string dispIng = topFolderName_ + "/Extended_L1TF/Displaced/FinalResolution/Ingredients/";
     displaced_respt_pt2to3[i] = igetter.get(dispIng + "respt_displaced_" + eta_ranges[i] + "_pt2to3");
     displaced_respt_pt3to8[i] = igetter.get(dispIng + "respt_displaced_" + eta_ranges[i] + "_pt3to8");
     displaced_respt_pt8toInf[i] = igetter.get(dispIng + "respt_displaced_" + eta_ranges[i] + "_pt8toInf");

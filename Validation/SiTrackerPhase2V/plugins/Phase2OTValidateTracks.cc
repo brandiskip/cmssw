@@ -135,7 +135,6 @@ public:
   MonitorElement *match_displaced_tp_Lxy = nullptr;      // numerator (also known as vxy)
   MonitorElement *match_displaced_tp_z0 = nullptr;       // numerator
 
-  MonitorElement *d0_res_hist = nullptr;
   MonitorElement *res_displaced_d0 = nullptr;
   MonitorElement *res_prompt_d0 = nullptr;
 
@@ -143,16 +142,19 @@ public:
   MonitorElement *res_eta = nullptr;    // for all eta and pT
   MonitorElement *res_pt = nullptr;     // for all eta and pT
   MonitorElement *res_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
+  MonitorElement *res_z0 = nullptr;
 
   // 1D intermediate resolution plots for extended (pT and eta)
-  // prompt tracks d0 < 0.1
+  // prompt TPs: |tp d0| < TP_maxD0
   MonitorElement *res_prompt_eta = nullptr;
   MonitorElement *res_prompt_pt = nullptr;
   MonitorElement *res_prompt_ptRel = nullptr;
-  // displaced tracks d0 >= 0.1
+  MonitorElement *res_prompt_z0 = nullptr;
+  // displaced TPs: |tp d0| >= TP_maxD0
   MonitorElement *res_displaced_eta = nullptr;    // for all eta and pT
   MonitorElement *res_displaced_pt = nullptr;     // for all eta and pT
   MonitorElement *res_displaced_ptRel = nullptr;  // for all eta and pT (delta(pT)/pT)
+  MonitorElement *res_displaced_z0 = nullptr;
 
   // Regular L1 track histograms
   std::vector<MonitorElement *> respt_pt2to3;
@@ -161,7 +163,6 @@ public:
   std::vector<MonitorElement *> reseta_vect;
   std::vector<MonitorElement *> resphi_vect;
   std::vector<MonitorElement *> resz0_vect;
-  std::vector<MonitorElement *> resd0_vect;
 
   // Extended track histograms
   std::vector<MonitorElement *> reseta_prompt_vect;
@@ -269,7 +270,6 @@ void Phase2OTValidateTracks::dqmBeginRun(const edm::Run &iRun, const edm::EventS
   reseta_vect.clear();
   resphi_vect.clear();
   resz0_vect.clear();
-  resd0_vect.clear();
 
   respt_prompt_pt2to3.clear();
   respt_prompt_pt3to8.clear();
@@ -294,7 +294,6 @@ void Phase2OTValidateTracks::dqmBeginRun(const edm::Run &iRun, const edm::EventS
   reseta_vect.resize(6, nullptr);
   resphi_vect.resize(6, nullptr);
   resz0_vect.resize(6, nullptr);
-  resd0_vect.resize(6, nullptr);
 
   respt_prompt_pt2to3.resize(6, nullptr);
   respt_prompt_pt3to8.resize(6, nullptr);
@@ -340,6 +339,7 @@ void Phase2OTValidateTracks::processTrackCollection(
   MonitorElement *res_eta_ptr = nullptr;
   MonitorElement *res_pt_ptr = nullptr;
   MonitorElement *res_ptRel_ptr = nullptr;
+  MonitorElement *res_z0_ptr = nullptr;
   MonitorElement *match_tp_pt_ptr = nullptr;
   MonitorElement *match_tp_pt_zoom_ptr = nullptr;
   MonitorElement *match_tp_eta_ptr = nullptr;
@@ -409,7 +409,8 @@ void Phase2OTValidateTracks::processTrackCollection(
       trk_duplicate_ptr->Fill(bestTrack_pt);
     }
   }
-
+  // Prompt/displaced is a property of the TP, so numerator and denominator use the same definition
+  const bool isDisplacedTP = isExtended && std::fabs(tmp_tp_d0) >= TP_maxD0;
   if (isExtended) {
     // if extended, if "prompt"
     if (std::fabs(tmp_tp_d0) < TP_maxD0) {
@@ -425,6 +426,7 @@ void Phase2OTValidateTracks::processTrackCollection(
       res_pt_ptr = res_prompt_pt;
       res_ptRel_ptr = res_prompt_ptRel;
       res_d0_hist_ptr = res_prompt_d0;
+      res_z0_ptr = res_prompt_z0;
 
       match_tp_pt_ptr = match_prompt_tp_pt;
       match_tp_pt_zoom_ptr = match_prompt_tp_pt_zoom;
@@ -447,6 +449,7 @@ void Phase2OTValidateTracks::processTrackCollection(
       res_pt_ptr = res_displaced_pt;
       res_ptRel_ptr = res_displaced_ptRel;
       res_d0_hist_ptr = res_displaced_d0;
+      res_z0_ptr = res_displaced_z0;
 
       match_tp_pt_ptr = match_displaced_tp_pt;
       match_tp_pt_zoom_ptr = match_displaced_tp_pt_zoom;
@@ -461,7 +464,6 @@ void Phase2OTValidateTracks::processTrackCollection(
     reseta_vect_ptr = &reseta_vect;
     resphi_vect_ptr = &resphi_vect;
     resz0_vect_ptr = &resz0_vect;
-    resd0_vect_ptr = &resd0_vect;
     respt_pt2to3_ptr = &respt_pt2to3;
     respt_pt3to8_ptr = &respt_pt3to8;
     respt_pt8toInf_ptr = &respt_pt8toInf;
@@ -469,7 +471,7 @@ void Phase2OTValidateTracks::processTrackCollection(
     res_eta_ptr = res_eta;
     res_pt_ptr = res_pt;
     res_ptRel_ptr = res_ptRel;
-    res_d0_hist_ptr = d0_res_hist;
+    res_z0_ptr = res_z0;
 
     match_tp_pt_ptr = match_tp_pt;
     match_tp_pt_zoom_ptr = match_tp_pt_zoom;
@@ -492,10 +494,12 @@ void Phase2OTValidateTracks::processTrackCollection(
   res_eta_ptr->Fill(eta_res);
   res_pt_ptr->Fill(pt_diff);
   res_ptRel_ptr->Fill(pt_res);
-  res_d0_hist_ptr->Fill(d0_res);
+  res_z0_ptr->Fill(z0_res);
+  if (isExtended)
+    res_d0_hist_ptr->Fill(d0_res);
 
   // Fill efficiency histograms
-  if (tmp_tp_Lxy < 1.0) {
+  if (isDisplacedTP || tmp_tp_Lxy < TP_maxLxy) {
     match_tp_pt_ptr->Fill(tmp_tp_pt);
     if (tmp_tp_pt > 0.f && tmp_tp_pt <= 10.f) {
       match_tp_pt_zoom_ptr->Fill(tmp_tp_pt);
@@ -506,7 +510,7 @@ void Phase2OTValidateTracks::processTrackCollection(
   match_tp_Lxy_ptr->Fill(tmp_tp_Lxy);
 
   // Eta, d0, z0 efficiencies
-  if (isExtended && std::fabs(bestTrack_d0) >= TP_maxD0) {
+  if (isDisplacedTP) {
     // Displaced track: Fill unconditionally (no Lxy cut for displaced)
     match_tp_eta_ptr->Fill(tmp_tp_eta);
     match_tp_d0_ptr->Fill(tmp_tp_d0);
@@ -528,7 +532,8 @@ void Phase2OTValidateTracks::processTrackCollection(
       (*reseta_vect_ptr)[i]->Fill(eta_res);
       (*resphi_vect_ptr)[i]->Fill(phi_res);
       (*resz0_vect_ptr)[i]->Fill(z0_res);
-      (*resd0_vect_ptr)[i]->Fill(d0_res);
+      if (isExtended)
+        (*resd0_vect_ptr)[i]->Fill(d0_res);
 
       if (tmp_tp_pt >= 2.f && tmp_tp_pt < 3.f) {
         (*respt_pt2to3_ptr)[i]->Fill(pt_res);
@@ -703,7 +708,7 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
       continue;
 
     // pT Denominators (No minPt cut yet, strict Lxy cut)
-    if (tmp_tp_Lxy < 1.0) {
+    if (tmp_tp_Lxy < TP_maxLxy) {
       tp_pt->Fill(tmp_tp_pt);
       if (tmp_tp_pt <= 10.f) {
         tp_pt_zoom->Fill(tmp_tp_pt);
@@ -858,7 +863,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
   res_pt = book1DFromPS(iBooker, "res_pt", psRes_pt, "trk p_{T} - tp p_{T} [GeV]", "# tracking particles");
   res_eta = book1DFromPS(iBooker, "res_eta", psRes_eta, "trk #eta - tp #eta", "# tracking particles");
   res_ptRel = book1DFromPS(iBooker, "res_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
-  d0_res_hist = book1DFromPS(iBooker, "res_d0", psRes_d0, "trk d_{0} - tp d_{0} [cm]", "# tracking particles");
+  res_z0 = book1DFromPS(iBooker, "res_z0", psRes_z0, "trk z_{0} - tp z_{0} [cm]", "# tracking particles");
 
   // Nominal L1TF: resolution vs eta and pT slices
   iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/FinalResolution/Ingredients");
@@ -869,8 +874,6 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
         book1DFromPS(iBooker, "resphi_" + ranges[i], psRes_phi, "#phi_{trk} - #phi_{tp}", "# tracking particles");
     resz0_vect[i] =
         book1DFromPS(iBooker, "resz0_" + ranges[i], psRes_z0, "z0_{trk} - z0_{tp} [cm]", "# tracking particles");
-    resd0_vect[i] =
-        book1DFromPS(iBooker, "resd0_" + ranges[i], psRes_d0, "d0_{trk} - d0_{tp} [cm]", "# tracking particles");
     respt_pt2to3[i] = book1DFromPS(iBooker,
                                    "respt_" + ranges[i] + "_pt2to3",
                                    psRes_pt,
@@ -924,6 +927,8 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
       book1DFromPS(iBooker, "res_displaced_pt", psRes_pt, "p_{T}(trk)-p_{T}(tp)", "# tracking particles");
   res_displaced_ptRel =
       book1DFromPS(iBooker, "res_displaced_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
+  res_displaced_z0 =
+      book1DFromPS(iBooker, "res_displaced_z0", psRes_z0, "trk z_{0} - tp z_{0} [cm]", "# tracking particles");
 
   // Extended L1TF (Displaced): resolution vs eta and pT slices
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Displaced/FinalResolution/Ingredients");
@@ -977,6 +982,7 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
   res_prompt_pt = book1DFromPS(iBooker, "res_prompt_pt", psRes_pt, "p_{T}(trk)-p_{T}(tp)", "# tracking particles");
   res_prompt_ptRel =
       book1DFromPS(iBooker, "res_prompt_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
+  res_prompt_z0 = book1DFromPS(iBooker, "res_prompt_z0", psRes_z0, "trk z_{0} - tp z_{0} [cm]", "# tracking particles");
 
   // Extended L1TF (Prompt): resolution vs eta and pT slices
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Prompt/FinalResolution/Ingredients");
@@ -1053,7 +1059,7 @@ void Phase2OTValidateTracks::fillDescriptions(edm::ConfigurationDescriptions &de
   addHist("TH1Effic_pt", 50, 0.0, 100.0);
   addHist("TH1Effic_pt_zoom", 50, 0.0, 10.0);
   addHist("TH1Effic_eta", 50, -2.5, 2.5);
-  addHist("TH1Effic_d0", 101, -0.15, 0.15);
+  addHist("TH1Effic_d0", 101, -0.25, 0.25);
   addHist("TH1DisEffic_d0", 101, -10.0, 10.0);
   addHist("TH1Effic_Lxy", 25, 0.0, 1.0);
   addHist("TH1displacedEffic_Lxy", 50, 0.0, 10.0);
@@ -1093,7 +1099,7 @@ void Phase2OTValidateTracks::fillDescriptions(edm::ConfigurationDescriptions &de
   desc.add<double>("TP_maxEta", 2.4);
   desc.add<double>("TP_maxZ0", 15.0);
   desc.add<double>("TP_maxLxy", 1.0);
-  desc.add<double>("TP_maxD0", 0.1);
+  desc.add<double>("TP_maxD0", 0.2);  // |d0| [cm] boundary between prompt and displaced TPs (extended only)
   descriptions.add("Phase2OTValidateTracks", desc);
   // or use the following to generate the label from the module's C++ type
   // descriptions.addWithDefaultLabel(desc);

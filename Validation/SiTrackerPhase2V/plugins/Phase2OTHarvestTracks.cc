@@ -63,8 +63,7 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
 
   // nominal collection
   std::vector<MonitorElement *> respt_pt2to3(6, nullptr), respt_pt3to8(6, nullptr), respt_pt8toInf(6, nullptr);
-  std::vector<MonitorElement *> mereseta_vect(6, nullptr), meresphi_vect(6, nullptr), meresz0_vect(6, nullptr),
-      meresd0_vect(6, nullptr);
+  std::vector<MonitorElement *> mereseta_vect(6, nullptr), meresphi_vect(6, nullptr), meresz0_vect(6, nullptr);
 
   std::vector<MonitorElement *> prompt_respt_pt2to3(6, nullptr), prompt_respt_pt3to8(6, nullptr),
       prompt_respt_pt8toInf(6, nullptr);
@@ -84,7 +83,6 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
     mereseta_vect[i] = igetter.get(resIng + "reseta_" + eta_ranges[i]);
     meresphi_vect[i] = igetter.get(resIng + "resphi_" + eta_ranges[i]);
     meresz0_vect[i] = igetter.get(resIng + "resz0_" + eta_ranges[i]);
-    meresd0_vect[i] = igetter.get(resIng + "resd0_" + eta_ranges[i]);
 
     std::string promptIng = topFolderName_ + "/Extended_L1TF/Prompt/FinalResolution/Ingredients/";
     prompt_respt_pt2to3[i] = igetter.get(promptIng + "respt_prompt_" + eta_ranges[i] + "_pt2to3");
@@ -135,10 +133,6 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
   phase2tkutil::fillResolutionFromVec(
       meresz0_vect,
       ibooker.book1D("z0Resolution", "z0 resolution vs |#eta|;|#eta|;#sigma(#Deltaz0) [cm]", eta_binnum, eta_bins),
-      "");
-  phase2tkutil::fillResolutionFromVec(
-      meresd0_vect,
-      ibooker.book1D("d0Resolution", "d0 resolution vs |#eta|;|#eta|;#sigma(#Deltad_{0}) [cm]", eta_binnum, eta_bins),
       "");
 
   // Final Resolutions - Prompt

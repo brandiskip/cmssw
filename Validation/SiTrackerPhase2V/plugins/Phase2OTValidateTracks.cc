@@ -34,6 +34,7 @@
 #include "DataFormats/L1TrackTrigger/interface/TTStub.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTrack.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
+#include "DataFormats/Math/interface/deltaPhi.h"
 #include "DataFormats/SiStripDetId/interface/StripSubdetector.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -373,7 +374,7 @@ void Phase2OTValidateTracks::processTrackCollection(
 
     float dmatch_pt = std::fabs(associatedTP->p4().pt() - tmp_tp_pt);
     float dmatch_eta = std::fabs(associatedTP->p4().eta() - tmp_tp_eta);
-    float dmatch_phi = std::fabs(associatedTP->p4().phi() - tmp_tp_phi);
+    float dmatch_phi = std::fabs(reco::deltaPhi(associatedTP->p4().phi(), tmp_tp_phi));
     int match_id = associatedTP->pdgId();
     float chi2dof = thisTrack->chi2Red();
 
@@ -649,6 +650,10 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
 
     // only TPs from the primary interaction, as in L1TrackNtuplePlot.C (TP_select_eventid = 0)
     if (TP_selectPrimaryOnly && iterTP.eventId().event() != 0)
+      continue;
+
+    // neutral particles leave no hits; z0/d0 from computeZ0LxyD0 divide by the charge (as in L1TrackNtupleMaker.cc)
+    if (iterTP.charge() == 0)
       continue;
 
     float tmp_tp_pt = iterTP.pt();

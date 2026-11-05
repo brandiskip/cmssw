@@ -697,12 +697,7 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
       nTrackParts++;
     }
 
-    int nStubTP = -1;
-    if (MCTruthTTStubHandle.isValid()) {
-      std::vector<edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>, TTStub<Ref_Phase2TrackerDigi_>>>
-          theStubRefs = MCTruthTTStubHandle->findTTStubRefs(tp_ptr);
-      nStubTP = (int)theStubRefs.size();
-    }
+    int nStubTP = static_cast<int>(theStubRefs.size());
     if (MCTruthTTClusterHandle.isValid() && MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr).empty())
       continue;
 
@@ -712,6 +707,11 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
     std::tie(tmp_tp_z0, tmp_tp_Lxy, tmp_tp_d0) = phase2tkutil::computeZ0LxyD0(*tp_ptr);
 
     if (std::fabs(tmp_tp_z0) > TP_maxZ0)
+      continue;
+
+    // Efficiency denominator: the TP needs >= TP_minNStub stubs AND stubs in >= TP_minNLayersStub layers/disks,
+    // as in L1TrackNtupleMaker.cc. A TP failing this cannot be tracked, so it is not counted at all.
+    if (nStubTP < TP_minNStub || nStubLayerTP < TP_minNLayersStub)
       continue;
 
     // pT Denominators (No minPt cut yet, strict Lxy cut)
@@ -759,19 +759,17 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
     }
 
     if (MCTruthTTTrackExtendedHandle.isValid()) {
-      if (nStubTP >= TP_minNStub || nStubLayerTP >= TP_minNLayersStub) {
-        processTrackCollection(MCTruthTTTrackExtendedHandle,
-                               tp_ptr,
-                               true,
-                               tmp_tp_pdgid,
-                               tmp_tp_d0,
-                               tmp_tp_Lxy,
-                               tmp_tp_pt,
-                               tmp_tp_eta,
-                               tmp_tp_phi,
-                               tmp_tp_z0,
-                               iEvent);  // Extended Tracks
-      }
+      processTrackCollection(MCTruthTTTrackExtendedHandle,
+                             tp_ptr,
+                             true,
+                             tmp_tp_pdgid,
+                             tmp_tp_d0,
+                             tmp_tp_Lxy,
+                             tmp_tp_pt,
+                             tmp_tp_eta,
+                             tmp_tp_phi,
+                             tmp_tp_z0,
+                             iEvent);  // Extended Tracks
     }
 
     if (tmp_tp_Lxy > TP_maxLxy)
@@ -786,9 +784,6 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
       tp_d0_for_prompt->Fill(tmp_tp_d0);
       tp_z0_for_prompt->Fill(tmp_tp_z0);
     }
-
-    if (nStubTP < TP_minNStub || nStubLayerTP < TP_minNLayersStub)
-      continue;  // nStub cut not included in denominator of efficiency plots
 
     if (MCTruthTTTrackHandle.isValid()) {
       processTrackCollection(MCTruthTTTrackHandle,
@@ -1070,7 +1065,7 @@ void Phase2OTValidateTracks::fillDescriptions(edm::ConfigurationDescriptions &de
   addHist("TH1DisEffic_d0", 101, -10.0, 10.0);
   addHist("TH1Effic_Lxy", 25, 0.0, 1.0);
   addHist("TH1displacedEffic_Lxy", 50, 0.0, 10.0);
-  addHist("TH1Effic_z0", 40, -16.0, 16.0);
+  addHist("TH1Effic_z0", 60, -30.0, 30.0);
 
   // Resolution plots
   addHist("TH1Res_ptRel", 200, -0.5, 0.5);

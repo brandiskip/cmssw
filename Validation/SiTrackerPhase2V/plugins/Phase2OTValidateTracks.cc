@@ -1103,8 +1103,8 @@ void Phase2OTValidateTracks::fillDescriptions(edm::ConfigurationDescriptions &de
   desc.add<int>("TP_minNStub", 4);
   desc.add<int>("TP_minNLayersStub", 4);
   desc.add<double>("TP_minPt", 1.5);
-  desc.add<double>("TP_maxEta", 2.4);
-  desc.add<double>("TP_maxZ0", 15.0);
+  desc.add<double>("TP_maxEta", 2.5);
+  desc.add<double>("TP_maxZ0", 30.0);
   desc.add<double>("TP_maxLxy", 1.0);
   desc.add<double>("TP_maxD0", 0.2);  // |d0| [cm] boundary between prompt and displaced TPs (extended only)
   desc.add<bool>("TP_selectPrimaryOnly", true);

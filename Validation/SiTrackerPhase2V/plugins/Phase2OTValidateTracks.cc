@@ -651,7 +651,6 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
     if (TP_selectPrimaryOnly && iterTP.eventId().event() != 0)
       continue;
 
-    //int tmp_eventid = iterTP.eventId().event();
     float tmp_tp_pt = iterTP.pt();
     float tmp_tp_phi = iterTP.phi();
     float tmp_tp_eta = iterTP.eta();
@@ -693,9 +692,6 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
       nTrackParts++;
     }
 
-    //if (TP_select_eventid == 0 && tmp_eventid != 0)
-    //  continue;  //only care about tracking particles from the primary
-    //   interaction for efficiency/resolution
     int nStubTP = -1;
     if (MCTruthTTStubHandle.isValid()) {
       std::vector<edm::Ref<edmNew::DetSetVector<TTStub<Ref_Phase2TrackerDigi_>>, TTStub<Ref_Phase2TrackerDigi_>>>

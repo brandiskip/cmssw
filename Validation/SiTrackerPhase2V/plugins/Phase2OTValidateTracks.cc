@@ -221,6 +221,7 @@ private:
   double TP_maxZ0;
   double TP_maxLxy;
   double TP_maxD0;
+  bool TP_selectPrimaryOnly;
   std::string topFolderName_;
 };
 
@@ -258,6 +259,7 @@ Phase2OTValidateTracks::Phase2OTValidateTracks(const edm::ParameterSet &iConfig)
   TP_maxZ0 = conf_.getParameter<double>("TP_maxZ0");                 // max vertZ (or z0) to consider matching
   TP_maxLxy = conf_.getParameter<double>("TP_maxLxy");               // max Lxy to consider prompt matching
   TP_maxD0 = conf_.getParameter<double>("TP_maxD0");                 // max d0 to consider prompt matching
+  TP_selectPrimaryOnly = conf_.getParameter<bool>("TP_selectPrimaryOnly");  // only TPs from the primary interaction
 }
 
 Phase2OTValidateTracks::~Phase2OTValidateTracks() = default;
@@ -645,7 +647,11 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
     edm::Ptr<TrackingParticle> tp_ptr(trackingParticleHandle, this_tp);
     this_tp++;
 
-    // int tmp_eventid = iterTP.eventId().event();
+    // only TPs from the primary interaction, as in L1TrackNtuplePlot.C (TP_select_eventid = 0)
+    if (TP_selectPrimaryOnly && iterTP.eventId().event() != 0)
+      continue;
+
+    //int tmp_eventid = iterTP.eventId().event();
     float tmp_tp_pt = iterTP.pt();
     float tmp_tp_phi = iterTP.phi();
     float tmp_tp_eta = iterTP.eta();
@@ -687,8 +693,8 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
       nTrackParts++;
     }
 
-    // if (TP_select_eventid == 0 && tmp_eventid != 0)
-    //   continue;  //only care about tracking particles from the primary
+    //if (TP_select_eventid == 0 && tmp_eventid != 0)
+    //  continue;  //only care about tracking particles from the primary
     //   interaction for efficiency/resolution
     int nStubTP = -1;
     if (MCTruthTTStubHandle.isValid()) {
@@ -1100,6 +1106,7 @@ void Phase2OTValidateTracks::fillDescriptions(edm::ConfigurationDescriptions &de
   desc.add<double>("TP_maxZ0", 15.0);
   desc.add<double>("TP_maxLxy", 1.0);
   desc.add<double>("TP_maxD0", 0.2);  // |d0| [cm] boundary between prompt and displaced TPs (extended only)
+  desc.add<bool>("TP_selectPrimaryOnly", true);
   descriptions.add("Phase2OTValidateTracks", desc);
   // or use the following to generate the label from the module's C++ type
   // descriptions.addWithDefaultLabel(desc);

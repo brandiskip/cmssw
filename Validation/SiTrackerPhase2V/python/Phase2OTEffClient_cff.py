@@ -3,7 +3,7 @@
 #
 # This configuration defines DQMGenericClient modules to calculate final
 # tracking and stub efficiencies for the Phase-2 Outer Tracker. It computes
-# ratios for Nominal, Extended Prompt, and Extended Displaced L1 tracks,
+# ratios for Nominal L1 tracks and Extended L1 tracks (prompt and displaced tracking particles),
 # along with Barrel and Endcap stubs, reading from EfficiencyIngredients and
 # outputting to FinalEfficiency folders.
 #
@@ -21,8 +21,8 @@ phase2OTEffClient = cms.EDProducer(
     "DQMGenericClient",
     subDirs=cms.untracked.vstring(
         f"{_topFolder}/Nominal_L1TF",
-        f"{_topFolder}/Extended_L1TF/Prompt",
-        f"{_topFolder}/Extended_L1TF/Displaced",
+        f"{_topFolder}/Extended_L1TF/PromptParticles",
+        f"{_topFolder}/Extended_L1TF/DisplacedParticles",
     ),
     # Output: FinalEfficiency/Name
     # Input:  FinalEfficiency/Ingredients/Name

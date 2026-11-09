@@ -6,7 +6,7 @@
  * the harvesting step for L1 tracks validation. It processes histograms
  * created during the earlier validation steps to calculate resolutions for
  * tracking performance. Specifically it extracts standard deviations from
- * resolution ingredients for Nominal, Extended Prompt, and Extended Displaced
+ * resolution ingredients for Nominal, Extended PromptParticles, and Extended DisplacedParticles
  * L1 tracks.
  * 
  * It also forms the track-level rate plots from the ingredients booked by the
@@ -84,7 +84,7 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
     meresphi_vect[i] = igetter.get(resIng + "resphi_" + eta_ranges[i]);
     meresz0_vect[i] = igetter.get(resIng + "resz0_" + eta_ranges[i]);
 
-    std::string promptIng = topFolderName_ + "/Extended_L1TF/Prompt/FinalResolution/Ingredients/";
+    std::string promptIng = topFolderName_ + "/Extended_L1TF/PromptParticles/FinalResolution/Ingredients/";
     prompt_respt_pt2to3[i] = igetter.get(promptIng + "respt_prompt_" + eta_ranges[i] + "_pt2to3");
     prompt_respt_pt3to8[i] = igetter.get(promptIng + "respt_prompt_" + eta_ranges[i] + "_pt3to8");
     prompt_respt_pt8toInf[i] = igetter.get(promptIng + "respt_prompt_" + eta_ranges[i] + "_pt8toInf");
@@ -93,7 +93,7 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
     prompt_meresz0_vect[i] = igetter.get(promptIng + "resz0_prompt_" + eta_ranges[i]);
     prompt_meresd0_vect[i] = igetter.get(promptIng + "resd0_prompt_" + eta_ranges[i]);
 
-    std::string dispIng = topFolderName_ + "/Extended_L1TF/Displaced/FinalResolution/Ingredients/";
+    std::string dispIng = topFolderName_ + "/Extended_L1TF/DisplacedParticles/FinalResolution/Ingredients/";
     displaced_respt_pt2to3[i] = igetter.get(dispIng + "respt_displaced_" + eta_ranges[i] + "_pt2to3");
     displaced_respt_pt3to8[i] = igetter.get(dispIng + "respt_displaced_" + eta_ranges[i] + "_pt3to8");
     displaced_respt_pt8toInf[i] = igetter.get(dispIng + "respt_displaced_" + eta_ranges[i] + "_pt8toInf");
@@ -135,8 +135,8 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
       ibooker.book1D("z0Resolution", "z0 resolution vs |#eta|;|#eta|;#sigma(#Deltaz0) [cm]", eta_binnum, eta_bins),
       "");
 
-  // Final Resolutions - Prompt
-  ibooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Prompt/FinalResolution");
+  // Final Resolutions - PromptParticles
+  ibooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/PromptParticles/FinalResolution");
   phase2tkutil::fillResolutionFromVec(
       prompt_respt_pt2to3,
       ibooker.book1D("pTResVsEta_2-3_prompt",
@@ -180,8 +180,8 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
                                                      eta_bins),
                                       "");
 
-  // Final Resolutions - Displaced
-  ibooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/Displaced/FinalResolution");
+  // Final Resolutions - DisplacedParticles
+  ibooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/DisplacedParticles/FinalResolution");
   phase2tkutil::fillResolutionFromVec(
       displaced_respt_pt2to3,
       ibooker.book1D("pTResVsEta_2-3_displaced",

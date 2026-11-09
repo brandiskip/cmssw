@@ -218,6 +218,7 @@ private:
   int TP_minNStub;
   int TP_minNLayersStub;
   double TP_minPt;
+  double TP_minPtTurnOn;
   double TP_maxEta;
   double TP_maxZ0;
   double TP_maxLxy;
@@ -256,10 +257,12 @@ Phase2OTValidateTracks::Phase2OTValidateTracks(const edm::ParameterSet &iConfig)
   TP_minNLayersStub = conf_.getParameter<int>("TP_minNLayersStub");  // Minimum number of layers with stubs for the
                                                                      // tracking particle to be considered for matching
   TP_minPt = conf_.getParameter<double>("TP_minPt");                 // min pT to consider matching
-  TP_maxEta = conf_.getParameter<double>("TP_maxEta");               // max eta to consider matching
-  TP_maxZ0 = conf_.getParameter<double>("TP_maxZ0");                 // max vertZ (or z0) to consider matching
-  TP_maxLxy = conf_.getParameter<double>("TP_maxLxy");               // max Lxy to consider prompt matching
-  TP_maxD0 = conf_.getParameter<double>("TP_maxD0");                 // max d0 to consider prompt matching
+  TP_minPtTurnOn =
+      conf_.getParameter<double>("TP_minPtTurnOn");     // lower pT threshold, used only for the pT-efficiency plots
+  TP_maxEta = conf_.getParameter<double>("TP_maxEta");  // max eta to consider matching
+  TP_maxZ0 = conf_.getParameter<double>("TP_maxZ0");    // max vertZ (or z0) to consider matching
+  TP_maxLxy = conf_.getParameter<double>("TP_maxLxy");  // max Lxy to consider prompt matching
+  TP_maxD0 = conf_.getParameter<double>("TP_maxD0");    // max d0 to consider prompt matching
   TP_selectPrimaryOnly = conf_.getParameter<bool>("TP_selectPrimaryOnly");  // only TPs from the primary interaction
 }
 
@@ -485,6 +488,18 @@ void Phase2OTValidateTracks::processTrackCollection(
     match_tp_z0_ptr = match_tp_z0;
   }
 
+  // pT efficiency numerator: filled down to TP_minPtTurnOn to show the turn-on
+  if (isDisplacedTP || tmp_tp_Lxy < TP_maxLxy) {
+    match_tp_pt_ptr->Fill(tmp_tp_pt);
+    if (tmp_tp_pt > 0.f && tmp_tp_pt <= 10.f) {
+      match_tp_pt_zoom_ptr->Fill(tmp_tp_pt);
+    }
+  }
+
+  // below TP_minPt the TP only enters the pT-efficiency plots
+  if (tmp_tp_pt < TP_minPt)
+    return;
+
   // Compute residuals & fill them
   float eta_res = bestTrack->momentum().eta() - tmp_tp_eta;
   float phi_res = bestTrack->momentum().phi() - tmp_tp_phi;
@@ -500,14 +515,6 @@ void Phase2OTValidateTracks::processTrackCollection(
   res_z0_ptr->Fill(z0_res);
   if (isExtended)
     res_d0_hist_ptr->Fill(d0_res);
-
-  // Fill efficiency histograms
-  if (isDisplacedTP || tmp_tp_Lxy < TP_maxLxy) {
-    match_tp_pt_ptr->Fill(tmp_tp_pt);
-    if (tmp_tp_pt > 0.f && tmp_tp_pt <= 10.f) {
-      match_tp_pt_zoom_ptr->Fill(tmp_tp_pt);
-    }
-  }
 
   // Lxy efficiency (NO Lxy cut)
   match_tp_Lxy_ptr->Fill(tmp_tp_Lxy);
@@ -742,20 +749,25 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
       }
     }
 
-    if (tmp_tp_pt < TP_minPt)
+    // pT-efficiency plots go down to TP_minPtTurnOn so the turn-on is visible;
+    // every other plot uses TP_minPt, as in L1TrackNtuplePlot.C
+    if (tmp_tp_pt < TP_minPtTurnOn)
       continue;
+    const bool passMinPt = tmp_tp_pt >= TP_minPt;
 
-    // Lxy Denominators (minPt applied, NO Lxy cut)
-    tp_Lxy->Fill(tmp_tp_Lxy);
-    if (std::fabs(tmp_tp_d0) < TP_maxD0) {
-      tp_Lxy_for_prompt->Fill(tmp_tp_Lxy);
-    } else {
-      tp_Lxy_for_dis->Fill(tmp_tp_Lxy);
+    if (passMinPt) {
+      // Lxy Denominators (minPt applied, NO Lxy cut)
+      tp_Lxy->Fill(tmp_tp_Lxy);
+      if (std::fabs(tmp_tp_d0) < TP_maxD0) {
+        tp_Lxy_for_prompt->Fill(tmp_tp_Lxy);
+      } else {
+        tp_Lxy_for_dis->Fill(tmp_tp_Lxy);
 
-      // Displaced has NO Lxy cut at all, fill its eta, d0, z0 here
-      tp_eta_for_dis->Fill(tmp_tp_eta);
-      tp_d0_for_dis->Fill(tmp_tp_d0);
-      tp_z0_for_dis->Fill(tmp_tp_z0);
+        // Displaced has NO Lxy cut at all, fill its eta, d0, z0 here
+        tp_eta_for_dis->Fill(tmp_tp_eta);
+        tp_d0_for_dis->Fill(tmp_tp_d0);
+        tp_z0_for_dis->Fill(tmp_tp_z0);
+      }
     }
 
     if (MCTruthTTTrackExtendedHandle.isValid()) {
@@ -775,14 +787,16 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
     if (tmp_tp_Lxy > TP_maxLxy)
       continue;
 
-    tp_eta->Fill(tmp_tp_eta);
-    tp_d0->Fill(tmp_tp_d0);
-    tp_z0->Fill(tmp_tp_z0);
+    if (passMinPt) {
+      tp_eta->Fill(tmp_tp_eta);
+      tp_d0->Fill(tmp_tp_d0);
+      tp_z0->Fill(tmp_tp_z0);
 
-    if (std::fabs(tmp_tp_d0) < TP_maxD0) {
-      tp_eta_for_prompt->Fill(tmp_tp_eta);
-      tp_d0_for_prompt->Fill(tmp_tp_d0);
-      tp_z0_for_prompt->Fill(tmp_tp_z0);
+      if (std::fabs(tmp_tp_d0) < TP_maxD0) {
+        tp_eta_for_prompt->Fill(tmp_tp_eta);
+        tp_d0_for_prompt->Fill(tmp_tp_d0);
+        tp_z0_for_prompt->Fill(tmp_tp_z0);
+      }
     }
 
     if (MCTruthTTTrackHandle.isValid()) {
@@ -1097,7 +1111,8 @@ void Phase2OTValidateTracks::fillDescriptions(edm::ConfigurationDescriptions &de
   desc.add<double>("L1Tk_maxChi2dof", 25.0);
   desc.add<int>("TP_minNStub", 4);
   desc.add<int>("TP_minNLayersStub", 4);
-  desc.add<double>("TP_minPt", 1.5);
+  desc.add<double>("TP_minPt", 2.0);        // as L1TrackNtuplePlot.C
+  desc.add<double>("TP_minPtTurnOn", 1.5);  // pT-efficiency plots only, to show the turn-on
   desc.add<double>("TP_maxEta", 2.5);
   desc.add<double>("TP_maxZ0", 30.0);
   desc.add<double>("TP_maxLxy", 1.0);

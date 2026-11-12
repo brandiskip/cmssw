@@ -696,16 +696,9 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
 
     if (std::fabs(tmp_tp_eta) > TP_maxEta)
       continue;
-    // Fill the 1D distribution plots for tracking particles, to monitor change
-    // in stub definition
-    if (tmp_tp_pt > TP_minPt && nStubLayerTP >= TP_minNLayersStub) {
-      trackParts_Pt->Fill(tmp_tp_pt);
-      trackParts_Eta->Fill(tmp_tp_eta);
-      trackParts_Phi->Fill(tmp_tp_phi);
-      nTrackParts++;
-    }
 
     int nStubTP = static_cast<int>(theStubRefs.size());
+
     if (MCTruthTTClusterHandle.isValid() && MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr).empty())
       continue;
 
@@ -792,6 +785,12 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
       tp_eta->Fill(tmp_tp_eta);
       tp_d0->Fill(tmp_tp_d0);
       tp_z0->Fill(tmp_tp_z0);
+
+      // trackParticles folder: exactly the TPs in the nominal efficiency denominator
+      trackParts_Pt->Fill(tmp_tp_pt);
+      trackParts_Eta->Fill(tmp_tp_eta);
+      trackParts_Phi->Fill(tmp_tp_phi);
+      nTrackParts++;
 
       if (std::fabs(tmp_tp_d0) < TP_maxD0) {
         tp_eta_for_prompt->Fill(tmp_tp_eta);
@@ -1161,7 +1160,7 @@ void Phase2OTValidateTracks::fillDescriptions(edm::ConfigurationDescriptions &de
   };
 
   // Tracking particle kinematics
-  addHist("TH1TrackParts_Eta", 45, -3.0, 3.0);
+  addHist("TH1TrackParts_Eta", 50, -2.5, 2.5);
   addHist("TH1TrackParts_Phi", 60, -3.141592653589793, 3.141592653589793);
   addHist("TH1TrackParts_Pt", 45, 0.0, 100.0);
   addHist("n_trackParticles", 100, 0.0, 600.0);

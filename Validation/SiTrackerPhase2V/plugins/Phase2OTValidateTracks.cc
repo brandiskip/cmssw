@@ -849,11 +849,18 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
 
   // Tracking particle kinematics
   iBooker.setCurrentFolder(topFolderName_ + "/trackParticles");
-  trackParts_Pt = book1DFromPS(iBooker, "trackParts_Pt", psTrackParts_Pt, "p_{T} [GeV]", "# tracking particles");
-  trackParts_Eta = book1DFromPS(iBooker, "trackParts_Eta", psTrackParts_Eta, "#eta", "# tracking particles");
-  trackParts_Phi = book1DFromPS(iBooker, "trackParts_Phi", psTrackParts_Phi, "#phi", "# tracking particles");
-  trackParts_Num =
-      book1DFromPS(iBooker, "trackParts_Num", n_trackParticles, "# track particles per event", "# tracking particles");
+  trackParts_Pt = book1DFromPS(
+      iBooker, "trackParts_Pt", psTrackParts_Pt, "p_{T} [GeV]", "# tracking particles", "Tracking particle p_{T}");
+  trackParts_Eta = book1DFromPS(
+      iBooker, "trackParts_Eta", psTrackParts_Eta, "#eta", "# tracking particles", "Tracking particle #eta");
+  trackParts_Phi = book1DFromPS(
+      iBooker, "trackParts_Phi", psTrackParts_Phi, "#phi", "# tracking particles", "Tracking particle #phi");
+  trackParts_Num = book1DFromPS(iBooker,
+                                "trackParts_Num",
+                                n_trackParticles,
+                                "# tracking particles per event",
+                                "# events",
+                                "Tracking particles per event");
 
   // Nominal L1TF: efficiency ingredients (denominator + matched numerator)
   iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/FinalEfficiency/Ingredients");
@@ -876,10 +883,26 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
 
   // Nominal L1TF: residual distributions
   iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/Residual");
-  res_pt = book1DFromPS(iBooker, "res_pt", psRes_pt, "trk p_{T} - tp p_{T} [GeV]", "# tracking particles");
-  res_eta = book1DFromPS(iBooker, "res_eta", psRes_eta, "trk #eta - tp #eta", "# tracking particles");
-  res_ptRel = book1DFromPS(iBooker, "res_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
-  res_z0 = book1DFromPS(iBooker, "res_z0", psRes_z0, "trk z_{0} - tp z_{0} [cm]", "# tracking particles");
+  res_pt = book1DFromPS(iBooker,
+                        "res_pt",
+                        psRes_pt,
+                        "trk p_{T} - tp p_{T} [GeV]",
+                        "# tracking particles",
+                        "Nominal L1 tracks p_{T} residual");
+  res_eta = book1DFromPS(
+      iBooker, "res_eta", psRes_eta, "trk #eta - tp #eta", "# tracking particles", "Nominal L1 tracks #eta residual");
+  res_ptRel = book1DFromPS(iBooker,
+                           "res_ptRel",
+                           psRes_ptRel,
+                           "(trk p_{T} - tp p_{T}) / tp p_{T}",
+                           "# tracking particles",
+                           "Nominal L1 tracks relative p_{T} residual");
+  res_z0 = book1DFromPS(iBooker,
+                        "res_z0",
+                        psRes_z0,
+                        "trk z_{0} - tp z_{0} [cm]",
+                        "# tracking particles",
+                        "Nominal L1 tracks z_{0} residual");
 
   // Nominal L1TF: resolution vs eta and pT slices
   iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/FinalResolution/Ingredients");
@@ -935,16 +958,36 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
 
   // Extended L1TF (DisplacedParticles): residual distributions
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/DisplacedParticles/Residual");
-  res_displaced_d0 =
-      book1DFromPS(iBooker, "res_displaced_d0", psRes_displaced_d0, "trk d_{0} - tp d_{0} [cm]", "# tracking particles");
-  res_displaced_eta =
-      book1DFromPS(iBooker, "res_displaced_eta", psRes_eta, "#eta_{trk} - #eta_{tp}", "# tracking particles");
-  res_displaced_pt =
-      book1DFromPS(iBooker, "res_displaced_pt", psRes_pt, "p_{T}(trk)-p_{T}(tp)", "# tracking particles");
-  res_displaced_ptRel =
-      book1DFromPS(iBooker, "res_displaced_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
-  res_displaced_z0 =
-      book1DFromPS(iBooker, "res_displaced_z0", psRes_z0, "trk z_{0} - tp z_{0} [cm]", "# tracking particles");
+  res_displaced_d0 = book1DFromPS(iBooker,
+                                  "res_displaced_d0",
+                                  psRes_displaced_d0,
+                                  "trk d_{0} - tp d_{0} [cm]",
+                                  "# tracking particles",
+                                  "Displaced particles d_{0} residual");
+  res_displaced_eta = book1DFromPS(iBooker,
+                                   "res_displaced_eta",
+                                   psRes_eta,
+                                   "trk #eta - tp #eta",
+                                   "# tracking particles",
+                                   "Displaced particles #eta residual");
+  res_displaced_pt = book1DFromPS(iBooker,
+                                  "res_displaced_pt",
+                                  psRes_pt,
+                                  "trk p_{T} - tp p_{T} [GeV]",
+                                  "# tracking particles",
+                                  "Displaced particles p_{T} residual");
+  res_displaced_ptRel = book1DFromPS(iBooker,
+                                     "res_displaced_ptRel",
+                                     psRes_ptRel,
+                                     "(trk p_{T} - tp p_{T}) / tp p_{T}",
+                                     "# tracking particles",
+                                     "Displaced particles relative p_{T} residual");
+  res_displaced_z0 = book1DFromPS(iBooker,
+                                  "res_displaced_z0",
+                                  psRes_z0,
+                                  "trk z_{0} - tp z_{0} [cm]",
+                                  "# tracking particles",
+                                  "Displaced particles z_{0} residual");
 
   // Extended L1TF (DisplacedParticles): resolution vs eta and pT slices
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/DisplacedParticles/FinalResolution/Ingredients");
@@ -993,12 +1036,36 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
 
   // Extended L1TF (PromptParticles): residual distributions
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/PromptParticles/Residual");
-  res_prompt_d0 = book1DFromPS(iBooker, "res_prompt_d0", psRes_d0, "trk d_{0} - tp d_{0} [cm]", "# tracking particles");
-  res_prompt_eta = book1DFromPS(iBooker, "res_prompt_eta", psRes_eta, "#eta_{trk} - #eta_{tp}", "# tracking particles");
-  res_prompt_pt = book1DFromPS(iBooker, "res_prompt_pt", psRes_pt, "p_{T}(trk)-p_{T}(tp)", "# tracking particles");
-  res_prompt_ptRel =
-      book1DFromPS(iBooker, "res_prompt_ptRel", psRes_ptRel, "Relative p_{T} [GeV]", "# tracking particles");
-  res_prompt_z0 = book1DFromPS(iBooker, "res_prompt_z0", psRes_z0, "trk z_{0} - tp z_{0} [cm]", "# tracking particles");
+  res_prompt_d0 = book1DFromPS(iBooker,
+                               "res_prompt_d0",
+                               psRes_d0,
+                               "trk d_{0} - tp d_{0} [cm]",
+                               "# tracking particles",
+                               "Prompt particles d_{0} residual");
+  res_prompt_eta = book1DFromPS(iBooker,
+                                "res_prompt_eta",
+                                psRes_eta,
+                                "trk #eta - tp #eta",
+                                "# tracking particles",
+                                "Prompt particles #eta residual");
+  res_prompt_pt = book1DFromPS(iBooker,
+                               "res_prompt_pt",
+                               psRes_pt,
+                               "trk p_{T} - tp p_{T} [GeV]",
+                               "# tracking particles",
+                               "Prompt particles p_{T} residual");
+  res_prompt_ptRel = book1DFromPS(iBooker,
+                                  "res_prompt_ptRel",
+                                  psRes_ptRel,
+                                  "(trk p_{T} - tp p_{T}) / tp p_{T}",
+                                  "# tracking particles",
+                                  "Prompt particles relative p_{T} residual");
+  res_prompt_z0 = book1DFromPS(iBooker,
+                               "res_prompt_z0",
+                               psRes_z0,
+                               "trk z_{0} - tp z_{0} [cm]",
+                               "# tracking particles",
+                               "Prompt particles z_{0} residual");
 
   // Extended L1TF (PromptParticles): resolution vs eta and pT slices
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/PromptParticles/FinalResolution/Ingredients");
@@ -1032,9 +1099,24 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
       book1DFromPS(iBooker, "trk_fake_vspt", psTrack_pt, "track p_{T} [GeV]", "# fake (not genuine) L1 tracks");
   trk_duplicate_vspt =
       book1DFromPS(iBooker, "trk_duplicate_vspt", psTrack_pt, "track p_{T} [GeV]", "# duplicate L1 tracks");
-  ntrk_pt2 = book1DFromPS(iBooker, "ntrk_pt2", psTrack_N_pt2, "# L1 tracks (p_{T} > 2 GeV) per event", "# events");
-  ntrk_pt3 = book1DFromPS(iBooker, "ntrk_pt3", psTrack_N_pt3, "# L1 tracks (p_{T} > 3 GeV) per event", "# events");
-  ntrk_pt10 = book1DFromPS(iBooker, "ntrk_pt10", psTrack_N_pt10, "# L1 tracks (p_{T} > 10 GeV) per event", "# events");
+  ntrk_pt2 = book1DFromPS(iBooker,
+                          "ntrk_pt2",
+                          psTrack_N_pt2,
+                          "# L1 tracks (p_{T} > 2 GeV) per event",
+                          "# events",
+                          "Nominal L1 tracks per event (p_{T} > 2 GeV)");
+  ntrk_pt3 = book1DFromPS(iBooker,
+                          "ntrk_pt3",
+                          psTrack_N_pt3,
+                          "# L1 tracks (p_{T} > 3 GeV) per event",
+                          "# events",
+                          "Nominal L1 tracks per event (p_{T} > 3 GeV)");
+  ntrk_pt10 = book1DFromPS(iBooker,
+                           "ntrk_pt10",
+                           psTrack_N_pt10,
+                           "# L1 tracks (p_{T} > 10 GeV) per event",
+                           "# events",
+                           "Nominal L1 tracks per event (p_{T} > 10 GeV)");
 
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/TrackRateIngredients");
   trk_all_vspt_extended =
@@ -1043,12 +1125,24 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
       iBooker, "trk_fake_vspt_extended", psTrack_pt, "track p_{T} [GeV]", "# fake (not genuine) L1 tracks");
   trk_duplicate_vspt_extended =
       book1DFromPS(iBooker, "trk_duplicate_vspt_extended", psTrack_pt, "track p_{T} [GeV]", "# duplicate L1 tracks");
-  ntrk_pt2_extended =
-      book1DFromPS(iBooker, "ntrk_pt2_extended", psTrack_N_pt2, "# L1 tracks (p_{T} > 2 GeV) per event", "# events");
-  ntrk_pt3_extended =
-      book1DFromPS(iBooker, "ntrk_pt3_extended", psTrack_N_pt3, "# L1 tracks (p_{T} > 3 GeV) per event", "# events");
-  ntrk_pt10_extended =
-      book1DFromPS(iBooker, "ntrk_pt10_extended", psTrack_N_pt10, "# L1 tracks (p_{T} > 10 GeV) per event", "# events");
+  ntrk_pt2_extended = book1DFromPS(iBooker,
+                                   "ntrk_pt2_extended",
+                                   psTrack_N_pt2,
+                                   "# L1 tracks (p_{T} > 2 GeV) per event",
+                                   "# events",
+                                   "Extended L1 tracks per event (p_{T} > 2 GeV)");
+  ntrk_pt3_extended = book1DFromPS(iBooker,
+                                   "ntrk_pt3_extended",
+                                   psTrack_N_pt3,
+                                   "# L1 tracks (p_{T} > 3 GeV) per event",
+                                   "# events",
+                                   "Extended L1 tracks per event (p_{T} > 3 GeV)");
+  ntrk_pt10_extended = book1DFromPS(iBooker,
+                                    "ntrk_pt10_extended",
+                                    psTrack_N_pt10,
+                                    "# L1 tracks (p_{T} > 10 GeV) per event",
+                                    "# events",
+                                    "Extended L1 tracks per event (p_{T} > 10 GeV)");
 
 }  // end of method
 

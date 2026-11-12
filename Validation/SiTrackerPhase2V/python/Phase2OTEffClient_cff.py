@@ -28,30 +28,29 @@ phase2OTEffClient = cms.EDProducer(
     # Input:  FinalEfficiency/Ingredients/Name
     efficiency=cms.vstring(
         # Nominal
-        "FinalEfficiency/EtaEfficiency        '#eta efficiency;tracking particle #eta;Efficiency'    FinalEfficiency/Ingredients/match_tp_eta       FinalEfficiency/Ingredients/tp_eta",
-        "FinalEfficiency/PtEfficiency         'p_{T} efficiency;p_{T} [GeV];Efficiency'              FinalEfficiency/Ingredients/match_tp_pt        FinalEfficiency/Ingredients/tp_pt",
-        "FinalEfficiency/PtEfficiencyZoom     'p_{T} efficiency;p_{T} [GeV];Efficiency'              FinalEfficiency/Ingredients/match_tp_pt_zoom   FinalEfficiency/Ingredients/tp_pt_zoom",
-        "FinalEfficiency/d0Efficiency         'd_{0} efficiency;d_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_tp_d0        FinalEfficiency/Ingredients/tp_d0",
-        "FinalEfficiency/LxyEfficiency        'L_{xy} efficiency;L_{xy} [cm];Efficiency'             FinalEfficiency/Ingredients/match_tp_Lxy       FinalEfficiency/Ingredients/tp_Lxy",
-        "FinalEfficiency/z0Efficiency         'z_{0} efficiency;z_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_tp_z0        FinalEfficiency/Ingredients/tp_z0",
+        "FinalEfficiency/EtaEfficiency        'Nominal L1 tracks #eta efficiency;tracking particle #eta;Efficiency'      FinalEfficiency/Ingredients/match_tp_eta       FinalEfficiency/Ingredients/tp_eta",
+        "FinalEfficiency/PtEfficiency         'Nominal L1 tracks p_{T} efficiency;p_{T} [GeV];Efficiency'                FinalEfficiency/Ingredients/match_tp_pt        FinalEfficiency/Ingredients/tp_pt",
+        "FinalEfficiency/PtEfficiencyZoom     'Nominal L1 tracks p_{T} efficiency (zoom);p_{T} [GeV];Efficiency'         FinalEfficiency/Ingredients/match_tp_pt_zoom   FinalEfficiency/Ingredients/tp_pt_zoom",
+        "FinalEfficiency/d0Efficiency         'Nominal L1 tracks d_{0} efficiency;d_{0} [cm];Efficiency'                 FinalEfficiency/Ingredients/match_tp_d0        FinalEfficiency/Ingredients/tp_d0",
+        "FinalEfficiency/LxyEfficiency        'Nominal L1 tracks L_{xy} efficiency;L_{xy} [cm];Efficiency'               FinalEfficiency/Ingredients/match_tp_Lxy       FinalEfficiency/Ingredients/tp_Lxy",
+        "FinalEfficiency/z0Efficiency         'Nominal L1 tracks z_{0} efficiency;z_{0} [cm];Efficiency'                 FinalEfficiency/Ingredients/match_tp_z0        FinalEfficiency/Ingredients/tp_z0",
 
-        # Prompt
-        # Note: If Prompt/Displaced use different ingredient names, ensure they match here.
-        "FinalEfficiency/EtaEfficiency        '#eta efficiency;tracking particle #eta;Efficiency'    FinalEfficiency/Ingredients/match_prompt_tp_eta       FinalEfficiency/Ingredients/tp_eta_for_prompt",
-        "FinalEfficiency/PtEfficiency         'p_{T} efficiency;p_{T} [GeV];Efficiency'              FinalEfficiency/Ingredients/match_prompt_tp_pt        FinalEfficiency/Ingredients/tp_pt_for_prompt",
-        "FinalEfficiency/PtEfficiencyZoom     'p_{T} efficiency;p_{T} [GeV];Efficiency'              FinalEfficiency/Ingredients/match_prompt_tp_pt_zoom   FinalEfficiency/Ingredients/tp_pt_zoom_for_prompt",
-        "FinalEfficiency/d0Efficiency         'd_{0} efficiency;d_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_prompt_tp_d0        FinalEfficiency/Ingredients/tp_d0_for_prompt",
-        "FinalEfficiency/LxyEfficiency        'L_{xy} efficiency;L_{xy} [cm];Efficiency'             FinalEfficiency/Ingredients/match_prompt_tp_Lxy       FinalEfficiency/Ingredients/tp_Lxy_for_prompt",
-        "FinalEfficiency/z0Efficiency         'z_{0} efficiency;z_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_prompt_tp_z0        FinalEfficiency/Ingredients/tp_z0_for_prompt",
+        # Prompt particles
+        "FinalEfficiency/EtaEfficiency        'Prompt particles #eta efficiency;tracking particle #eta;Efficiency'       FinalEfficiency/Ingredients/match_prompt_tp_eta       FinalEfficiency/Ingredients/tp_eta_for_prompt",
+        "FinalEfficiency/PtEfficiency         'Prompt particles p_{T} efficiency;p_{T} [GeV];Efficiency'                 FinalEfficiency/Ingredients/match_prompt_tp_pt        FinalEfficiency/Ingredients/tp_pt_for_prompt",
+        "FinalEfficiency/PtEfficiencyZoom     'Prompt particles p_{T} efficiency (zoom);p_{T} [GeV];Efficiency'          FinalEfficiency/Ingredients/match_prompt_tp_pt_zoom   FinalEfficiency/Ingredients/tp_pt_zoom_for_prompt",
+        "FinalEfficiency/d0Efficiency         'Prompt particles d_{0} efficiency;d_{0} [cm];Efficiency'                  FinalEfficiency/Ingredients/match_prompt_tp_d0        FinalEfficiency/Ingredients/tp_d0_for_prompt",
+        "FinalEfficiency/LxyEfficiency        'Prompt particles L_{xy} efficiency;L_{xy} [cm];Efficiency'                FinalEfficiency/Ingredients/match_prompt_tp_Lxy       FinalEfficiency/Ingredients/tp_Lxy_for_prompt",
+        "FinalEfficiency/z0Efficiency         'Prompt particles z_{0} efficiency;z_{0} [cm];Efficiency'                  FinalEfficiency/Ingredients/match_prompt_tp_z0        FinalEfficiency/Ingredients/tp_z0_for_prompt",
 
-        # Displaced
-        "FinalEfficiency/EtaEfficiency        '#eta efficiency;tracking particle #eta;Efficiency'    FinalEfficiency/Ingredients/match_displaced_tp_eta       FinalEfficiency/Ingredients/tp_eta_for_dis",
-        "FinalEfficiency/PtEfficiency         'p_{T} efficiency;p_{T} [GeV];Efficiency'              FinalEfficiency/Ingredients/match_displaced_tp_pt        FinalEfficiency/Ingredients/tp_pt_for_dis",
-        "FinalEfficiency/PtEfficiencyZoom     'p_{T} efficiency;p_{T} [GeV];Efficiency'              FinalEfficiency/Ingredients/match_displaced_tp_pt_zoom   FinalEfficiency/Ingredients/tp_pt_zoom_for_dis",
-        "FinalEfficiency/d0Efficiency         'd_{0} efficiency;d_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_displaced_tp_d0        FinalEfficiency/Ingredients/tp_d0_for_dis",
-        "FinalEfficiency/LxyEfficiency        'L_{xy} efficiency;L_{xy} [cm];Efficiency'             FinalEfficiency/Ingredients/match_displaced_tp_Lxy       FinalEfficiency/Ingredients/tp_Lxy_for_dis",
-        "FinalEfficiency/z0Efficiency         'z_{0} efficiency;z_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_displaced_tp_z0        FinalEfficiency/Ingredients/tp_z0_for_dis",
-    ),
+        # Displaced particles
+        "FinalEfficiency/EtaEfficiency        'Displaced particles #eta efficiency;tracking particle #eta;Efficiency'    FinalEfficiency/Ingredients/match_displaced_tp_eta       FinalEfficiency/Ingredients/tp_eta_for_dis",
+        "FinalEfficiency/PtEfficiency         'Displaced particles p_{T} efficiency;p_{T} [GeV];Efficiency'              FinalEfficiency/Ingredients/match_displaced_tp_pt        FinalEfficiency/Ingredients/tp_pt_for_dis",
+        "FinalEfficiency/PtEfficiencyZoom     'Displaced particles p_{T} efficiency (zoom);p_{T} [GeV];Efficiency'       FinalEfficiency/Ingredients/match_displaced_tp_pt_zoom   FinalEfficiency/Ingredients/tp_pt_zoom_for_dis",
+        "FinalEfficiency/d0Efficiency         'Displaced particles d_{0} efficiency;d_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_displaced_tp_d0        FinalEfficiency/Ingredients/tp_d0_for_dis",
+        "FinalEfficiency/LxyEfficiency        'Displaced particles L_{xy} efficiency;L_{xy} [cm];Efficiency'             FinalEfficiency/Ingredients/match_displaced_tp_Lxy       FinalEfficiency/Ingredients/tp_Lxy_for_dis",
+        "FinalEfficiency/z0Efficiency         'Displaced particles z_{0} efficiency;z_{0} [cm];Efficiency'               FinalEfficiency/Ingredients/match_displaced_tp_z0        FinalEfficiency/Ingredients/tp_z0_for_dis",
+   ),
     resolution=cms.vstring(),
     efficiencyProfile=cms.untracked.vstring(),
     verbose=cms.untracked.uint32(0)

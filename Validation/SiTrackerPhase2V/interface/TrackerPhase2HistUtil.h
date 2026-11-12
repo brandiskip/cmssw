@@ -57,9 +57,10 @@ namespace phase2tkutil {
                                                    const std::string& name,
                                                    const edm::ParameterSet& ps,
                                                    const char* xaxis,
-                                                   const char* yaxis) {
+                                                   const char* yaxis,
+                                                   const std::string& title = "") {
     auto h = iBooker.book1D(name,
-                            name,
+                            title.empty() ? name : title,
                             ps.getParameter<int32_t>("Nbinsx"),
                             ps.getParameter<double>("xmin"),
                             ps.getParameter<double>("xmax"));

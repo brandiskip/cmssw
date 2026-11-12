@@ -107,32 +107,45 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
   ibooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/FinalResolution");
   phase2tkutil::fillResolutionFromVec(
       respt_pt2to3,
-      ibooker.book1D(
-          "pTResVsEta_2-3", "pT resolution vs |#eta| (2-3 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})", eta_binnum, eta_bins),
+      ibooker.book1D("pTResVsEta_2-3",
+                     "Nominal L1 tracks p_{T} resolution vs |#eta| (2-3 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     eta_binnum,
+                     eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       respt_pt3to8,
-      ibooker.book1D(
-          "pTResVsEta_3-8", "pT resolution vs |#eta| (3-8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})", eta_binnum, eta_bins),
+      ibooker.book1D("pTResVsEta_3-8",
+                     "Nominal L1 tracks p_{T} resolution vs |#eta| (3-8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     eta_binnum,
+                     eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       respt_pt8toInf,
       ibooker.book1D("pTResVsEta_8-inf",
-                     "pT resolution vs |#eta| (8-inf GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     "Nominal L1 tracks p_{T} resolution vs |#eta| (> 8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
                      eta_binnum,
                      eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       mereseta_vect,
-      ibooker.book1D("EtaResolution", "#eta resolution vs |#eta|;|#eta|;#sigma(#Delta#eta)", eta_binnum, eta_bins),
+      ibooker.book1D("EtaResolution",
+                     "Nominal L1 tracks #eta resolution vs |#eta|;|#eta|;#sigma(#Delta#eta)",
+                     eta_binnum,
+                     eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       meresphi_vect,
-      ibooker.book1D("PhiResolution", "#phi resolution vs |#eta|;|#eta|;#sigma(#Delta#phi)", eta_binnum, eta_bins),
+      ibooker.book1D("PhiResolution",
+                     "Nominal L1 tracks #phi resolution vs |#eta|;|#eta|;#sigma(#Delta#phi)",
+                     eta_binnum,
+                     eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       meresz0_vect,
-      ibooker.book1D("z0Resolution", "z0 resolution vs |#eta|;|#eta|;#sigma(#Deltaz0) [cm]", eta_binnum, eta_bins),
+      ibooker.book1D("z0Resolution",
+                     "Nominal L1 tracks z_{0} resolution vs |#eta|;|#eta|;#sigma(#Deltaz_{0}) [cm]",
+                     eta_binnum,
+                     eta_bins),
       "");
 
   // Final Resolutions - PromptParticles
@@ -140,91 +153,101 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
   phase2tkutil::fillResolutionFromVec(
       prompt_respt_pt2to3,
       ibooker.book1D("pTResVsEta_2-3_prompt",
-                     "Prompt pT resolution vs |#eta| (2-3 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     "Prompt particles p_{T} resolution vs |#eta| (2-3 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
                      eta_binnum,
                      eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       prompt_respt_pt3to8,
       ibooker.book1D("pTResVsEta_3-8_prompt",
-                     "Prompt pT resolution vs |#eta| (3-8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     "Prompt particles p_{T} resolution vs |#eta| (3-8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
                      eta_binnum,
                      eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       prompt_respt_pt8toInf,
       ibooker.book1D("pTResVsEta_8-inf_prompt",
-                     "Prompt pT resolution vs |#eta| (8-inf GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     "Prompt particles p_{T} resolution vs |#eta| (> 8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
                      eta_binnum,
                      eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       prompt_mereseta_vect,
-      ibooker.book1D(
-          "EtaResolution_prompt", "Prompt #eta resolution vs |#eta|;|#eta|;#sigma(#Delta#eta)", eta_binnum, eta_bins),
+      ibooker.book1D("EtaResolution_prompt",
+                     "Prompt particles #eta resolution vs |#eta|;|#eta|;#sigma(#Delta#eta)",
+                     eta_binnum,
+                     eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       prompt_meresphi_vect,
-      ibooker.book1D(
-          "PhiResolution_prompt", "Prompt #phi resolution vs |#eta|;|#eta|;#sigma(#Delta#phi)", eta_binnum, eta_bins),
+      ibooker.book1D("PhiResolution_prompt",
+                     "Prompt particles #phi resolution vs |#eta|;|#eta|;#sigma(#Delta#phi)",
+                     eta_binnum,
+                     eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       prompt_meresz0_vect,
-      ibooker.book1D(
-          "z0Resolution_prompt", "Prompt z0 resolution vs |#eta|;|#eta|;#sigma(#Deltaz0) [cm]", eta_binnum, eta_bins),
+      ibooker.book1D("z0Resolution_prompt",
+                     "Prompt particles z_{0} resolution vs |#eta|;|#eta|;#sigma(#Deltaz_{0}) [cm]",
+                     eta_binnum,
+                     eta_bins),
       "");
-  phase2tkutil::fillResolutionFromVec(prompt_meresd0_vect,
-                                      ibooker.book1D("d0Resolution_prompt",
-                                                     "Prompt d0 resolution vs |#eta|;|#eta|;#sigma(#Deltad_{0}) [cm]",
-                                                     eta_binnum,
-                                                     eta_bins),
-                                      "");
+  phase2tkutil::fillResolutionFromVec(
+      prompt_meresd0_vect,
+      ibooker.book1D("d0Resolution_prompt",
+                     "Prompt particles d_{0} resolution vs |#eta|;|#eta|;#sigma(#Deltad_{0}) [cm]",
+                     eta_binnum,
+                     eta_bins),
+      "");
 
   // Final Resolutions - DisplacedParticles
   ibooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/DisplacedParticles/FinalResolution");
   phase2tkutil::fillResolutionFromVec(
       displaced_respt_pt2to3,
       ibooker.book1D("pTResVsEta_2-3_displaced",
-                     "Displaced pT resolution vs |#eta| (2-3 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     "Displaced particles p_{T} resolution vs |#eta| (2-3 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
                      eta_binnum,
                      eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       displaced_respt_pt3to8,
       ibooker.book1D("pTResVsEta_3-8_displaced",
-                     "Displaced pT resolution vs |#eta| (3-8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     "Displaced particles p_{T} resolution vs |#eta| (3-8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
                      eta_binnum,
                      eta_bins),
       "");
   phase2tkutil::fillResolutionFromVec(
       displaced_respt_pt8toInf,
       ibooker.book1D("pTResVsEta_8-inf_displaced",
-                     "Displaced pT resolution vs |#eta| (8-inf GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
+                     "Displaced particles p_{T} resolution vs |#eta| (> 8 GeV);|#eta|;#sigma(#Delta p_{T}/p_{T})",
                      eta_binnum,
                      eta_bins),
       "");
-  phase2tkutil::fillResolutionFromVec(displaced_mereseta_vect,
-                                      ibooker.book1D("EtaResolution_displaced",
-                                                     "Displaced #eta resolution vs |#eta|;|#eta|;#sigma(#Delta#eta)",
-                                                     eta_binnum,
-                                                     eta_bins),
-                                      "");
-  phase2tkutil::fillResolutionFromVec(displaced_meresphi_vect,
-                                      ibooker.book1D("PhiResolution_displaced",
-                                                     "Displaced #phi resolution vs |#eta|;|#eta|;#sigma(#Delta#phi)",
-                                                     eta_binnum,
-                                                     eta_bins),
-                                      "");
-  phase2tkutil::fillResolutionFromVec(displaced_meresz0_vect,
-                                      ibooker.book1D("z0Resolution_displaced",
-                                                     "Displaced z0 resolution vs |#eta|;|#eta|;#sigma(#Deltaz0) [cm]",
-                                                     eta_binnum,
-                                                     eta_bins),
-                                      "");
+  phase2tkutil::fillResolutionFromVec(
+      displaced_mereseta_vect,
+      ibooker.book1D("EtaResolution_displaced",
+                     "Displaced particles #eta resolution vs |#eta|;|#eta|;#sigma(#Delta#eta)",
+                     eta_binnum,
+                     eta_bins),
+      "");
+  phase2tkutil::fillResolutionFromVec(
+      displaced_meresphi_vect,
+      ibooker.book1D("PhiResolution_displaced",
+                     "Displaced particles #phi resolution vs |#eta|;|#eta|;#sigma(#Delta#phi)",
+                     eta_binnum,
+                     eta_bins),
+      "");
+  phase2tkutil::fillResolutionFromVec(
+      displaced_meresz0_vect,
+      ibooker.book1D("z0Resolution_displaced",
+                     "Displaced particles z_{0} resolution vs |#eta|;|#eta|;#sigma(#Deltaz_{0}) [cm]",
+                     eta_binnum,
+                     eta_bins),
+      "");
   phase2tkutil::fillResolutionFromVec(
       displaced_meresd0_vect,
       ibooker.book1D("d0Resolution_displaced",
-                     "Displaced d0 resolution vs |#eta|;|#eta|;#sigma(#Deltad_{0}) [cm]",
+                     "Displaced particles d_{0} resolution vs |#eta|;|#eta|;#sigma(#Deltad_{0}) [cm]",
                      eta_binnum,
                      eta_bins),
       "");
@@ -246,18 +269,18 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
                              ratesNom + "trk_fake_vspt",
                              ratesNom + "trk_all_vspt",
                              "fakeFraction_vspt",
-                             "Fake fraction;track p_{T} [GeV];fake fraction");
+                             "Nominal L1 tracks fake fraction;track p_{T} [GeV];fake fraction");
   phase2tkutil::bookFraction(ibooker,
                              igetter,
                              ratesNom + "trk_duplicate_vspt",
                              ratesNom + "trk_all_vspt",
                              "duplicateFraction_vspt",
-                             "Duplicate fraction;track p_{T} [GeV];duplicate fraction");
+                             "Nominal L1 tracks duplicate fraction;track p_{T} [GeV];duplicate fraction");
   phase2tkutil::bookPerEventRate(ibooker,
                                  igetter,
                                  ratesNom + "trk_all_vspt",
                                  "trackRate_vspt",
-                                 "L1 tracks per event;track p_{T} [GeV];tracks / event",
+                                 "Nominal L1 tracks per event;track p_{T} [GeV];tracks / event",
                                  nEvents);
 
   std::string ratesExt = topFolderName_ + "/Extended_L1TF/TrackRateIngredients/";
@@ -267,18 +290,18 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
                              ratesExt + "trk_fake_vspt_extended",
                              ratesExt + "trk_all_vspt_extended",
                              "fakeFraction_vspt",
-                             "Fake fraction;track p_{T} [GeV];fake fraction");
+                             "Extended L1 tracks fake fraction;track p_{T} [GeV];fake fraction");
   phase2tkutil::bookFraction(ibooker,
                              igetter,
                              ratesExt + "trk_duplicate_vspt_extended",
                              ratesExt + "trk_all_vspt_extended",
                              "duplicateFraction_vspt",
-                             "Duplicate fraction;track p_{T} [GeV];duplicate fraction");
+                             "Extended L1 tracks duplicate fraction;track p_{T} [GeV];duplicate fraction");
   phase2tkutil::bookPerEventRate(ibooker,
                                  igetter,
                                  ratesExt + "trk_all_vspt_extended",
                                  "trackRate_vspt",
-                                 "L1 tracks per event;track p_{T} [GeV];tracks / event",
+                                 "Extended L1 tracks per event;track p_{T} [GeV];tracks / event",
                                  nEvents);
 }  // end dqmEndJob
 

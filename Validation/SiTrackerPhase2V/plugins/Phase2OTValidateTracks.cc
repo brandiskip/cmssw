@@ -183,16 +183,16 @@ public:
 
   // Track rate / fake rate / duplicate rate monitoring
   // (definitions follow L1Trigger/TrackFindingTracklet/test/L1TrackNtuplePlot.C)
-  MonitorElement *trk_all_vspt = nullptr;        // denominator for fake/duplicate fractions
-  MonitorElement *trk_fake_vspt = nullptr;       // numerator: tracks failing isGenuine
-  MonitorElement *trk_duplicate_vspt = nullptr;  // numerator: extra genuine matches to the same TP
-  MonitorElement *ntrk_pt2 = nullptr;            // # tracks per event with pT > 2 GeV
-  MonitorElement *ntrk_pt3 = nullptr;            // # tracks per event with pT > 3 GeV
-  MonitorElement *ntrk_pt10 = nullptr;           // # tracks per event with pT > 10 GeV
+  MonitorElement *trk_all_vs_pt = nullptr;        // denominator for fake/duplicate fractions
+  MonitorElement *trk_fake_vs_pt = nullptr;       // numerator: tracks failing isGenuine
+  MonitorElement *trk_duplicate_vs_pt = nullptr;  // numerator: extra genuine matches to the same TP
+  MonitorElement *ntrk_pt2 = nullptr;             // # tracks per event with pT > 2 GeV
+  MonitorElement *ntrk_pt3 = nullptr;             // # tracks per event with pT > 3 GeV
+  MonitorElement *ntrk_pt10 = nullptr;            // # tracks per event with pT > 10 GeV
 
-  MonitorElement *trk_all_vspt_extended = nullptr;
-  MonitorElement *trk_fake_vspt_extended = nullptr;
-  MonitorElement *trk_duplicate_vspt_extended = nullptr;
+  MonitorElement *trk_all_vs_pt_extended = nullptr;
+  MonitorElement *trk_fake_vs_pt_extended = nullptr;
+  MonitorElement *trk_duplicate_vs_pt_extended = nullptr;
   MonitorElement *ntrk_pt2_extended = nullptr;
   MonitorElement *ntrk_pt3_extended = nullptr;
   MonitorElement *ntrk_pt10_extended = nullptr;
@@ -407,10 +407,10 @@ void Phase2OTValidateTracks::processTrackCollection(
   // Duplicate-rate numerator: every genuine match beyond the first is a duplicate.
   // Same counting as the tp_nmatch > 1 block in
   // L1Trigger/TrackFindingTracklet/test/L1TrackNtuplePlot.C; cuts on the best
-  // track mirror the trk_all_vspt denominator selection in processTrackRates().
+  // track mirror the trk_all_vs_pt denominator selection in processTrackRates().
   float bestTrack_pt = bestTrack->momentum().perp();
   if (tp_nMatch > 1 && bestTrack_pt > 2.0 && std::fabs(bestTrack->momentum().eta()) < TP_maxEta) {
-    MonitorElement *trk_duplicate_ptr = isExtended ? trk_duplicate_vspt_extended : trk_duplicate_vspt;
+    MonitorElement *trk_duplicate_ptr = isExtended ? trk_duplicate_vs_pt_extended : trk_duplicate_vs_pt;
     for (int inm = 1; inm < tp_nMatch; inm++) {  // N.B. loop doesn't start at zero
       trk_duplicate_ptr->Fill(bestTrack_pt);
     }
@@ -637,13 +637,14 @@ void Phase2OTValidateTracks::analyze(const edm::Event &iEvent, const edm::EventS
 
   // Track rate and fake rate, computed by looping over reconstructed tracks
   if (TTTrackHandle.isValid() && MCTruthTTTrackHandle.isValid()) {
-    processTrackRates(TTTrackHandle, MCTruthTTTrackHandle, trk_all_vspt, trk_fake_vspt, ntrk_pt2, ntrk_pt3, ntrk_pt10);
+    processTrackRates(
+        TTTrackHandle, MCTruthTTTrackHandle, trk_all_vs_pt, trk_fake_vs_pt, ntrk_pt2, ntrk_pt3, ntrk_pt10);
   }
   if (TTTrackExtendedHandle.isValid() && MCTruthTTTrackExtendedHandle.isValid()) {
     processTrackRates(TTTrackExtendedHandle,
                       MCTruthTTTrackExtendedHandle,
-                      trk_all_vspt_extended,
-                      trk_fake_vspt_extended,
+                      trk_all_vs_pt_extended,
+                      trk_fake_vs_pt_extended,
                       ntrk_pt2_extended,
                       ntrk_pt3_extended,
                       ntrk_pt10_extended);
@@ -1094,11 +1095,11 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
   edm::ParameterSet psTrack_N_pt10 = conf_.getParameter<edm::ParameterSet>("TH1NTracks_pt10");
 
   iBooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/TrackRateIngredients");
-  trk_all_vspt = book1DFromPS(iBooker, "trk_all_vspt", psTrack_pt, "track p_{T} [GeV]", "# L1 tracks");
-  trk_fake_vspt =
-      book1DFromPS(iBooker, "trk_fake_vspt", psTrack_pt, "track p_{T} [GeV]", "# fake (not genuine) L1 tracks");
-  trk_duplicate_vspt =
-      book1DFromPS(iBooker, "trk_duplicate_vspt", psTrack_pt, "track p_{T} [GeV]", "# duplicate L1 tracks");
+  trk_all_vs_pt = book1DFromPS(iBooker, "trk_all_vs_pt", psTrack_pt, "track p_{T} [GeV]", "# L1 tracks");
+  trk_fake_vs_pt =
+      book1DFromPS(iBooker, "trk_fake_vs_pt", psTrack_pt, "track p_{T} [GeV]", "# fake (not genuine) L1 tracks");
+  trk_duplicate_vs_pt =
+      book1DFromPS(iBooker, "trk_duplicate_vs_pt", psTrack_pt, "track p_{T} [GeV]", "# duplicate L1 tracks");
   ntrk_pt2 = book1DFromPS(iBooker,
                           "ntrk_pt2",
                           psTrack_N_pt2,
@@ -1119,12 +1120,12 @@ void Phase2OTValidateTracks::bookHistograms(DQMStore::IBooker &iBooker,
                            "Nominal L1 tracks per event (p_{T} > 10 GeV)");
 
   iBooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/TrackRateIngredients");
-  trk_all_vspt_extended =
-      book1DFromPS(iBooker, "trk_all_vspt_extended", psTrack_pt, "track p_{T} [GeV]", "# L1 tracks");
-  trk_fake_vspt_extended = book1DFromPS(
-      iBooker, "trk_fake_vspt_extended", psTrack_pt, "track p_{T} [GeV]", "# fake (not genuine) L1 tracks");
-  trk_duplicate_vspt_extended =
-      book1DFromPS(iBooker, "trk_duplicate_vspt_extended", psTrack_pt, "track p_{T} [GeV]", "# duplicate L1 tracks");
+  trk_all_vs_pt_extended =
+      book1DFromPS(iBooker, "trk_all_vs_pt_extended", psTrack_pt, "track p_{T} [GeV]", "# L1 tracks");
+  trk_fake_vs_pt_extended = book1DFromPS(
+      iBooker, "trk_fake_vs_pt_extended", psTrack_pt, "track p_{T} [GeV]", "# fake (not genuine) L1 tracks");
+  trk_duplicate_vs_pt_extended =
+      book1DFromPS(iBooker, "trk_duplicate_vs_pt_extended", psTrack_pt, "track p_{T} [GeV]", "# duplicate L1 tracks");
   ntrk_pt2_extended = book1DFromPS(iBooker,
                                    "ntrk_pt2_extended",
                                    psTrack_N_pt2,

@@ -10,9 +10,9 @@
  * L1 tracks.
  * 
  * It also forms the track-level rate plots from the ingredients booked by the
- * analyzer: the fake fraction (trk_fake_vspt / trk_all_vspt) and duplicate
- * fraction (trk_duplicate_vspt / trk_all_vspt) with binomial errors, and the
- * per-event track rate (trk_all_vspt / nEvents), for both the nominal and
+ * analyzer: the fake fraction (trk_fake_vs_pt / trk_all_vs_pt) and duplicate
+ * fraction (trk_duplicate_vs_pt / trk_all_vs_pt) with binomial errors, and the
+ * per-event track rate (trk_all_vs_pt / nEvents), for both the nominal and
  * extended L1 track collections. Definitions follow
  * L1Trigger/TrackFindingTracklet/test/L1TrackNtuplePlot.C.
  *
@@ -266,20 +266,20 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
   ibooker.setCurrentFolder(topFolderName_ + "/Nominal_L1TF/FinalRates");
   phase2tkutil::bookFraction(ibooker,
                              igetter,
-                             ratesNom + "trk_fake_vspt",
-                             ratesNom + "trk_all_vspt",
-                             "fakeFraction_vspt",
+                             ratesNom + "trk_fake_vs_pt",
+                             ratesNom + "trk_all_vs_pt",
+                             "fakeFraction_vs_pt",
                              "Nominal L1 tracks fake fraction;track p_{T} [GeV];fake fraction");
   phase2tkutil::bookFraction(ibooker,
                              igetter,
-                             ratesNom + "trk_duplicate_vspt",
-                             ratesNom + "trk_all_vspt",
-                             "duplicateFraction_vspt",
+                             ratesNom + "trk_duplicate_vs_pt",
+                             ratesNom + "trk_all_vs_pt",
+                             "duplicateFraction_vs_pt",
                              "Nominal L1 tracks duplicate fraction;track p_{T} [GeV];duplicate fraction");
   phase2tkutil::bookPerEventRate(ibooker,
                                  igetter,
-                                 ratesNom + "trk_all_vspt",
-                                 "trackRate_vspt",
+                                 ratesNom + "trk_all_vs_pt",
+                                 "trackRate_vs_pt",
                                  "Nominal L1 tracks per event;track p_{T} [GeV];tracks / event",
                                  nEvents);
 
@@ -287,20 +287,20 @@ void Phase2OTHarvestTracks::dqmEndJob(DQMStore::IBooker &ibooker, DQMStore::IGet
   ibooker.setCurrentFolder(topFolderName_ + "/Extended_L1TF/FinalRates");
   phase2tkutil::bookFraction(ibooker,
                              igetter,
-                             ratesExt + "trk_fake_vspt_extended",
-                             ratesExt + "trk_all_vspt_extended",
-                             "fakeFraction_vspt",
+                             ratesExt + "trk_fake_vs_pt_extended",
+                             ratesExt + "trk_all_vs_pt_extended",
+                             "fakeFraction_vs_pt",
                              "Extended L1 tracks fake fraction;track p_{T} [GeV];fake fraction");
   phase2tkutil::bookFraction(ibooker,
                              igetter,
-                             ratesExt + "trk_duplicate_vspt_extended",
-                             ratesExt + "trk_all_vspt_extended",
-                             "duplicateFraction_vspt",
+                             ratesExt + "trk_duplicate_vs_pt_extended",
+                             ratesExt + "trk_all_vs_pt_extended",
+                             "duplicateFraction_vs_pt",
                              "Extended L1 tracks duplicate fraction;track p_{T} [GeV];duplicate fraction");
   phase2tkutil::bookPerEventRate(ibooker,
                                  igetter,
-                                 ratesExt + "trk_all_vspt_extended",
-                                 "trackRate_vspt",
+                                 ratesExt + "trk_all_vs_pt_extended",
+                                 "trackRate_vs_pt",
                                  "Extended L1 tracks per event;track p_{T} [GeV];tracks / event",
                                  nEvents);
 }  // end dqmEndJob
